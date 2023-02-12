@@ -1,4 +1,4 @@
-<p align="center"><a href="https://ipcosy.com" target="_blank"><img src="./public/favion.icon" width="400" alt="Laravel Logo"></a></p>
+<p align="center"><a href="https://ipcosy.com" target="_blank"><img src="https://blog.ipcosy.com/src/favicon.ico" width="400" alt="Laravel Logo"></a></p>
 
 <p align="center">
 <a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
