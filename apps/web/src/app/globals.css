@@ -1,0 +1,45 @@
+@import "tailwindcss";
+
+:root {
+  /* Light Theme (Telegram Default) */
+  --background: #f3f4f6; /* gray-100 */
+  --foreground: #171717;
+  --primary: #3b82f6; /* blue-500 */
+  --bubble-in: #ffffff;
+  --bubble-out: #dbeafe; /* blue-100 */
+}
+
+/* Dark Theme (Telegram Night) */
+[data-theme="dark"] {
+  --background: #17212b; /* deep blue */
+  --foreground: #ededed;
+  --primary: #60a5fa; /* blue-400 */
+  --bubble-in: #182533;
+  --bubble-out: #2b5278;
+}
+
+/* Gray Green Theme */
+[data-theme="gray-green"] {
+  --background: #546e7a; /* blue-gray-600 */
+  --foreground: #ffffff;
+  --primary: #4ade80; /* green-400 */
+  --bubble-in: #455a64;
+  --bubble-out: #37474f;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-primary: var(--primary);
+  --color-bubble-in: var(--bubble-in);
+  --color-bubble-out: var(--bubble-out);
+}
+
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  transition-property: background-color, color;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 300ms;
+}
+
