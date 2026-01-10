@@ -2,9 +2,10 @@
 
 import { useTheme } from "next-themes";
 import Image from "next/image";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
+import { IpSocket } from "@ipcosy/ip-socket";
 
-// Mock Data
+// Mock Data (still used for list, but messages will be real-time enhanced)
 const MOCK_CHATS = [
   {
     id: 1,
@@ -20,32 +21,60 @@ const MOCK_CHATS = [
     time: "09:15 AM",
     unread: 0,
   },
-  {
-    id: 3,
-    name: "Anonymous 05",
-    message: "Can you send the docs?",
-    time: "Yesterday",
-    unread: 0,
-  },
-];
-
-const MOCK_MESSAGES = [
-  { id: 1, sender: "them", text: "Hello! Is this secure?", time: "10:00 AM" },
-  { id: 2, sender: "me", text: "Yes, fully anonymous.", time: "10:05 AM" },
-  {
-    id: 3,
-    sender: "them",
-    text: "Great. I have some files to share.",
-    time: "10:06 AM",
-  },
 ];
 
 export default function Home() {
   const { theme, setTheme } = useTheme();
   const [selectedChat, setSelectedChat] = useState<number | null>(null);
+  const [messages, setMessages] = useState<any[]>([]);
+  const [inputText, setInputText] = useState("");
+  const socketRef = useRef<IpSocket | null>(null);
 
-  // Mobile: If chat selected, show chat window. Else show list.
-  // Desktop: Show both side-by-side.
+  useEffect(() => {
+    // Initialize Socket
+    socketRef.current = new IpSocket({
+      url: "ws://localhost:8080",
+      autoConnect: true,
+    });
+
+    socketRef.current.on("connect", () => {
+      console.log("Connected to IPCosy Engine");
+    });
+
+    socketRef.current.on("message", (payload: any) => {
+      console.log("Received:", payload);
+      if (payload.type === "echo") {
+        setMessages((prev) => [...prev, payload.data]);
+      } else if (payload.type === "error") {
+        alert(payload.message); // Simple alert for MVP
+      }
+    });
+
+    return () => {
+      socketRef.current?.disconnect();
+    };
+  }, []);
+
+  const handleSend = () => {
+    if (!inputText.trim()) return;
+
+    const msg = {
+      id: Date.now(),
+      sender: "me",
+      text: inputText,
+      time: new Date().toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+      }),
+    };
+
+    // Optimistic update
+    setMessages((prev) => [...prev, msg]);
+
+    // Send to server
+    socketRef.current?.send(msg);
+    setInputText("");
+  };
 
   return (
     <div className="flex h-screen overflow-hidden bg-background text-foreground">
@@ -56,7 +85,7 @@ export default function Home() {
         }`}
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-4 bg-background">
+        <div className="flex items-center justify-between p-4 bg-background border-b border-black/5 dark:border-white/5">
           <div className="flex items-center gap-2">
             <div className="relative w-8 h-8">
               <Image
@@ -90,7 +119,7 @@ export default function Home() {
         </div>
 
         {/* Search */}
-        <div className="px-4 pb-2">
+        <div className="px-4 py-3">
           <input
             type="text"
             placeholder="Search"
@@ -162,10 +191,9 @@ export default function Home() {
               className="flex-1 overflow-y-auto p-4 space-y-2 bg-cover bg-center"
               style={{ backgroundImage: "url('/pattern.png')" }}
             >
-              {/* Note: pattern.png is a placeholder, strictly using CSS colors for now */}
-              {MOCK_MESSAGES.map((msg) => (
+              {messages.map((msg, idx) => (
                 <div
-                  key={msg.id}
+                  key={idx}
                   className={`flex w-full ${
                     msg.sender === "me" ? "justify-end" : "justify-start"
                   }`}
@@ -186,6 +214,11 @@ export default function Home() {
                   </div>
                 </div>
               ))}
+              {messages.length === 0 && (
+                <div className="flex h-full items-center justify-center text-black/30 dark:text-white/30 text-sm">
+                  No messages yet. Say hello!
+                </div>
+              )}
             </div>
 
             {/* Input Area */}
@@ -196,10 +229,16 @@ export default function Home() {
                 </button>
                 <input
                   type="text"
+                  value={inputText}
+                  onChange={(e) => setInputText(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && handleSend()}
                   placeholder="Message..."
                   className="flex-1 bg-transparent focus:outline-none"
                 />
-                <button className="text-primary hover:text-blue-600 transition-colors">
+                <button
+                  onClick={handleSend}
+                  className="text-primary hover:text-blue-600 transition-colors"
+                >
                   ➤
                 </button>
               </div>
