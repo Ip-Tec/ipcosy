@@ -1,0 +1,82 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // Anonymous Identity
+  fingerprint String? @unique // Device fingerprint
+  isPremium   Boolean @default(false)
+  isBanned    Boolean @default(false)
+
+  // Relations
+  chats       ChatParticipant[]
+  messages    Message[]
+  reactions   Reaction[]
+}
+
+model Chat {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  isGroup   Boolean  @default(false)
+  name      String?  // For groups
+
+  participants ChatParticipant[]
+  messages     Message[]
+}
+
+model ChatParticipant {
+  id        String   @id @default(uuid())
+  joinedAt  DateTime @default(now())
+  
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  
+  chatId    String
+  chat      Chat     @relation(fields: [chatId], references: [id])
+
+  @@unique([userId, chatId])
+}
+
+model Message {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  
+  content   String?  @db.Text
+  fileUrl   String?
+  fileType  String?  // image, video, doc
+  
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  
+  chatId    String
+  chat      Chat     @relation(fields: [chatId], references: [id])
+
+  reactions Reaction[]
+}
+
+model Reaction {
+  id        String   @id @default(uuid())
+  emoji     String
+  
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  
+  messageId String
+  message   Message  @relation(fields: [messageId], references: [id])
+
+  @@unique([userId, messageId, emoji])
+}
