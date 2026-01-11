@@ -1,0 +1,12 @@
+services:
+  - type: worker
+    name: ipcosy-server
+    env: docker
+    dockerContext: .
+    dockerfilePath: apps/server/Dockerfile
+    envVars:
+      - key: PORT
+        value: 8080
+      - key: DATABASE_URL
+        sync: false
+    autoDeploy: true
