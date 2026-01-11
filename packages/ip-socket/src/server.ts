@@ -4,7 +4,7 @@ import { ServerEvent, MessagePayload } from "./types";
 export abstract class IpServer {
   protected wss: WebSocketServer;
 
-  constructor(port: number) {
+  public constructor(port: number) {
     this.wss = new WebSocketServer({ port });
     this.init();
   }
@@ -22,9 +22,9 @@ export abstract class IpServer {
     });
   }
 
-  abstract onMessage(ws: WebSocket, payload: MessagePayload): void;
+  public abstract onMessage(ws: WebSocket, payload: MessagePayload): void;
 
-  broadcast(event: ServerEvent) {
+  public broadcast(event: ServerEvent) {
     const data = JSON.stringify(event);
     this.wss.clients.forEach((client: WebSocket) => {
       if (client.readyState === WebSocket.OPEN) {

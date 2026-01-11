@@ -3,6 +3,10 @@ import { prisma } from "@ipcosy/db";
 import { IpServer, MessagePayload } from "@ipcosy/ip-socket";
 
 class ChatServer extends IpServer {
+  constructor(port: number) {
+    super(port);
+  }
+
   // Simple in-memory rate limiter
   private messageCounts = new Map<
     string,
