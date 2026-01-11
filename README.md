@@ -8,11 +8,12 @@ IPCosy is a modern, anonymous social media platform designed for real conversati
 
 | Layer | Technology |
 |-------|------------|
-| **Frontend** | Next.js 15 + Tailwind + React Query |
-| **Hosting** | Vercel |
-| **Real-Time Engine** | `ip-socket` (Custom WebSocket Library) |
-| **Database** | TiDB Cloud |
-| **Storage** | TiDB blobs / Cloudinary |
+| **Frontend** | Next.js 16 + Tailwind + React Query |
+| **Hosting** | Vercel (Web) + Railway/Render (Server) |
+| **Real-Time Engine** | `@ipcosy/ip-socket` (Custom WebSocket Library) |
+| **Database** | TiDB Cloud (Prisma) |
+| **Storage** | Uploadthing (Anonymous File Sharing) |
+| **Payments** | Paystack (Premium Monetization) |
 | **Ops** | pnpm monorepo |
 
 ## Project Structure

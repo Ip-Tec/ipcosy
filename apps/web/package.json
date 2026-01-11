@@ -11,10 +11,12 @@
   "dependencies": {
     "@fingerprintjs/fingerprintjs": "^5.0.1",
     "@ipcosy/ip-socket": "workspace:*",
+    "@uploadthing/react": "^7.3.3",
     "next": "16.1.1",
     "next-themes": "^0.4.6",
     "react": "19.2.3",
-    "react-dom": "19.2.3"
+    "react-dom": "19.2.3",
+    "uploadthing": "^7.7.4"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

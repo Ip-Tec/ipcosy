@@ -4,6 +4,8 @@ import { useTheme } from "next-themes";
 import Image from "next/image";
 import { useState, useEffect, useRef } from "react";
 import { IpSocket } from "@ipcosy/ip-socket";
+import FingerprintJS from "@fingerprintjs/fingerprintjs";
+import { UploadButton } from "../utils/uploadthing";
 
 // Mock Data (still used for list, but messages will be real-time enhanced)
 const MOCK_CHATS = [
@@ -28,10 +30,19 @@ export default function Home() {
   const [selectedChat, setSelectedChat] = useState<number | null>(null);
   const [messages, setMessages] = useState<any[]>([]);
   const [inputText, setInputText] = useState("");
+  const [visitorId, setVisitorId] = useState<string | null>(null);
   const socketRef = useRef<IpSocket | null>(null);
 
   useEffect(() => {
-    // Initialize Socket
+    // 1. Generate Fingerprint
+    const setFp = async () => {
+      const fp = await FingerprintJS.load();
+      const result = await fp.get();
+      setVisitorId(result.visitorId);
+    };
+    setFp();
+
+    // 2. Initialize Socket
     socketRef.current = new IpSocket({
       url: "ws://localhost:8080",
       autoConnect: true,
@@ -42,11 +53,10 @@ export default function Home() {
     });
 
     socketRef.current.on("message", (payload: any) => {
-      console.log("Received:", payload);
       if (payload.type === "echo") {
         setMessages((prev) => [...prev, payload.data]);
       } else if (payload.type === "error") {
-        alert(payload.message); // Simple alert for MVP
+        alert(payload.message);
       }
     });
 
@@ -55,13 +65,16 @@ export default function Home() {
     };
   }, []);
 
-  const handleSend = () => {
-    if (!inputText.trim()) return;
+  const handleSend = (fileUrl?: string) => {
+    if (!visitorId) return;
+    if (!inputText.trim() && !fileUrl) return;
 
     const msg = {
       id: Date.now(),
       sender: "me",
       text: inputText,
+      fileUrl: fileUrl,
+      visitorId: visitorId,
       time: new Date().toLocaleTimeString([], {
         hour: "2-digit",
         minute: "2-digit",
@@ -205,6 +218,29 @@ export default function Home() {
                         : "bg-[var(--bubble-in)] text-black dark:text-white rounded-bl-none"
                     }`}
                   >
+                    {msg.fileUrl && (
+                      <div className="mb-2">
+                        {msg.fileUrl.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? (
+                          <img
+                            src={msg.fileUrl}
+                            alt="shared"
+                            className="rounded-lg max-w-full h-auto cursor-pointer"
+                            onClick={() => window.open(msg.fileUrl)}
+                          />
+                        ) : (
+                          <a
+                            href={msg.fileUrl}
+                            target="_blank"
+                            className="flex items-center gap-2 p-2 bg-black/10 rounded overflow-hidden"
+                          >
+                            <span className="text-xl">📄</span>
+                            <span className="truncate text-xs">
+                              View Document
+                            </span>
+                          </a>
+                        )}
+                      </div>
+                    )}
                     <p>{msg.text}</p>
                     <span
                       className={`float-right mt-1 ml-2 text-[10px] opacity-70`}
@@ -224,9 +260,30 @@ export default function Home() {
             {/* Input Area */}
             <div className="p-3 bg-background">
               <div className="flex items-center gap-2 rounded-2xl bg-black/5 dark:bg-white/5 px-4 py-2">
-                <button className="text-black/40 dark:text-white/40 hover:text-primary transition-colors">
-                  📎
-                </button>
+                <div className="relative overflow-hidden w-8 h-8 flex items-center justify-center group">
+                  <span className="text-xl transition-transform group-hover:scale-110">
+                    📎
+                  </span>
+                  <div className="absolute inset-0 opacity-0 cursor-pointer">
+                    <UploadButton
+                      endpoint="imageUploader"
+                      onClientUploadComplete={(res) => {
+                        handleSend(res?.[0]?.url);
+                      }}
+                      onUploadError={(error) =>
+                        alert(`Upload Failed: ${error.message}`)
+                      }
+                      appearance={{
+                        button: {
+                          background: "transparent",
+                          width: "100%",
+                          height: "100%",
+                        },
+                        allowedContent: { display: "none" },
+                      }}
+                    />
+                  </div>
+                </div>
                 <input
                   type="text"
                   value={inputText}
@@ -236,7 +293,7 @@ export default function Home() {
                   className="flex-1 bg-transparent focus:outline-none"
                 />
                 <button
-                  onClick={handleSend}
+                  onClick={() => handleSend()}
                   className="text-primary hover:text-blue-600 transition-colors"
                 >
                   ➤
