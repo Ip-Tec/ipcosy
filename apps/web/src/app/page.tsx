@@ -102,7 +102,7 @@ export default function Home() {
           <div className="flex items-center gap-2">
             <div className="relative w-8 h-8">
               <Image
-                src="/ip cosy logo.png"
+                src="/logo.png"
                 alt="Logo"
                 fill
                 className="object-contain"
@@ -305,7 +305,7 @@ export default function Home() {
           <div className="flex h-full flex-col items-center justify-center text-center p-4">
             <div className="w-24 h-24 relative mb-4 opacity-20">
               <Image
-                src="/ip cosy logo.png"
+                src="/logo.png"
                 alt="Logo"
                 fill
                 className="object-contain grayscale"
