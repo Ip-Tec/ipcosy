@@ -12,7 +12,7 @@
     "dev": "pnpm -r dev",
     "build": "pnpm -r build",
     "lint": "pnpm -r lint",
-    "postinstall": "pnpm -r db:generate || true"
+    "postinstall": "pnpm -r db:generate"
   },
   "devDependencies": {}
 }
