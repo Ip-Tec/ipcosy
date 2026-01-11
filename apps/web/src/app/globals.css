@@ -1,30 +1,31 @@
 @import "tailwindcss";
 
 :root {
-  /* Light Theme (Telegram Default) */
-  --background: #f3f4f6; /* gray-100 */
-  --foreground: #171717;
-  --primary: #3b82f6; /* blue-500 */
+  /* Telegram Light Theme */
+  --background: #f0f2f5; /* Light gray background */
+  --foreground: #000000;
+  --primary: #3390ec; /* Telegram blue */
   --bubble-in: #ffffff;
-  --bubble-out: #dbeafe; /* blue-100 */
+  --bubble-out: #eeffde; /* Telegram light green outgoing bubble */
+  --bubble-in-text: #000000;
+  --bubble-out-text: #000000;
+  --muted: #707579; /* Telegram muted text */
+  --border: rgba(0, 0, 0, 0.1);
+  --sidebar: #ffffff;
 }
 
-/* Dark Theme (Telegram Night) */
 [data-theme="dark"] {
-  --background: #17212b; /* deep blue */
-  --foreground: #ededed;
-  --primary: #60a5fa; /* blue-400 */
+  /* Telegram Dark Theme */
+  --background: #0e1621; /* Dark chat background */
+  --foreground: #ffffff;
+  --primary: #2b5278; /* Muted dark blue */
   --bubble-in: #182533;
   --bubble-out: #2b5278;
-}
-
-/* Gray Green Theme */
-[data-theme="gray-green"] {
-  --background: #546e7a; /* blue-gray-600 */
-  --foreground: #ffffff;
-  --primary: #4ade80; /* green-400 */
-  --bubble-in: #455a64;
-  --bubble-out: #37474f;
+  --bubble-in-text: #ffffff;
+  --bubble-out-text: #ffffff;
+  --muted: #7f91a4;
+  --border: rgba(255, 255, 255, 0.08);
+  --sidebar: #17212b;
 }
 
 @theme inline {
@@ -33,6 +34,11 @@
   --color-primary: var(--primary);
   --color-bubble-in: var(--bubble-in);
   --color-bubble-out: var(--bubble-out);
+  --color-bubble-in-text: var(--bubble-in-text);
+  --color-bubble-out-text: var(--bubble-out-text);
+  --color-muted: var(--muted);
+  --color-border: var(--border);
+  --color-sidebar: var(--sidebar);
 }
 
 body {

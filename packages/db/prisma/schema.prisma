@@ -11,19 +11,82 @@ datasource db {
 }
 
 model User {
-  id        String   @id @default(uuid())
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id            String    @id @default(uuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
   
-  // Anonymous Identity
-  fingerprint String? @unique // Device fingerprint
+  // Custom IPCosy fields
+  username      String?   @unique
+  referralCode  String?   @unique
+  referredById  String?
+  referredBy    User?     @relation("Referrals", fields: [referredById], references: [id])
+  referrals     User[]    @relation("Referrals")
+
+  // Identity Storage
+  fingerprint          String? @unique
+  registrationFingerprint String?
+  registrationIP       String?
+  registrationDeviceId String?
+  lastLogin            DateTime?
+
   isPremium   Boolean @default(false)
   isBanned    Boolean @default(false)
 
-  // Relations
-  chats       ChatParticipant[]
-  messages    Message[]
-  reactions   Reaction[]
+  // NextAuth Relations
+  accounts      Account[]
+  sessions      Session[]
+
+  // App Relations
+  chats         ChatParticipant[]
+  messages      Message[]
+  reactions     Reaction[]
+}
+
+model Account {
+  id                 String  @id @default(uuid())
+  userId             String
+  type               String
+  provider           String
+  providerAccountId  String
+  refresh_token      String?  @db.Text
+  access_token       String?  @db.Text
+  expires_at         Int?
+  token_type         String?
+  scope              String?
+  id_token           String?  @db.Text
+  session_state      String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(uuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model PublicInvite {
+  id        String   @id @default(uuid())
+  code      String   @unique
+  expiresAt DateTime
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
 }
 
 model Chat {
