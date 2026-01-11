@@ -1,5 +1,6 @@
 {
   "buildCommand": "pnpm --filter @ipcosy/web build",
   "installCommand": "pnpm install",
+  "outputDirectory": "apps/web/.next",
   "framework": "nextjs"
 }
