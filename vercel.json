@@ -1,0 +1,5 @@
+{
+  "buildCommand": "pnpm --filter @ipcosy/web build",
+  "installCommand": "pnpm install",
+  "framework": "nextjs"
+}
