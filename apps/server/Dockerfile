@@ -8,7 +8,7 @@ RUN corepack enable
 FROM base AS build
 COPY . /usr/src/app
 WORKDIR /usr/src/app
-RUN pnpm install --frozen-lockfile
+RUN pnpm install --no-frozen-lockfile
 RUN pnpm --filter @ipcosy/db build
 RUN pnpm --filter @ipcosy/ip-socket build
 RUN pnpm --filter @ipcosy/server build

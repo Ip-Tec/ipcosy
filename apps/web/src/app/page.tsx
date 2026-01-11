@@ -31,6 +31,7 @@ export default function Home() {
   const [messages, setMessages] = useState<any[]>([]);
   const [inputText, setInputText] = useState("");
   const [visitorId, setVisitorId] = useState<string | null>(null);
+  const [typingUser, setTypingUser] = useState<string | null>(null);
   const socketRef = useRef<IpSocket | null>(null);
 
   useEffect(() => {
@@ -58,13 +59,23 @@ export default function Home() {
         setMessages((prev) => [...prev, payload.data]);
       } else if (payload.type === "error") {
         alert(payload.message);
+      } else if (payload.type === "typing") {
+        if (payload.visitorId !== visitorId) {
+          setTypingUser(payload.isTyping ? payload.visitorId : null);
+        }
       }
     });
 
     return () => {
       socketRef.current?.disconnect();
     };
-  }, []);
+  }, [visitorId]);
+
+  useEffect(() => {
+    if (socketRef.current && visitorId) {
+      socketRef.current.setTyping(visitorId, inputText.length > 0);
+    }
+  }, [inputText, visitorId]);
 
   const handleSend = (fileUrl?: string) => {
     if (!visitorId) return;
@@ -242,15 +253,24 @@ export default function Home() {
                         )}
                       </div>
                     )}
-                    <p>{msg.text}</p>
-                    <span
-                      className={`float-right mt-1 ml-2 text-[10px] opacity-70`}
-                    >
+                    {msg.text && (
+                      <div className="break-words leading-relaxed">
+                        {msg.text}
+                      </div>
+                    )}
+                    <span className="mt-1 block text-[10px] text-right opacity-50">
                       {msg.time}
                     </span>
                   </div>
                 </div>
               ))}
+              {typingUser && (
+                <div className="flex justify-start">
+                  <div className="bg-[var(--bubble-in)] text-black dark:text-white rounded-2xl rounded-bl-none px-4 py-2 text-xs opacity-70 animate-pulse italic">
+                    Someone is typing...
+                  </div>
+                </div>
+              )}
               {messages.length === 0 && (
                 <div className="flex h-full items-center justify-center text-black/30 dark:text-white/30 text-sm">
                   No messages yet. Say hello!

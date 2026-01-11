@@ -1,95 +1,89 @@
-import { WebSocketServer, WebSocket } from "ws";
+import { WebSocket } from "ws";
 import { prisma } from "@ipcosy/db";
+import { IpServer, MessagePayload } from "@ipcosy/ip-socket";
 
-const port = Number(process.env.PORT) || 8080;
-const wss = new WebSocketServer({ port });
+class ChatServer extends IpServer {
+  // Simple in-memory rate limiter
+  private messageCounts = new Map<
+    string,
+    { count: number; lastReset: number }
+  >();
+  private readonly RATE_LIMIT = 5;
+  private readonly RATE_WINDOW = 10000;
 
-console.log(`WebSocket server started on port ${port}`);
+  async onMessage(ws: WebSocket, payload: MessagePayload) {
+    const visitorId = payload.visitorId;
 
-// Simple in-memory rate limiter
-const messageCounts = new Map<string, { count: number; lastReset: number }>();
-const RATE_LIMIT = 5; // messages
-const RATE_WINDOW = 10000; // 10 seconds
+    if (!visitorId) {
+      console.warn("Message received without visitorId");
+      return;
+    }
 
-wss.on("connection", async (ws) => {
-  console.log("New client connected");
+    // 1. Handle Typing Events
+    if (payload.type === "typing") {
+      this.broadcast({ type: "typing", visitorId, isTyping: !!payload.text });
+      return;
+    }
 
-  ws.on("message", async (data) => {
-    try {
-      const payload = JSON.parse(data.toString());
-      const visitorId = payload.visitorId;
+    // 2. Rate Limiting Logic
+    const now = Date.now();
+    const userRate = this.messageCounts.get(visitorId) || {
+      count: 0,
+      lastReset: now,
+    };
 
-      if (!visitorId) {
-        console.warn("Message received without visitorId");
-        return;
-      }
+    if (now - userRate.lastReset > this.RATE_WINDOW) {
+      userRate.count = 0;
+      userRate.lastReset = now;
+    }
 
-      // 1. Rate Limiting Logic
-      const now = Date.now();
-      const userRate = messageCounts.get(visitorId) || {
-        count: 0,
-        lastReset: now,
-      };
+    if (userRate.count >= this.RATE_LIMIT) {
+      ws.send(
+        JSON.stringify({
+          type: "error",
+          message: "Rate limit exceeded. Slow down!",
+        }),
+      );
+      return;
+    }
 
-      if (now - userRate.lastReset > RATE_WINDOW) {
-        userRate.count = 0;
-        userRate.lastReset = now;
-      }
+    userRate.count++;
+    this.messageCounts.set(visitorId, userRate);
 
-      if (userRate.count >= RATE_LIMIT) {
-        ws.send(
-          JSON.stringify({
-            type: "error",
-            message: "Rate limit exceeded. Slow down!",
-          }),
-        );
-        return;
-      }
+    // 3. Resolve or Create User by Fingerprint
+    const user = await prisma.user.upsert({
+      where: { fingerprint: visitorId },
+      update: {},
+      create: {
+        id: visitorId,
+        fingerprint: visitorId,
+      },
+    });
 
-      userRate.count++;
-      messageCounts.set(visitorId, userRate);
-
-      // 2. Resolve or Create User by Fingerprint
-      const user = await prisma.user.upsert({
-        where: { fingerprint: visitorId },
+    if (payload.text || payload.fileUrl) {
+      // 4. Push to Database
+      const chat = await prisma.chat.upsert({
+        where: { id: "mvp-lobby" },
         update: {},
-        create: {
-          id: visitorId,
-          fingerprint: visitorId,
+        create: { id: "mvp-lobby", isGroup: true, name: "Public Lobby" },
+      });
+
+      await prisma.message.create({
+        data: {
+          content: payload.text || "",
+          fileUrl: payload.fileUrl,
+          userId: user.id,
+          chatId: chat.id,
         },
       });
-
-      if (payload.text || payload.fileUrl) {
-        // 3. Push to Database
-        const chat = await prisma.chat.upsert({
-          where: { id: "mvp-lobby" },
-          update: {},
-          create: { id: "mvp-lobby", isGroup: true, name: "Public Lobby" },
-        });
-
-        await prisma.message.create({
-          data: {
-            content: payload.text || "",
-            fileUrl: payload.fileUrl,
-            userId: user.id,
-            chatId: chat.id,
-          },
-        });
-      }
-
-      // 4. Broadcast to all connected clients
-      const outgoing = JSON.stringify({ type: "echo", data: payload });
-      wss.clients.forEach((client) => {
-        if (client.readyState === WebSocket.OPEN) {
-          client.send(outgoing);
-        }
-      });
-    } catch (e) {
-      console.error("Error processing message:", e);
     }
-  });
 
-  ws.on("close", () => {
-    console.log("Client disconnected");
-  });
-});
+    // 5. Broadcast to all connected clients
+    this.broadcast({ type: "echo", data: payload });
+  }
+}
+
+const port = Number(process.env.PORT) || 8080;
+const server = new ChatServer(port);
+
+console.log(`WebSocket server started on port ${port} using IpServer engine`);

@@ -1,4 +1,5 @@
 import { EventEmitter } from "events";
+import { MessagePayload } from "./types";
 
 type Config = {
   url: string;
@@ -46,12 +47,20 @@ export class IpSocket extends EventEmitter {
     };
   }
 
-  send(data: any) {
+  send(data: MessagePayload) {
     if (this.ws && this.ws.readyState === WebSocket.OPEN) {
       this.ws.send(JSON.stringify(data));
     } else {
       console.warn("Socket not open, cannot send.");
     }
+  }
+
+  setTyping(visitorId: string, isTyping: boolean) {
+    this.send({
+      visitorId,
+      type: "typing",
+      text: isTyping ? "typing..." : "",
+    });
   }
 
   disconnect() {
