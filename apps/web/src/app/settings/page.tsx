@@ -11,8 +11,60 @@ import { toast } from "sonner";
 
 import { LoginPrompt } from "@/components/login-prompt";
 
+function UpgradeButton({
+  user,
+  premiumPrice,
+}: {
+  user: any;
+  premiumPrice: number;
+}) {
+  const config = {
+    reference: new Date().getTime().toString(),
+    email: user?.email || "customer@example.com",
+    amount: premiumPrice * 100,
+    publicKey: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY || "",
+    callback_url: `${window.location.origin}/api/callback/paystack`,
+    metadata: {
+      userId: user?.id,
+      custom_fields: [
+        {
+          display_name: "Upgrade",
+          variable_name: "upgrade",
+          value: "premium",
+        },
+      ],
+    },
+  };
+
+  const initializePayment = usePaystackPayment(config);
+
+  const onSuccess = () => {
+    toast.success("Payment Successful! Upgrading or refreshing...");
+    window.location.reload();
+  };
+
+  const onClose = () => {
+    console.log("Payment closed");
+  };
+
+  return (
+    <button
+      onClick={() => {
+        if (!config.publicKey) {
+          toast.error("Paystack Public Key is missing!");
+          return;
+        }
+        initializePayment({ onSuccess, onClose });
+      }}
+      className="w-full bg-primary text-white py-4 rounded-2xl font-black text-sm hover:opacity-90 shadow-lg transition-all active:scale-95"
+    >
+      Upgrade Now with Paystack
+    </button>
+  );
+}
+
 export default function SettingsPage() {
-  const { data: session, status, update } = useSession();
+  const { data: session, status } = useSession();
   const { theme, setTheme } = useTheme();
   const [alias, setAlias] = useState("");
   const [isMounted, setIsMounted] = useState(false);
@@ -32,46 +84,12 @@ export default function SettingsPage() {
   }, [session]);
 
   const handleSaveAlias = async () => {
-    // In a real app, call API to update username
-    // await fetch('/api/user/update', { ... })
-    // await update({ username: alias });
     setIsEditing(false);
     toast.success("Username updated!");
   };
 
   const user = session?.user as any;
   const isPremium = user?.isPremium;
-
-  const paystackConfig = {
-    reference: new Date().getTime().toString(),
-    email: user?.email || "customer@example.com",
-    amount: premiumPrice * 100, // Dynamic price in kobo
-    publicKey: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY || "",
-    callback_url: `${typeof window !== "undefined" ? window.location.origin : "https://ipcosy.vercel.app"}/api/callback/paystack`,
-    metadata: {
-      userId: user?.id,
-      custom_fields: [
-        {
-          display_name: "Upgrade",
-          variable_name: "upgrade",
-          value: "premium",
-        },
-      ],
-    },
-  };
-
-  const initializePayment = usePaystackPayment(paystackConfig);
-
-  const onSuccess = (reference: any) => {
-    // In a real app, verify on backend
-    toast.success("Payment Successful! Upgrading or refreshing...");
-    // Ideally, the webhook will handle the DB update, but we can trigger a refresh
-    window.location.reload();
-  };
-
-  const onClose = () => {
-    console.log("Payment closed");
-  };
 
   if (!isMounted || status === "loading")
     return <div className="h-screen bg-background" />;
@@ -209,18 +227,7 @@ export default function SettingsPage() {
                 </div>
               </div>
 
-              <button
-                onClick={() => {
-                  if (!paystackConfig.publicKey) {
-                    toast.error("Paystack Public Key is missing!");
-                    return;
-                  }
-                  initializePayment({ onSuccess, onClose });
-                }}
-                className="w-full bg-primary text-white py-4 rounded-2xl font-black text-sm hover:opacity-90 shadow-lg transition-all active:scale-95"
-              >
-                Upgrade Now with Paystack
-              </button>
+              <UpgradeButton user={user} premiumPrice={premiumPrice} />
 
               <div className="grid grid-cols-2 gap-2">
                 {[
