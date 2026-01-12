@@ -23,7 +23,7 @@ function UpgradeButton({
     email: user?.email || "customer@example.com",
     amount: premiumPrice * 100,
     publicKey: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY || "",
-    callback_url: `${window.location.origin}/api/callback/paystack`,
+    callback_url: `${typeof window !== "undefined" ? window.location.origin : "https://ipcosy.vercel.app"}/api/callback/paystack`,
     metadata: {
       userId: user?.id,
       custom_fields: [
