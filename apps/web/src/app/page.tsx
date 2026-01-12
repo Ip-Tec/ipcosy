@@ -252,6 +252,7 @@ function HomeContent() {
   if (status === "unauthenticated") {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen bg-background p-6">
+        <h1 className="sr-only">IP~Cosy - Secure & Anonymous Messaging</h1>
         <div className="w-full max-w-sm bg-background border border-border rounded-[2.5rem] p-10 shadow-2xl space-y-10 text-center animate-in fade-in zoom-in duration-500">
           <div className="space-y-6">
             <div className="w-28 h-28 bg-primary/10 rounded-full flex items-center justify-center mx-auto transition-transform hover:scale-105 duration-300">
@@ -264,7 +265,9 @@ function HomeContent() {
               />
             </div>
             <div className="space-y-2">
-              <h2 className="text-4xl font-extrabold tracking-tight">IPCosy</h2>
+              <h2 className="text-4xl font-extrabold tracking-tight">
+                IP~Cosy
+              </h2>
               <p className="text-muted-foreground text-sm px-2 leading-relaxed">
                 The most secure way to connect anonymously.
                 <br />
