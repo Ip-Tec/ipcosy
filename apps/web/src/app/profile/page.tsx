@@ -6,6 +6,20 @@ import { useSession } from "next-auth/react";
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { toast } from "sonner";
+import {
+  Copy,
+  MessageSquare,
+  Trophy,
+  Eye,
+  User,
+  PenBox,
+  Users,
+  Zap,
+  ArrowLeft,
+  Link as LinkIcon,
+} from "lucide-react";
+
+import { LoginPrompt } from "@/components/login-prompt";
 
 export default function ProfilePage() {
   const { data: session, status } = useSession();
@@ -19,7 +33,7 @@ export default function ProfilePage() {
 
   if (!hasMounted || status === "loading")
     return <div className="h-screen bg-background" />;
-  if (status === "unauthenticated") return <div>Please log in.</div>;
+  if (status === "unauthenticated") return <LoginPrompt />;
 
   const user = session?.user as any;
   const username =
@@ -34,9 +48,9 @@ export default function ProfilePage() {
       <div className="flex items-center gap-4 border-b border-border bg-sidebar p-4 shadow-sm">
         <Link
           href="/"
-          className="text-primary hover:opacity-80 transition-opacity"
+          className="text-primary hover:opacity-80 transition-opacity flex items-center gap-1"
         >
-          ← Back to Chat
+          <ArrowLeft className="w-4 h-4" /> Back to Chat
         </Link>
         <h1 className="text-xl font-bold">Your Profile</h1>
       </div>
@@ -62,25 +76,39 @@ export default function ProfilePage() {
               <h2 className="text-2xl font-bold">{user?.name}</h2>
               <p className="text-sm text-muted font-medium mb-1">@{username}</p>
               <span
-                className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${user?.isPremium ? "bg-yellow-500/10 text-yellow-600 border border-yellow-500/20" : "bg-primary/10 text-primary border border-primary/20"}`}
+                className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider flex items-center gap-1 w-fit mx-auto ${user?.isPremium ? "bg-yellow-500/10 text-yellow-600 border border-yellow-500/20" : "bg-primary/10 text-primary border border-primary/20"}`}
               >
-                {user?.isPremium ? "💎 Premium Member" : "Free Member"}
+                {user?.isPremium ? (
+                  <>
+                    <Zap className="w-3 h-3 fill-yellow-600" /> Premium Member
+                  </>
+                ) : (
+                  <>
+                    <User className="w-3 h-3" /> Free Member
+                  </>
+                )}
               </span>
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4 pt-4">
             <div className="bg-background rounded-2xl p-4 border border-border transition-all hover:border-primary/30">
-              <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest mb-1">
-                Messages
+              <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest mb-1 flex items-center gap-1 justify-center">
+                <MessageSquare className="w-3 h-3" /> Messages
               </p>
               <p className="text-2xl font-black">0</p>
             </div>
             <div className="bg-background rounded-2xl p-4 border border-border transition-all hover:border-primary/30">
-              <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest mb-1">
-                Rank
+              <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest mb-1 flex items-center gap-1 justify-center">
+                <Trophy className="w-3 h-3" /> Rank
               </p>
               <p className="text-2xl font-black">Newbie</p>
+            </div>
+            <div className="bg-background rounded-2xl p-4 border border-border transition-all hover:border-primary/30 col-span-2">
+              <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest mb-1 flex items-center gap-1 justify-center">
+                <Eye className="w-3 h-3" /> Link Visits
+              </p>
+              <p className="text-2xl font-black">{user?.profileViews || 0}</p>
             </div>
           </div>
         </div>
@@ -93,7 +121,7 @@ export default function ProfilePage() {
           <div className="bg-sidebar rounded-[2rem] border border-border p-8 shadow-sm space-y-6">
             <div className="space-y-3">
               <label className="text-[10px] text-muted-foreground uppercase font-black tracking-widest flex items-center gap-2">
-                🔗 Public Message Link
+                <LinkIcon className="w-3 h-3" /> Public Message Link
               </label>
               <div className="flex gap-2">
                 <div className="flex-1 bg-background p-4 rounded-2xl border border-border font-mono text-xs break-all select-all flex items-center">
@@ -106,7 +134,7 @@ export default function ProfilePage() {
                   }}
                   className="bg-primary text-white p-4 rounded-2xl hover:opacity-90 active:scale-95 transition-all shadow-lg"
                 >
-                  📋
+                  <Copy className="w-5 h-5" />
                 </button>
               </div>
               <p className="text-[10px] text-muted-foreground italic px-2">
@@ -116,7 +144,7 @@ export default function ProfilePage() {
 
             <div className="space-y-3 pt-4 border-t border-border/50">
               <label className="text-[10px] text-muted-foreground uppercase font-black tracking-widest flex items-center gap-2">
-                ✨ Referral Invitation
+                <Zap className="w-3 h-3" /> Referral Invitation
               </label>
               <div className="flex gap-2">
                 <div className="flex-1 bg-background p-4 rounded-2xl border border-border font-mono text-xs break-all select-all flex items-center">
@@ -129,7 +157,7 @@ export default function ProfilePage() {
                   }}
                   className="bg-primary text-white p-4 rounded-2xl hover:opacity-90 active:scale-95 transition-all shadow-lg"
                 >
-                  📋
+                  <Copy className="w-5 h-5" />
                 </button>
               </div>
               <p className="text-[10px] text-muted-foreground italic px-2">
@@ -167,8 +195,8 @@ export default function ProfilePage() {
 
               <div className="grid gap-6">
                 <div className="flex items-center gap-5">
-                  <div className="w-12 h-12 bg-white dark:bg-white/10 rounded-2xl flex items-center justify-center text-2xl shadow-sm">
-                    ✏️
+                  <div className="w-12 h-12 bg-white dark:bg-white/10 rounded-2xl flex items-center justify-center text-primary shadow-sm">
+                    <PenBox className="w-6 h-6" />
                   </div>
                   <div>
                     <p className="font-bold text-sm">Custom Username</p>
@@ -178,8 +206,8 @@ export default function ProfilePage() {
                   </div>
                 </div>
                 <div className="flex items-center gap-5">
-                  <div className="w-12 h-12 bg-white dark:bg-white/10 rounded-2xl flex items-center justify-center text-2xl shadow-sm">
-                    🏢
+                  <div className="w-12 h-12 bg-white dark:bg-white/10 rounded-2xl flex items-center justify-center text-primary shadow-sm">
+                    <Users className="w-6 h-6" />
                   </div>
                   <div>
                     <p className="font-bold text-sm">Multiple Groups</p>
@@ -191,7 +219,7 @@ export default function ProfilePage() {
               </div>
 
               <button className="w-full bg-foreground text-background font-black py-5 rounded-[1.5rem] hover:opacity-90 active:scale-[0.98] transition-all shadow-xl">
-                Upgrade Now — $4.99/mo
+                Upgrade Now — 450
               </button>
             </div>
           </div>

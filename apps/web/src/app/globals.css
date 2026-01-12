@@ -2,28 +2,30 @@
 
 :root {
   /* Telegram Light Theme */
-  --background: #f0f2f5; /* Light gray background */
+  --background: #f0f2f5;
   --foreground: #000000;
-  --primary: #3390ec; /* Telegram blue */
+  --primary: #3390ec;
   --bubble-in: #ffffff;
-  --bubble-out: #eeffde; /* Telegram light green outgoing bubble */
+  --bubble-out: #eeffde;
   --bubble-in-text: #000000;
   --bubble-out-text: #000000;
-  --muted: #707579; /* Telegram muted text */
+  --muted: #707579;
+  --muted-foreground: #4e5358;
   --border: rgba(0, 0, 0, 0.1);
   --sidebar: #ffffff;
 }
 
 [data-theme="dark"] {
   /* Telegram Dark Theme */
-  --background: #0e1621; /* Dark chat background */
+  --background: #0e1621;
   --foreground: #ffffff;
-  --primary: #2b5278; /* Muted dark blue */
+  --primary: #2b5278;
   --bubble-in: #182533;
   --bubble-out: #2b5278;
   --bubble-in-text: #ffffff;
   --bubble-out-text: #ffffff;
   --muted: #7f91a4;
+  --muted-foreground: #abbbc9;
   --border: rgba(255, 255, 255, 0.08);
   --sidebar: #17212b;
 }
@@ -37,6 +39,7 @@
   --color-bubble-in-text: var(--bubble-in-text);
   --color-bubble-out-text: var(--bubble-out-text);
   --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
   --color-border: var(--border);
   --color-sidebar: var(--sidebar);
 }

@@ -9,8 +9,10 @@ import { useSession } from "next-auth/react";
 import { usePaystackPayment } from "react-paystack";
 import { toast } from "sonner";
 
+import { LoginPrompt } from "@/components/login-prompt";
+
 export default function SettingsPage() {
-  const { data: session, update } = useSession();
+  const { data: session, status, update } = useSession();
   const { theme, setTheme } = useTheme();
   const [alias, setAlias] = useState("");
   const [isMounted, setIsMounted] = useState(false);
@@ -45,7 +47,7 @@ export default function SettingsPage() {
     email: user?.email || "customer@example.com",
     amount: premiumPrice * 100, // Dynamic price in kobo
     publicKey: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY || "",
-    callback_url: "https://ipcosy.vercel.app/api/callback/paystack",
+    callback_url: `${typeof window !== "undefined" ? window.location.origin : "https://ipcosy.vercel.app"}/api/callback/paystack`,
     metadata: {
       userId: user?.id,
       custom_fields: [
@@ -71,7 +73,9 @@ export default function SettingsPage() {
     console.log("Payment closed");
   };
 
-  if (!isMounted) return <div className="h-screen bg-background" />;
+  if (!isMounted || status === "loading")
+    return <div className="h-screen bg-background" />;
+  if (status === "unauthenticated") return <LoginPrompt />;
 
   return (
     <div className="flex h-screen flex-col bg-background text-foreground">

@@ -32,7 +32,7 @@ export const metadata: Metadata = {
     title: "IP~Cosy - Secure & Anonymous Messaging",
     description:
       "The most secure way to connect anonymously. No tracking, no logs, just pure privacy.",
-    url: "https://ipcosy.vercel.app",
+    url: process.env.NEXT_PUBLIC_BASE_URL || "https://ipcosy.vercel.app",
     siteName: "IP~Cosy",
     images: [
       {
@@ -56,6 +56,18 @@ export const metadata: Metadata = {
     index: true,
     follow: true,
   },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "IP~Cosy",
+  },
+  formatDetection: {
+    telephone: false,
+  },
+};
+
+export const viewport = {
+  themeColor: "#ffffff",
 };
 
 export default function RootLayout({

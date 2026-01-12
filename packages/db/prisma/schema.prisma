@@ -36,6 +36,7 @@ model User {
   isPremium   Boolean @default(false)
   isAdmin     Boolean @default(false)
   isBanned    Boolean @default(false)
+  profileViews Int     @default(0)
 
   // NextAuth Relations
   accounts      Account[]

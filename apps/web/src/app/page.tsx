@@ -93,14 +93,28 @@ function HomeContent() {
     }
 
     // 3. Initialize Socket
-    const wsUrl = process.env.NEXT_PUBLIC_WS_URL || "ws://localhost:8080";
+    let wsUrl = process.env.NEXT_PUBLIC_WS_URL;
+    if (!wsUrl) {
+      const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+      const host = window.location.hostname;
+      wsUrl = `${protocol}//${host}:8080`;
+    }
+
     socketRef.current = new IpSocket({
       url: wsUrl,
       autoConnect: true,
     });
 
     socketRef.current.on("error", (err: any) => {
-      console.error("IpSocket error handled:", err);
+      console.error(
+        "IpSocket error handled:",
+        err || "Unknown Error (empty error object)",
+      );
+      if (err && Object.keys(err).length === 0) {
+        console.warn(
+          "Socket error object is empty. This often indicates a connection reset or failed handshake.",
+        );
+      }
     });
 
     socketRef.current.on("message", (payload: any) => {
