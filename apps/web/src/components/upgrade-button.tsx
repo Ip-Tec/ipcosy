@@ -49,7 +49,7 @@ export default function UpgradeButton({
         }
         initializePayment({ onSuccess, onClose });
       }}
-      className="w-full bg-primary text-white py-4 rounded-2xl font-black text-sm hover:opacity-90 shadow-lg transition-all active:scale-95"
+      className="cursor-pointer w-full bg-primary text-white py-4 rounded-2xl font-black text-sm hover:opacity-90 shadow-lg transition-all active:scale-95"
     >
       Upgrade Now with Paystack
     </button>

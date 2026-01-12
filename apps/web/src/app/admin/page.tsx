@@ -142,7 +142,7 @@ export default function AdminPage() {
             <button
               onClick={handleSavePrice}
               disabled={isSaving}
-              className="w-full bg-primary text-white py-4 rounded-2xl font-black hover:opacity-90 disabled:opacity-50 transition-all shadow-lg active:scale-95"
+              className="cursor-pointer w-full bg-primary text-white py-4 rounded-2xl font-black hover:opacity-90 disabled:opacity-50 transition-all shadow-lg active:scale-95"
             >
               {isSaving ? "Saving..." : "Update Price"}
             </button>
@@ -170,7 +170,7 @@ export default function AdminPage() {
               />
               <button
                 onClick={handleSearchUsers}
-                className="bg-foreground text-background px-4 rounded-xl font-bold text-sm hover:opacity-90"
+                className="cursor-pointer bg-foreground text-background px-4 rounded-xl font-bold text-sm hover:opacity-90"
               >
                 🔍
               </button>
@@ -205,7 +205,7 @@ export default function AdminPage() {
                   </div>
                   <button
                     onClick={() => handleToggleAdmin(u.id, u.isAdmin)}
-                    className={`text-[10px] font-black px-3 py-1.5 rounded-lg border transition-all ${
+                    className={`cursor-pointer text-[10px] font-black px-3 py-1.5 rounded-lg border transition-all ${
                       u.isAdmin
                         ? "bg-red-500/10 text-red-600 border-red-500/20 hover:bg-red-500 hover:text-white"
                         : "bg-green-500/10 text-green-600 border-green-500/20 hover:bg-green-500 hover:text-white"

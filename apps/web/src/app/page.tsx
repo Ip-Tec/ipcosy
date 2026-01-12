@@ -380,7 +380,7 @@ function HomeContent() {
             </Link>
             <div className="h-px bg-border my-2 mx-2" />
             <button
-              className="w-full flex items-center gap-4 p-3 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 transition-colors group text-left"
+              className="cursor-pointer w-full flex items-center gap-4 p-3 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 transition-colors group text-left"
               onClick={() => {
                 navigator.clipboard.writeText(
                   window.location.origin + "?r=" + (user?.referralCode || ""),
@@ -413,7 +413,7 @@ function HomeContent() {
         <div className="flex items-center gap-4 p-4">
           <button
             onClick={() => setIsMenuOpen(true)}
-            className="p-2 -ml-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
+            className="cursor-pointer p-2 -ml-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
           >
             <svg
               width="24"
@@ -485,7 +485,7 @@ function HomeContent() {
             {/* Join Group Button */}
             <button
               onClick={() => setShowJoinGroup(true)}
-              className="w-12 h-12 bg-sidebar border border-border text-primary rounded-full flex items-center justify-center shadow-xl hover:scale-110 active:scale-95 transition-all"
+              className="cursor-pointer w-12 h-12 bg-sidebar border border-border text-primary rounded-full flex items-center justify-center shadow-xl hover:scale-110 active:scale-95 transition-all"
               title="Join Group"
             >
               <svg
@@ -514,7 +514,7 @@ function HomeContent() {
                 }
                 setShowCreateGroup(true);
               }}
-              className="w-14 h-14 bg-primary text-white rounded-full flex items-center justify-center shadow-2xl hover:scale-110 active:scale-95 transition-all text-2xl group"
+              className="cursor-pointer w-14 h-14 bg-primary text-white rounded-full flex items-center justify-center shadow-2xl hover:scale-110 active:scale-95 transition-all text-2xl group"
               title="Create Group"
             >
               <span className="group-hover:rotate-90 transition-transform duration-300">
@@ -537,7 +537,7 @@ function HomeContent() {
             <div className="flex items-center gap-4 border-b border-border bg-sidebar p-3 z-10">
               <button
                 onClick={() => setSelectedChat(null)}
-                className="md:hidden p-2 hover:bg-black/5 dark:hover:bg-white/5 rounded-full"
+                className="md:hidden p-2 cursor-pointer hover:bg-black/5 dark:hover:bg-white/5 rounded-full"
               >
                 ←
               </button>
@@ -558,7 +558,7 @@ function HomeContent() {
               {selectedChat !== "mvp-lobby" && status === "authenticated" && (
                 <button
                   onClick={() => setShowGroupSettings(true)}
-                  className="p-2 hover:bg-black/5 dark:hover:bg-white/5 rounded-full text-muted transition-colors"
+                  className="cursor-pointer p-2 hover:bg-black/5 dark:hover:bg-white/5 rounded-full text-muted transition-colors"
                   title="Group Settings"
                 >
                   <svg
@@ -713,7 +713,7 @@ function HomeContent() {
                 disabled={!inputText.trim()}
                 className={`p-3 rounded-full transition-all flex items-center justify-center ${
                   inputText.trim()
-                    ? "bg-primary text-white shadow-lg scale-100 hover:opacity-90 active:scale-95"
+                    ? "cursor-pointer bg-primary text-white shadow-lg scale-100 hover:opacity-90 active:scale-95"
                     : "bg-transparent text-muted scale-90 opacity-40 cursor-default"
                 }`}
               >
@@ -781,7 +781,7 @@ function HomeContent() {
                 <button
                   onClick={handleCreateGroup}
                   disabled={!newGroupName.trim()}
-                  className="flex-1 py-4 text-sm font-bold bg-primary text-white rounded-2xl shadow-lg hover:opacity-90 disabled:opacity-50 transition-all"
+                  className="cursor-pointer flex-1 py-4 text-sm font-bold bg-primary text-white rounded-2xl shadow-lg hover:opacity-90 disabled:opacity-50 transition-all"
                 >
                   Create
                 </button>
@@ -821,7 +821,7 @@ function HomeContent() {
                 <button
                   onClick={handleJoinGroup}
                   disabled={joinCodeInput.length < 4}
-                  className="flex-1 py-4 text-sm font-bold bg-primary text-white rounded-2xl shadow-lg hover:opacity-90 disabled:opacity-50 transition-all"
+                  className="cursor-pointer flex-1 py-4 text-sm font-bold bg-primary text-white rounded-2xl shadow-lg hover:opacity-90 disabled:opacity-50 transition-all"
                 >
                   Join
                 </button>
@@ -847,7 +847,7 @@ function HomeContent() {
               </div>
               <button
                 onClick={() => setShowGroupSettings(false)}
-                className="text-muted hover:text-primary"
+                className="cursor-pointer text-muted hover:text-primary"
               >
                 ✕
               </button>
@@ -867,7 +867,7 @@ function HomeContent() {
                       navigator.clipboard.writeText(selectedChatInfo.joinCode);
                       toast.success("Code copied!");
                     }}
-                    className="text-xs bg-primary text-white px-3 py-1.5 rounded-lg font-bold hover:opacity-90"
+                    className="cursor-pointer text-xs bg-primary text-white px-3 py-1.5 rounded-lg font-bold hover:opacity-90"
                   >
                     Copy
                   </button>
@@ -898,7 +898,7 @@ function HomeContent() {
                       p.role === "MEMBER" && (
                         <button
                           onClick={() => handlePromoteAdmin(p.id)}
-                          className="text-[10px] bg-sidebar border border-border px-2 py-1 rounded-md hover:bg-primary hover:text-white transition-all opacity-0 group-hover:opacity-100"
+                          className="cursor-pointer text-[10px] bg-sidebar border border-border px-2 py-1 rounded-md hover:bg-primary hover:text-white transition-all opacity-0 group-hover:opacity-100"
                         >
                           Make Admin
                         </button>
@@ -910,7 +910,7 @@ function HomeContent() {
 
             <button
               onClick={() => setShowGroupSettings(false)}
-              className="w-full py-4 text-sm font-bold bg-background border border-border rounded-2xl hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
+              className="cursor-pointer w-full py-4 text-sm font-bold bg-background border border-border rounded-2xl hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
             >
               Close
             </button>

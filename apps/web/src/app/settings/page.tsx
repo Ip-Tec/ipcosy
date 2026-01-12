@@ -104,7 +104,7 @@ export default function SettingsPage() {
                       onClick={() =>
                         isEditing ? handleSaveAlias() : setIsEditing(true)
                       }
-                      className="bg-primary text-white px-4 py-2 rounded-xl font-bold text-sm hover:opacity-90"
+                      className="cursor-pointer bg-primary text-white px-4 py-2 rounded-xl font-bold text-sm hover:opacity-90"
                     >
                       {isEditing ? "Save" : "Edit"}
                     </button>
@@ -131,7 +131,7 @@ export default function SettingsPage() {
               <div className="flex bg-background p-1 rounded-xl border border-border">
                 <button
                   onClick={() => setTheme("light")}
-                  className={`px-4 py-1.5 rounded-lg text-sm transition-all ${
+                  className={`cursor-pointer px-4 py-1.5 rounded-lg text-sm transition-all ${
                     theme === "light"
                       ? "bg-primary text-white shadow-md"
                       : "hover:bg-black/5 dark:hover:bg-white/5"
@@ -141,7 +141,7 @@ export default function SettingsPage() {
                 </button>
                 <button
                   onClick={() => setTheme("dark")}
-                  className={`px-4 py-1.5 rounded-lg text-sm transition-all ${
+                  className={`cursor-pointer px-4 py-1.5 rounded-lg text-sm transition-all ${
                     theme === "dark"
                       ? "bg-primary text-white shadow-md"
                       : "hover:bg-black/5 dark:hover:bg-white/5"

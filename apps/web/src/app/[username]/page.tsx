@@ -209,7 +209,7 @@ export default function PublicProfilePage({
             <button
               key={cat.id}
               onClick={() => setSelectedCategory(cat)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-full whitespace-nowrap text-sm font-bold transition-all ${
+              className={`cursor-pointer flex items-center gap-2 px-4 py-2 rounded-full whitespace-nowrap text-sm font-bold transition-all ${
                 selectedCategory.id === cat.id
                   ? "bg-primary text-white shadow-md scale-105"
                   : "bg-sidebar text-muted-foreground hover:bg-primary/10"
@@ -227,7 +227,7 @@ export default function PublicProfilePage({
             <button
               key={idx}
               onClick={() => setMessage(suggestion)}
-              className="p-4 bg-sidebar/50 border border-border/50 rounded-2xl text-xs text-left text-foreground hover:bg-primary/5 hover:border-primary/30 transition-all active:scale-95"
+              className="cursor-pointer p-4 bg-sidebar/50 border border-border/50 rounded-2xl text-xs text-left text-foreground hover:bg-primary/5 hover:border-primary/30 transition-all active:scale-95"
             >
               {suggestion}
             </button>
@@ -251,7 +251,7 @@ export default function PublicProfilePage({
           <button
             onClick={handleSend}
             disabled={!message.trim() || isSending}
-            className="w-full bg-primary text-white py-5 rounded-[1.5rem] font-black text-sm shadow-xl hover:opacity-90 active:scale-[0.98] transition-all disabled:opacity-50 flex items-center justify-center gap-3"
+            className="cursor-pointer w-full bg-primary text-white py-5 rounded-[1.5rem] font-black text-sm shadow-xl hover:opacity-90 active:scale-[0.98] transition-all disabled:opacity-50 flex items-center justify-center gap-3"
           >
             {isSending ? (
               <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -297,7 +297,7 @@ export default function PublicProfilePage({
             <div className="space-y-3">
               <button
                 onClick={() => signIn("google")}
-                className="w-full flex items-center justify-center gap-4 bg-foreground text-background font-bold py-5 rounded-[1.5rem] hover:opacity-90 active:scale-[0.98] transition-all shadow-xl group"
+                className="cursor-pointer w-full flex items-center justify-center gap-4 bg-foreground text-background font-bold py-5 rounded-[1.5rem] hover:opacity-90 active:scale-[0.98] transition-all shadow-xl group"
               >
                 <div className="bg-white p-1 rounded-full">
                   <img
@@ -310,7 +310,7 @@ export default function PublicProfilePage({
               </button>
               <button
                 onClick={() => setShowRegPopup(false)}
-                className="w-full py-4 text-xs font-bold text-muted hover:bg-black/5 dark:hover:bg-white/5 rounded-2xl transition-colors"
+                className="cursor-pointer w-full py-4 text-xs font-bold text-muted hover:bg-black/5 dark:hover:bg-white/5 rounded-2xl transition-colors"
               >
                 Maybe later
               </button>

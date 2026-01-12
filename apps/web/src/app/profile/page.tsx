@@ -132,7 +132,7 @@ export default function ProfilePage() {
                     navigator.clipboard.writeText(publicLink);
                     toast.success("Link copied!");
                   }}
-                  className="bg-primary text-white p-4 rounded-2xl hover:opacity-90 active:scale-95 transition-all shadow-lg"
+                  className="cursor-pointer bg-primary text-white p-4 rounded-2xl hover:opacity-90 active:scale-95 transition-all shadow-lg"
                 >
                   <Copy className="w-5 h-5" />
                 </button>
@@ -155,7 +155,7 @@ export default function ProfilePage() {
                     navigator.clipboard.writeText(referralLink);
                     toast.success("Referral link copied!");
                   }}
-                  className="bg-primary text-white p-4 rounded-2xl hover:opacity-90 active:scale-95 transition-all shadow-lg"
+                  className="cursor-pointer bg-primary text-white p-4 rounded-2xl hover:opacity-90 active:scale-95 transition-all shadow-lg"
                 >
                   <Copy className="w-5 h-5" />
                 </button>
