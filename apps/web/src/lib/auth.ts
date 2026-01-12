@@ -17,8 +17,8 @@ export const authOptions: NextAuthOptions = {
     async signIn({ user, account, profile }) {
       if (!user.email) return false;
 
-      // Grace Period: Until 2026-01-21, allow anyone to join.
-      const GRACE_PERIOD_END = new Date("2026-01-21T00:00:00Z");
+      // Grace Period: Until 2036-01-21, allow anyone to join.
+      const GRACE_PERIOD_END = new Date("2036-01-21T00:00:00Z");
       const isGracePeriod = new Date() < GRACE_PERIOD_END;
 
       // Wrap DB call in try/catch to debug Vercel connection issues
