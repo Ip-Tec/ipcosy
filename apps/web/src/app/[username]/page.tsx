@@ -16,10 +16,7 @@ export async function generateMetadata(
   // Try to find by username first, then by name (case-insensitive)
   let user = await prisma.user.findFirst({
     where: {
-      OR: [
-        { username: { equals: username, mode: "insensitive" } },
-        { name: { equals: username, mode: "insensitive" } },
-      ],
+      OR: [{ username: username }, { name: username }],
     },
     select: { name: true, image: true },
   });
@@ -53,10 +50,7 @@ export default async function Page({ params }: Props) {
   // Try to find by username first, then by name (case-insensitive)
   const user = await prisma.user.findFirst({
     where: {
-      OR: [
-        { username: { equals: username, mode: "insensitive" } },
-        { name: { equals: username, mode: "insensitive" } },
-      ],
+      OR: [{ username: username }, { name: username }],
     },
     select: {
       id: true,
