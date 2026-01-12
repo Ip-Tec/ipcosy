@@ -133,8 +133,8 @@ export function generateDeviceFingerprint(
 /**
  * Get client IP address from request headers
  */
-export function getClientIP(): string {
-  const headersList = headers();
+export async function getClientIP(): Promise<string> {
+  const headersList = await headers();
 
   // Check various headers in order of preference
   const forwardedFor = headersList.get("x-forwarded-for");
@@ -155,13 +155,13 @@ export function getClientIP(): string {
  * Capture all metadata from current request
  */
 export async function captureMessageMetadata(): Promise<MessageMetadata> {
-  const headersList = headers();
+  const headersList = await headers();
   const userAgent = headersList.get("user-agent") || "Unknown";
   const acceptLanguage = headersList.get("accept-language") || "";
   const acceptEncoding = headersList.get("accept-encoding") || "";
 
   const deviceInfo = extractDeviceInfo(userAgent);
-  const ipAddress = getClientIP();
+  const ipAddress = await getClientIP();
   const location = await getLocationFromIP(ipAddress);
   const deviceId = generateDeviceFingerprint(
     userAgent,
