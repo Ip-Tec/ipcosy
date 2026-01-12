@@ -72,6 +72,7 @@ export const authOptions: NextAuthOptions = {
         (session.user as any).id = user.id;
         (session.user as any).username = (user as any).username;
         (session.user as any).isPremium = (user as any).isPremium;
+        (session.user as any).isAdmin = (user as any).isAdmin;
         (session.user as any).referralCode = (user as any).referralCode;
       }
       return session;

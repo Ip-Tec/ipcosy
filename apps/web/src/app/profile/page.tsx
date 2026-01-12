@@ -5,6 +5,7 @@ export const dynamic = "force-dynamic";
 import { useSession } from "next-auth/react";
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { toast } from "sonner";
 
 export default function ProfilePage() {
   const { data: session, status } = useSession();
@@ -101,7 +102,7 @@ export default function ProfilePage() {
                 <button
                   onClick={() => {
                     navigator.clipboard.writeText(publicLink);
-                    alert("Link copied!");
+                    toast.success("Link copied!");
                   }}
                   className="bg-primary text-white p-4 rounded-2xl hover:opacity-90 active:scale-95 transition-all shadow-lg"
                 >
@@ -124,7 +125,7 @@ export default function ProfilePage() {
                 <button
                   onClick={() => {
                     navigator.clipboard.writeText(referralLink);
-                    alert("Referral link copied!");
+                    toast.success("Referral link copied!");
                   }}
                   className="bg-primary text-white p-4 rounded-2xl hover:opacity-90 active:scale-95 transition-all shadow-lg"
                 >

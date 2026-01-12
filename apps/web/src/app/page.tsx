@@ -11,6 +11,7 @@ import FingerprintJS from "@fingerprintjs/fingerprintjs";
 import { UploadButton } from "../utils/uploadthing";
 import { useSession, signIn, signOut } from "next-auth/react";
 import { useSearchParams } from "next/navigation";
+import { toast } from "sonner";
 
 // Mock Data
 const MOCK_CHATS = [
@@ -43,9 +44,18 @@ function HomeContent() {
   const [visitorId, setVisitorId] = useState<string | null>(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [typingUser, setTypingUser] = useState<string | null>(null);
+  const [showCreateGroup, setShowCreateGroup] = useState(false);
+  const [showJoinGroup, setShowJoinGroup] = useState(false);
+  const [showGroupSettings, setShowGroupSettings] = useState(false);
+  const [newGroupName, setNewGroupName] = useState("");
+  const [joinCodeInput, setJoinCodeInput] = useState("");
+  const [chats, setChats] = useState<any[]>(MOCK_CHATS);
+  const [selectedChatInfo, setSelectedChatInfo] = useState<any>(null);
   const socketRef = useRef<IpSocket | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
+  const user = session?.user as any;
+  const isPremium = user?.isPremium;
   const alias = session?.user?.name || "Anonymous";
 
   useEffect(() => {
@@ -73,7 +83,16 @@ function HomeContent() {
       initFp();
     }
 
-    // 2. Initialize Socket
+    // 2. Fetch Real Chats
+    if (status === "authenticated") {
+      fetch("/api/groups/list")
+        .then((res) => res.json())
+        .then((data) => {
+          if (Array.isArray(data)) setChats([...MOCK_CHATS, ...data]);
+        });
+    }
+
+    // 3. Initialize Socket
     const wsUrl = process.env.NEXT_PUBLIC_WS_URL || "ws://localhost:8080";
     socketRef.current = new IpSocket({
       url: wsUrl,
@@ -119,7 +138,23 @@ function HomeContent() {
     }
   }, [inputText, visitorId]);
 
-  const handleSend = (fileUrl?: string) => {
+  useEffect(() => {
+    if (
+      selectedChat &&
+      selectedChat !== "mvp-lobby" &&
+      status === "authenticated"
+    ) {
+      fetch(`/api/groups/info?chatId=${selectedChat}`)
+        .then((res) => res.json())
+        .then((data) => {
+          if (!data.error) setSelectedChatInfo(data);
+        });
+    } else {
+      setSelectedChatInfo(null);
+    }
+  }, [selectedChat, status]);
+
+  const handleSendMessage = (fileUrl?: string) => {
     if (!visitorId) return;
     if (!inputText.trim() && !fileUrl) return;
 
@@ -138,6 +173,77 @@ function HomeContent() {
 
     socketRef.current?.send(msg);
     setInputText("");
+  };
+
+  const handleCreateGroup = async () => {
+    if (!isPremium) {
+      toast.error("Please upgrade to Premium to create groups!");
+      return;
+    }
+    if (!newGroupName.trim()) return;
+    try {
+      const res = await fetch("/api/groups/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: newGroupName }),
+      });
+      if (res.ok) {
+        setShowCreateGroup(false);
+        setNewGroupName("");
+        // Reload or update chat list - for now a simple alert
+        toast.success("Group created! Reloading...");
+        window.location.reload();
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const handleJoinGroup = async () => {
+    if (!joinCodeInput.trim()) return;
+    try {
+      const res = await fetch("/api/groups/join", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ joinCode: joinCodeInput }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setShowJoinGroup(false);
+        setJoinCodeInput("");
+        toast.success(`Joined ${data.chatName}! Reloading...`);
+        window.location.reload();
+      } else {
+        toast.error(data.error || "Failed to join group");
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const handlePromoteAdmin = async (targetUserId: string) => {
+    try {
+      const res = await fetch("/api/groups/role", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          chatId: selectedChat,
+          targetUserId,
+          role: "ADMIN",
+        }),
+      });
+      if (res.ok) {
+        toast.success("User promoted to Admin!");
+        // Refresh info
+        fetch(`/api/groups/info?chatId=${selectedChat}`)
+          .then((res) => res.json())
+          .then((data) => {
+            if (!data.error) setSelectedChatInfo(data);
+          });
+      }
+    } catch (e) {
+      console.error(e);
+    }
   };
 
   if (!hasMounted || status === "loading")
@@ -235,6 +341,17 @@ function HomeContent() {
               </span>
               <span className="font-medium">My Profile</span>
             </Link>
+            {user?.isAdmin && (
+              <Link
+                href="/admin"
+                className="flex items-center gap-4 p-3 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 transition-colors group text-primary"
+              >
+                <span className="text-xl group-hover:scale-110 transition-transform">
+                  🛡️
+                </span>
+                <span className="font-medium">Admin Panel</span>
+              </Link>
+            )}
             <Link
               href="/settings"
               className="flex items-center gap-4 p-3 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 transition-colors group"
@@ -247,7 +364,12 @@ function HomeContent() {
             <div className="h-px bg-border my-2 mx-2" />
             <button
               className="w-full flex items-center gap-4 p-3 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 transition-colors group text-left"
-              onClick={() => alert("Invite link copied!")}
+              onClick={() => {
+                navigator.clipboard.writeText(
+                  window.location.origin + "?r=" + (user?.referralCode || ""),
+                );
+                toast.success("Invite link copied!");
+              }}
             >
               <span className="text-xl group-hover:scale-110 transition-transform">
                 🔗
@@ -302,7 +424,7 @@ function HomeContent() {
 
         {/* List */}
         <div className="flex-1 overflow-y-auto">
-          {MOCK_CHATS.map((chat) => (
+          {chats.map((chat) => (
             <div
               key={chat.id}
               onClick={() => setSelectedChat(chat.id)}
@@ -339,6 +461,51 @@ function HomeContent() {
             </div>
           ))}
         </div>
+
+        {/* Floating Action Button */}
+        {status === "authenticated" && (
+          <div className="absolute bottom-6 right-6 md:right-auto md:left-[300px] lg:left-[350px] z-20 flex flex-col gap-3">
+            {/* Join Group Button */}
+            <button
+              onClick={() => setShowJoinGroup(true)}
+              className="w-12 h-12 bg-sidebar border border-border text-primary rounded-full flex items-center justify-center shadow-xl hover:scale-110 active:scale-95 transition-all"
+              title="Join Group"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                <circle cx="9" cy="7" r="4" />
+                <line x1="19" y1="8" x2="19" y2="14" />
+                <line x1="16" y1="11" x2="22" y2="11" />
+              </svg>
+            </button>
+            {/* Create Group Button (Only if Premium, but maybe show alert if free?) */}
+            <button
+              onClick={() => {
+                if (!isPremium) {
+                  toast.error("Upgrade to Premium to create groups!");
+                  return;
+                }
+                setShowCreateGroup(true);
+              }}
+              className="w-14 h-14 bg-primary text-white rounded-full flex items-center justify-center shadow-2xl hover:scale-110 active:scale-95 transition-all text-2xl group"
+              title="Create Group"
+            >
+              <span className="group-hover:rotate-90 transition-transform duration-300">
+                +
+              </span>
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Right Content */}
@@ -353,35 +520,46 @@ function HomeContent() {
             <div className="flex items-center gap-4 border-b border-border bg-sidebar p-3 z-10">
               <button
                 onClick={() => setSelectedChat(null)}
-                className="md:hidden p-2 rounded-full hover:bg-black/5 text-primary"
+                className="md:hidden p-2 hover:bg-black/5 dark:hover:bg-white/5 rounded-full"
               >
-                <svg
-                  width="24"
-                  height="24"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="3"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <polyline points="15 18 9 12 15 6"></polyline>
-                </svg>
+                ←
               </button>
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-blue-400 to-purple-500 text-white font-bold shadow-md">
-                PL
+              <div className="h-10 w-10 flex items-center justify-center rounded-full bg-primary text-white font-bold">
+                {selectedChat === "mvp-lobby"
+                  ? "L"
+                  : chats
+                      .find((c) => c.id === selectedChat)
+                      ?.name.substring(0, 1)
+                      .toUpperCase()}
               </div>
-              <div className="flex flex-col flex-1">
-                <span className="font-bold text-sm tracking-tight flex items-center gap-1">
-                  Public Lobby
-                  <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-md font-bold uppercase tracking-wider">
-                    Group
-                  </span>
-                </span>
-                <span className="text-[10px] text-primary font-medium">
-                  99+ members, 12 online
-                </span>
+              <div className="flex-1">
+                <h2 className="font-bold leading-tight">
+                  {chats.find((c) => c.id === selectedChat)?.name || "Chat"}
+                </h2>
+                <p className="text-[10px] text-green-500 font-medium">Online</p>
               </div>
+              {selectedChat !== "mvp-lobby" && status === "authenticated" && (
+                <button
+                  onClick={() => setShowGroupSettings(true)}
+                  className="p-2 hover:bg-black/5 dark:hover:bg-white/5 rounded-full text-muted transition-colors"
+                  title="Group Settings"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <circle cx="12" cy="12" r="3" />
+                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 kitchens-1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+                  </svg>
+                </button>
+              )}
             </div>
 
             {/* Messages Area */}
@@ -556,6 +734,172 @@ function HomeContent() {
           </div>
         )}
       </div>
+
+      {/* Create Group Modal */}
+      {showCreateGroup && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-sidebar w-full max-w-sm rounded-[2rem] border border-border p-8 shadow-2xl space-y-6 animate-in zoom-in duration-300">
+            <div className="text-center space-y-2">
+              <h2 className="text-2xl font-black">Create New Group</h2>
+              <p className="text-xs text-muted">
+                Start a private encrypted community.
+              </p>
+            </div>
+            <div className="space-y-4">
+              <input
+                type="text"
+                value={newGroupName}
+                onChange={(e) => setNewGroupName(e.target.value)}
+                placeholder="Group Name (e.g. Family Chat)"
+                className="w-full bg-background border border-border rounded-2xl px-5 py-4 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
+                autoFocus
+              />
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowCreateGroup(false)}
+                  className="flex-1 py-4 text-sm font-bold text-muted hover:bg-black/5 dark:hover:bg-white/5 rounded-2xl transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleCreateGroup}
+                  disabled={!newGroupName.trim()}
+                  className="flex-1 py-4 text-sm font-bold bg-primary text-white rounded-2xl shadow-lg hover:opacity-90 disabled:opacity-50 transition-all"
+                >
+                  Create
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Join Group Modal */}
+      {showJoinGroup && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-sidebar w-full max-w-sm rounded-[2rem] border border-border p-8 shadow-2xl space-y-6 animate-in zoom-in duration-300">
+            <div className="text-center space-y-2">
+              <h2 className="text-2xl font-black">Join a Group</h2>
+              <p className="text-xs text-muted">
+                Enter the 6-character join code.
+              </p>
+            </div>
+            <div className="space-y-4">
+              <input
+                type="text"
+                value={joinCodeInput}
+                onChange={(e) => setJoinCodeInput(e.target.value.toUpperCase())}
+                placeholder="Code (e.g. AB12XY)"
+                maxLength={6}
+                className="w-full bg-background border border-border rounded-2xl px-5 py-4 text-center text-lg font-black tracking-widest focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all uppercase"
+                autoFocus
+              />
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowJoinGroup(false)}
+                  className="flex-1 py-4 text-sm font-bold text-muted hover:bg-black/5 dark:hover:bg-white/5 rounded-2xl transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleJoinGroup}
+                  disabled={joinCodeInput.length < 4}
+                  className="flex-1 py-4 text-sm font-bold bg-primary text-white rounded-2xl shadow-lg hover:opacity-90 disabled:opacity-50 transition-all"
+                >
+                  Join
+                </button>
+              </div>
+              <p className="text-[10px] text-center text-muted">
+                {isPremium
+                  ? "You have unlimited joins."
+                  : "Free users can join up to 2 groups."}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Group Settings Modal */}
+      {showGroupSettings && selectedChatInfo && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-sidebar w-full max-w-md rounded-[2rem] border border-border p-8 shadow-2xl space-y-6 animate-in zoom-in duration-300">
+            <div className="flex justify-between items-start">
+              <div className="space-y-1">
+                <h2 className="text-2xl font-black">{selectedChatInfo.name}</h2>
+                <p className="text-xs text-muted">Group Settings & Members</p>
+              </div>
+              <button
+                onClick={() => setShowGroupSettings(false)}
+                className="text-muted hover:text-primary"
+              >
+                ✕
+              </button>
+            </div>
+
+            {selectedChatInfo.joinCode && (
+              <div className="bg-primary/5 border border-primary/20 rounded-2xl p-4 space-y-2">
+                <p className="text-[10px] text-primary font-bold uppercase tracking-wider">
+                  Join Code
+                </p>
+                <div className="flex items-center justify-between">
+                  <span className="text-2xl font-black tracking-widest">
+                    {selectedChatInfo.joinCode}
+                  </span>
+                  <button
+                    onClick={() => {
+                      navigator.clipboard.writeText(selectedChatInfo.joinCode);
+                      toast.success("Code copied!");
+                    }}
+                    className="text-xs bg-primary text-white px-3 py-1.5 rounded-lg font-bold hover:opacity-90"
+                  >
+                    Copy
+                  </button>
+                </div>
+              </div>
+            )}
+
+            <div className="space-y-4">
+              <p className="text-xs font-bold text-muted uppercase tracking-wider">
+                Members ({selectedChatInfo.participants.length})
+              </p>
+              <div className="space-y-3 max-h-48 overflow-y-auto pr-2">
+                {selectedChatInfo.participants.map((p: any) => (
+                  <div
+                    key={p.id}
+                    className="flex items-center justify-between group"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="h-8 w-8 rounded-full bg-background border border-border flex items-center justify-center text-[10px] font-bold">
+                        {p.username.substring(0, 1).toUpperCase()}
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="text-sm font-bold">{p.username}</span>
+                        <span className="text-[10px] text-muted">{p.role}</span>
+                      </div>
+                    </div>
+                    {selectedChatInfo.myRole === "OWNER" &&
+                      p.role === "MEMBER" && (
+                        <button
+                          onClick={() => handlePromoteAdmin(p.id)}
+                          className="text-[10px] bg-sidebar border border-border px-2 py-1 rounded-md hover:bg-primary hover:text-white transition-all opacity-0 group-hover:opacity-100"
+                        >
+                          Make Admin
+                        </button>
+                      )}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <button
+              onClick={() => setShowGroupSettings(false)}
+              className="w-full py-4 text-sm font-bold bg-background border border-border rounded-2xl hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

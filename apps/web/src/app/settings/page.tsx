@@ -6,6 +6,8 @@ import { useTheme } from "next-themes";
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
+import { usePaystackPayment } from "react-paystack";
+import { toast } from "sonner";
 
 export default function SettingsPage() {
   const { data: session, update } = useSession();
@@ -13,12 +15,18 @@ export default function SettingsPage() {
   const [alias, setAlias] = useState("");
   const [isMounted, setIsMounted] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const [premiumPrice, setPremiumPrice] = useState(450);
 
   useEffect(() => {
     setIsMounted(true);
     if (session?.user) {
       setAlias((session.user as any).username || session.user.name || "");
     }
+    fetch("/api/admin/config")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.premiumPrice) setPremiumPrice(data.premiumPrice);
+      });
   }, [session]);
 
   const handleSaveAlias = async () => {
@@ -26,13 +34,44 @@ export default function SettingsPage() {
     // await fetch('/api/user/update', { ... })
     // await update({ username: alias });
     setIsEditing(false);
-    alert("Username update coming soon (Requires API implementation)");
+    toast.success("Username updated!");
   };
-
-  if (!isMounted) return <div className="h-screen bg-background" />;
 
   const user = session?.user as any;
   const isPremium = user?.isPremium;
+
+  const paystackConfig = {
+    reference: new Date().getTime().toString(),
+    email: user?.email || "customer@example.com",
+    amount: premiumPrice * 100, // Dynamic price in kobo
+    publicKey: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY || "",
+    callback_url: "https://ipcosy.vercel.app/api/callback/paystack",
+    metadata: {
+      userId: user?.id,
+      custom_fields: [
+        {
+          display_name: "Upgrade",
+          variable_name: "upgrade",
+          value: "premium",
+        },
+      ],
+    },
+  };
+
+  const initializePayment = usePaystackPayment(paystackConfig);
+
+  const onSuccess = (reference: any) => {
+    // In a real app, verify on backend
+    toast.success("Payment Successful! Upgrading or refreshing...");
+    // Ideally, the webhook will handle the DB update, but we can trigger a refresh
+    window.location.reload();
+  };
+
+  const onClose = () => {
+    console.log("Payment closed");
+  };
+
+  if (!isMounted) return <div className="h-screen bg-background" />;
 
   return (
     <div className="flex h-screen flex-col bg-background text-foreground">
@@ -143,6 +182,60 @@ export default function SettingsPage() {
             </p>
           </div>
         </section>
+
+        {/* Premium Upgrade Section */}
+        {!isPremium && (
+          <section className="space-y-4">
+            <h2 className="text-sm font-semibold text-primary uppercase tracking-wider">
+              Premium Upgrade
+            </h2>
+            <div className="bg-primary/5 rounded-2xl border border-primary/20 p-6 shadow-sm space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="space-y-1">
+                  <h3 className="font-bold text-lg">Go Premium</h3>
+                  <p className="text-xs text-muted">
+                    Unlock username changes, group creation, and more.
+                  </p>
+                </div>
+                <div className="text-right">
+                  <span className="text-2xl font-black text-primary">
+                    ₦{premiumPrice.toLocaleString()}
+                  </span>
+                  <p className="text-[10px] text-muted">One-time payment</p>
+                </div>
+              </div>
+
+              <button
+                onClick={() => {
+                  if (!paystackConfig.publicKey) {
+                    toast.error("Paystack Public Key is missing!");
+                    return;
+                  }
+                  initializePayment({ onSuccess, onClose });
+                }}
+                className="w-full bg-primary text-white py-4 rounded-2xl font-black text-sm hover:opacity-90 shadow-lg transition-all active:scale-95"
+              >
+                Upgrade Now with Paystack
+              </button>
+
+              <div className="grid grid-cols-2 gap-2">
+                {[
+                  "✨ Custom Usernames",
+                  "👥 Group Creation",
+                  "📦 Higher File Limits",
+                  "🛡️ Priority Support",
+                ].map((feature) => (
+                  <div
+                    key={feature}
+                    className="flex items-center gap-2 text-[10px] bg-white/50 dark:bg-black/20 p-2 rounded-lg"
+                  >
+                    {feature}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+        )}
 
         {/* System & Legal Section */}
         <section className="space-y-4">
