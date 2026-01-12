@@ -178,7 +178,7 @@ export default function SettingsPage() {
                   <span className="text-2xl font-black text-primary">
                     ₦{premiumPrice.toLocaleString()}
                   </span>
-                  <p className="text-[10px] text-muted">One-time payment</p>
+                  {/* <p className="text-[10px] text-muted">One-time payment</p> */}
                 </div>
               </div>
 

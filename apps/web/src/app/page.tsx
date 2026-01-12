@@ -403,9 +403,7 @@ function HomeContent() {
       {/* Left Sidebar (Chat List) */}
       <div
         className={`w-full md:w-[350px] lg:w-[400px] flex-col bg-sidebar border-r border-border ${
-          selectedChat && selectedChat !== "mvp-lobby"
-            ? "hidden md:flex"
-            : "flex"
+          selectedChat ? "hidden md:flex" : "flex"
         }`}
       >
         {/* Header */}

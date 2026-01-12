@@ -20,15 +20,23 @@ import {
 } from "lucide-react";
 
 import { LoginPrompt } from "@/components/login-prompt";
+import UpgradeButton from "@/components/upgrade-button";
 
 export default function ProfilePage() {
   const { data: session, status } = useSession();
   const [hasMounted, setHasMounted] = useState(false);
   const [origin, setOrigin] = useState("");
+  const [premiumPrice, setPremiumPrice] = useState(450);
 
   useEffect(() => {
     setHasMounted(true);
     setOrigin(window.location.origin);
+
+    fetch("/api/admin/config")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.premiumPrice) setPremiumPrice(data.premiumPrice);
+      });
   }, []);
 
   if (!hasMounted || status === "loading")
@@ -219,7 +227,8 @@ export default function ProfilePage() {
               </div>
 
               <button className="w-full bg-foreground text-background font-black py-5 rounded-[1.5rem] hover:opacity-90 active:scale-[0.98] transition-all shadow-xl">
-                Upgrade Now — 450
+                <UpgradeButton user={user} premiumPrice={premiumPrice} /> ₦
+                {premiumPrice.toLocaleString()}
               </button>
             </div>
           </div>
