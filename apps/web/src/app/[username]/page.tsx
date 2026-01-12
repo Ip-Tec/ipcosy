@@ -13,8 +13,14 @@ export async function generateMetadata(
 ): Promise<Metadata> {
   const { username } = await params;
 
-  const user = await prisma.user.findUnique({
-    where: { username: username },
+  // Try to find by username first, then by name (case-insensitive)
+  let user = await prisma.user.findFirst({
+    where: {
+      OR: [
+        { username: { equals: username, mode: "insensitive" } },
+        { name: { equals: username, mode: "insensitive" } },
+      ],
+    },
     select: { name: true, image: true },
   });
 
@@ -44,8 +50,14 @@ export async function generateMetadata(
 export default async function Page({ params }: Props) {
   const { username } = await params;
 
-  const user = await prisma.user.findUnique({
-    where: { username: username },
+  // Try to find by username first, then by name (case-insensitive)
+  const user = await prisma.user.findFirst({
+    where: {
+      OR: [
+        { username: { equals: username, mode: "insensitive" } },
+        { name: { equals: username, mode: "insensitive" } },
+      ],
+    },
     select: {
       id: true,
       name: true,
