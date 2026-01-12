@@ -13,18 +13,11 @@ import { UploadButton } from "../utils/uploadthing";
 import { useSession, signIn, signOut } from "next-auth/react";
 import { useSearchParams } from "next/navigation";
 import { toast } from "sonner";
+import { OnboardingModal } from "@/components/onboarding-modal";
+import { EmptyState } from "@/components/empty-state";
+import { Copy } from "lucide-react";
 
-// Mock Data
-const MOCK_CHATS = [
-  {
-    id: "mvp-lobby",
-    name: "Public Lobby",
-    message: "Welcome to IPCosy!",
-    time: "Now",
-    unread: 0,
-    isGroup: true,
-  },
-];
+const MOCK_CHATS: any[] = [];
 
 export default function Home() {
   return (
@@ -39,7 +32,7 @@ function HomeContent() {
   const searchParams = useSearchParams();
   const { theme } = useTheme();
   const [hasMounted, setHasMounted] = useState(false);
-  const [selectedChat, setSelectedChat] = useState<string | null>("mvp-lobby");
+  const [selectedChat, setSelectedChat] = useState<string | null>(null);
   const [messages, setMessages] = useState<any[]>([]);
   const [inputText, setInputText] = useState("");
   const [visitorId, setVisitorId] = useState<string | null>(null);
@@ -328,6 +321,7 @@ function HomeContent() {
   }
   return (
     <div className="flex h-screen overflow-hidden bg-background text-foreground font-sans">
+      <OnboardingModal user={user} />
       {/* Sidebar Menu */}
       <div
         className={`fixed inset-0 z-50 transition-all duration-300 ${isMenuOpen ? "visible opacity-100" : "invisible opacity-0"}`}
@@ -379,6 +373,19 @@ function HomeContent() {
               <span className="font-medium">Settings</span>
             </Link>
             <div className="h-px bg-border my-2 mx-2" />
+            <button
+              className="cursor-pointer w-full flex items-center gap-4 p-3 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 transition-colors group text-left"
+              onClick={() => {
+                const link = `${window.location.origin}/${(user?.username || session?.user?.name || "").toLowerCase().replace(/\s+/g, "")}`;
+                navigator.clipboard.writeText(link);
+                toast.success("Public link copied!");
+              }}
+            >
+              <span className="text-xl group-hover:scale-110 transition-transform">
+                🔗
+              </span>
+              <span className="font-medium">My Public Link</span>
+            </button>
             <button
               className="cursor-pointer w-full flex items-center gap-4 p-3 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 transition-colors group text-left"
               onClick={() => {
@@ -534,9 +541,9 @@ function HomeContent() {
             <div className="flex items-center gap-4 border-b border-border bg-sidebar p-3 z-10">
               <button
                 onClick={() => setSelectedChat(null)}
-                className="md:hidden p-2 cursor-pointer hover:bg-black/5 dark:hover:bg-white/5 rounded-full"
+                className="md:hidden p-4 -ml-2 cursor-pointer hover:bg-black/5 dark:hover:bg-white/5 rounded-full touch-manipulation"
               >
-                ←
+                <span className="text-2xl">←</span>
               </button>
               <div className="h-10 w-10 flex items-center justify-center rounded-full bg-primary text-white font-bold">
                 {selectedChat === "mvp-lobby"
@@ -731,7 +738,7 @@ function HomeContent() {
               </button>
             </div>
           </>
-        ) : (
+        ) : chats.length > 0 ? (
           <div className="flex h-full flex-col items-center justify-center text-center p-8 bg-background">
             <div className="w-32 h-32 relative mb-6 opacity-30 grayscale hover:grayscale-0 transition-all duration-500">
               <Image
@@ -746,6 +753,8 @@ function HomeContent() {
               Choose one from the sidebar to start messaging anonymously.
             </p>
           </div>
+        ) : (
+          <EmptyState username={alias} />
         )}
       </div>
 
