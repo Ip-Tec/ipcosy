@@ -11,8 +11,8 @@
   },
   "dependencies": {
     "@fingerprintjs/fingerprintjs": "^5.0.1",
-    "@ipcosy/db": "workspace:0.0.1",
-    "@ipcosy/ip-socket": "workspace:0.0.1",
+    "@ipcosy/db": "workspace:*",
+    "@ipcosy/ip-socket": "workspace:*",
     "@next-auth/prisma-adapter": "^1.0.7",
     "@uploadthing/react": "^7.3.3",
     "nanoid": "^5.1.0",
