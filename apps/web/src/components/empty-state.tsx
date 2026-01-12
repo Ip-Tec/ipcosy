@@ -1,7 +1,7 @@
 "use client";
 
-import { MessageSquare, Share2 } from "lucide-react";
-import { APP_VERSION } from "@/lib/constants";
+import { MessageSquare, Share2, Upload } from "lucide-react";
+import { toast } from "sonner";
 
 interface EmptyStateProps {
   username: string;
@@ -12,7 +12,7 @@ export function EmptyState({ username }: EmptyStateProps) {
     typeof window !== "undefined"
       ? `${window.location.origin}/${username}`
       : `https://ipcosy.vercel.app/${username}`;
-  const shareText = `Send me an anonymous message on IPCosy! 🤫\n\n${shareUrl}`;
+  const shareText = `Start an anonymous conversation with ${username}! 🤫\n\n${shareUrl}`;
 
   const socials = [
     {
@@ -47,16 +47,53 @@ export function EmptyState({ username }: EmptyStateProps) {
       ),
     },
     {
-      name: "Copy Link",
-      color: "bg-zinc-500",
-      isAction: true,
-      icon: <Share2 className="w-5 h-5" />,
+      name: "Instagram",
+      color: "bg-gradient-to-tr from-[#f9ce34] via-[#ee2a7b] to-[#6228d7]",
+      isSocialAction: true, // Use web share
+      icon: (
+        <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
+          <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.069-4.85.069-3.204 0-3.584-.012-4.849-.069-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.069-1.644-.069-4.849 0-3.204.013-3.583.069-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" />
+        </svg>
+      ),
+    },
+    {
+      name: "TikTok",
+      color: "bg-black",
+      isSocialAction: true,
+      icon: (
+        <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
+          <path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93v6.16c0 2.52-1.12 4.84-3.11 6.19-2.09 1.41-4.71 1.72-7.12.87-2.45-.87-4.33-3.08-4.94-5.61-.59-2.43.08-5.07 1.8-6.98 1.68-1.87 4.29-2.75 6.78-2.29V10.6c-2.34-.72-5.08.38-6.29 2.53-1.26 2.25-.66 5.16 1.42 6.8 2.37 1.86 5.85 1.34 7.64-1.14.9-1.25 1.39-2.76 1.39-4.31V.02z" />
+        </svg>
+      ),
+    },
+    {
+      name: "Share via...",
+      color: "bg-zinc-700",
+      textColor: "text-white",
+      isSocialAction: true,
+      icon: <Upload className="w-5 h-5" />,
     },
   ];
 
+  const handleSocialAction = async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: "IPCosy Anonymous Message",
+          text: `Start an anonymous conversation with ${username}! 🤫`,
+          url: shareUrl,
+        });
+      } catch (err) {
+        console.error("Error sharing:", err);
+      }
+    } else {
+      handleCopy();
+    }
+  };
+
   const handleCopy = () => {
     navigator.clipboard.writeText(shareUrl);
-    alert("Link copied to clipboard!"); // Simple alert or use sonner if available
+    toast.success("Link copied to clipboard!");
   };
 
   return (
@@ -77,7 +114,9 @@ export function EmptyState({ username }: EmptyStateProps) {
           <button
             key={s.name}
             onClick={() =>
-              s.isAction ? handleCopy() : window.open(s.url, "_blank")
+              s.isSocialAction
+                ? handleSocialAction()
+                : window.open(s.url, "_blank")
             }
             className={`${s.color} ${s.textColor || "text-white"} p-3 rounded-xl flex items-center justify-center gap-2 text-xs font-bold transition-transform active:scale-95 hover:opacity-90 shadow-lg`}
           >
