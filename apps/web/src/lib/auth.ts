@@ -17,16 +17,22 @@ export const authOptions: NextAuthOptions = {
     async signIn({ user, account, profile }) {
       if (!user.email) return false;
 
-      // check if user already exists
-      const existingUser = await prisma.user.findUnique({
-        where: { email: user.email },
-      });
-
-      if (existingUser) return true; // Allow login for existing users
-
       // Grace Period: Until 2026-01-21, allow anyone to join.
       const GRACE_PERIOD_END = new Date("2026-01-21T00:00:00Z");
       const isGracePeriod = new Date() < GRACE_PERIOD_END;
+
+      // Wrap DB call in try/catch to debug Vercel connection issues
+      try {
+        const existingUser = await prisma.user.findUnique({
+          where: { email: user.email },
+        });
+        if (existingUser) return true; // Allow login for existing users
+      } catch (error) {
+        console.error("Database connection failed during signIn:", error);
+        // If DB is down, we might want to fail gracefully or let them in if grace period?
+        // But if DB is down, creating user will fail anyway.
+        // Let's rely on grace period check below, but proceed with caution.
+      }
 
       if (isGracePeriod) return true;
 
@@ -39,30 +45,30 @@ export const authOptions: NextAuthOptions = {
         return false; // Block signup
       }
 
-      // Validate Referral Code
-      const referrer = await prisma.user.findUnique({
-        where: { referralCode },
-      });
+      try {
+        // Validate Referral Code
+        const referrer = await prisma.user.findUnique({
+          where: { referralCode },
+        });
 
-      if (referrer) {
-        // Optionally link referral here or in createUser event if passed via some state
-        // Ideally, we want to store this relationship.
-        // Since we can't easily pass data to createUser event from here without a hack,
-        // we might need to rely on the cookie again in createUser or update it here if possible (but user not created yet).
-        return true;
-      }
+        if (referrer) {
+          return true;
+        }
 
-      // Check Public Invite
-      const publicInvite = await prisma.publicInvite.findUnique({
-        where: { code: referralCode },
-      });
+        // Check Public Invite
+        const publicInvite = await prisma.publicInvite.findUnique({
+          where: { code: referralCode },
+        });
 
-      if (
-        publicInvite &&
-        publicInvite.isActive &&
-        publicInvite.expiresAt > new Date()
-      ) {
-        return true;
+        if (
+          publicInvite &&
+          publicInvite.isActive &&
+          publicInvite.expiresAt > new Date()
+        ) {
+          return true;
+        }
+      } catch (error) {
+        console.error("Error validating referral:", error);
       }
 
       return false;

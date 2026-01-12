@@ -1,6 +1,11 @@
 import Link from "next/link";
 
-export default function InviteExpiredPage() {
+export default async function InviteExpiredPage(props: {
+  searchParams: Promise<{ error?: string }>;
+}) {
+  const searchParams = await props.searchParams;
+  const error = searchParams.error;
+
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-background p-6 text-center">
       <div className="space-y-6 max-w-md">
@@ -14,6 +19,13 @@ export default function InviteExpiredPage() {
           This invitation link is no longer valid or has expired. You need a
           valid referral link from an existing member to join IPCosy.
         </p>
+
+        {error && (
+          <div className="bg-red-500/5 border border-red-500/20 text-red-600 rounded-lg p-3 text-xs font-mono break-all">
+            Error Code: {error}
+          </div>
+        )}
+
         <div className="pt-4">
           <Link
             href="/"
