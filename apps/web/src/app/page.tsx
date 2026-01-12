@@ -154,7 +154,7 @@ function HomeContent() {
     }
   }, [selectedChat, status]);
 
-  const handleSendMessage = (fileUrl?: string) => {
+  const handleSend = (fileUrl?: string) => {
     if (!visitorId) return;
     if (!inputText.trim() && !fileUrl) return;
 

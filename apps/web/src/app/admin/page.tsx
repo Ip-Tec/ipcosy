@@ -4,7 +4,6 @@ import Link from "next/link";
 import { toast } from "sonner";
 
 const ADMIN_EMAILS = ["iptecdev@gmail.com", "otakhorpeter@gmail.com"]; // Fallback legacy check
-
 export default function AdminPage() {
   const { data: session, status } = useSession();
   const [price, setPrice] = useState(450);
