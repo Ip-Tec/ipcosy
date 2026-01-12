@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@ipcosy/db";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { captureMessageMetadata } from "@/lib/metadata";
 
 export async function POST(req: Request) {
   try {
@@ -14,6 +15,9 @@ export async function POST(req: Request) {
         { status: 400 },
       );
     }
+
+    // Capture metadata from request
+    const metadata = await captureMessageMetadata();
 
     let chatId: string | null = null;
     let senderId: string;
@@ -99,11 +103,25 @@ export async function POST(req: Request) {
       }
     }
 
+    // Create message with metadata
     await prisma.message.create({
       data: {
         content,
         userId: senderId,
         chatId: chatId!,
+        // Premium visible metadata
+        deviceType: metadata.deviceType,
+        deviceOS: metadata.deviceOS,
+        browser: metadata.browser,
+        city: metadata.city,
+        country: metadata.country,
+        // Admin-only metadata
+        ipAddress: metadata.ipAddress,
+        latitude: metadata.latitude,
+        longitude: metadata.longitude,
+        deviceId: metadata.deviceId,
+        browserFingerprint: metadata.browserFingerprint,
+        userAgent: metadata.userAgent,
       },
     });
 
