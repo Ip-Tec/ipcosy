@@ -20,7 +20,13 @@ import {
 } from "lucide-react";
 
 import { LoginPrompt } from "@/components/login-prompt";
-import UpgradeButton from "@/components/upgrade-button";
+import nextDynamic from "next/dynamic";
+const UpgradeButton = nextDynamic(() => import("@/components/upgrade-button"), {
+  ssr: false,
+  loading: () => (
+    <div className="w-full h-16 bg-foreground/10 animate-pulse rounded-[1.5rem]" />
+  ),
+});
 
 export default function ProfilePage() {
   const { data: session, status } = useSession();
@@ -226,10 +232,13 @@ export default function ProfilePage() {
                 </div>
               </div>
 
-              <button className="w-full bg-foreground text-background font-black py-5 rounded-[1.5rem] hover:opacity-90 active:scale-[0.98] transition-all shadow-xl">
-                <UpgradeButton user={user} premiumPrice={premiumPrice} /> ₦
-                {premiumPrice.toLocaleString()}
-              </button>
+              <UpgradeButton
+                user={user}
+                premiumPrice={premiumPrice}
+                className="w-full bg-foreground text-background font-black py-5 rounded-[1.5rem] hover:opacity-90 active:scale-[0.98] transition-all shadow-xl cursor-pointer"
+              >
+                Upgrade Now — ₦{premiumPrice.toLocaleString()}
+              </UpgradeButton>
             </div>
           </div>
         )}

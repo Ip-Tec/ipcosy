@@ -3,12 +3,18 @@
 import { usePaystackPayment } from "react-paystack";
 import { toast } from "sonner";
 
+import { ReactNode } from "react";
+
 export default function UpgradeButton({
   user,
   premiumPrice,
+  children,
+  className,
 }: {
   user: any;
   premiumPrice: number;
+  children?: ReactNode;
+  className?: string;
 }) {
   const config = {
     reference: new Date().getTime().toString(),
@@ -49,9 +55,12 @@ export default function UpgradeButton({
         }
         initializePayment({ onSuccess, onClose });
       }}
-      className="cursor-pointer w-full bg-primary text-white py-4 rounded-2xl font-black text-sm hover:opacity-90 shadow-lg transition-all active:scale-95"
+      className={
+        className ||
+        "cursor-pointer w-full bg-primary text-white py-4 rounded-2xl font-black text-sm hover:opacity-90 shadow-lg transition-all active:scale-95"
+      }
     >
-      Upgrade Now with Paystack
+      {children || "Upgrade Now with Paystack"}
     </button>
   );
 }
