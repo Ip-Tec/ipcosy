@@ -410,7 +410,11 @@ function HomeContent() {
       {/* Left Sidebar (Chat List) */}
       <div
         className={`w-full md:w-[350px] lg:w-[400px] flex-col bg-sidebar border-r border-border ${
-          selectedChat ? "hidden md:flex" : "flex"
+          selectedChat
+            ? "hidden md:flex"
+            : chats.length === 0
+              ? "hidden md:flex"
+              : "flex"
         }`}
       >
         {/* Header */}
@@ -532,7 +536,11 @@ function HomeContent() {
       {/* Right Content */}
       <div
         className={`flex-1 flex-col bg-background relative ${
-          !selectedChat ? "hidden md:flex" : "flex"
+          !selectedChat && chats.length === 0
+            ? "flex"
+            : !selectedChat
+              ? "hidden md:flex"
+              : "flex"
         }`}
       >
         {selectedChat ? (
