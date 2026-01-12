@@ -6,7 +6,7 @@
   --foreground: #000000;
   --primary: #3390ec;
   --bubble-in: #ffffff;
-  --bubble-out: #eeffde;
+  --bubble-out: #eeffde; /* Telegram light green outgoing bubble */
   --bubble-in-text: #000000;
   --bubble-out-text: #000000;
   --muted: #707579;
@@ -17,9 +17,9 @@
 
 [data-theme="dark"] {
   /* Telegram Dark Theme */
-  --background: #0e1621;
+  --background: #0e1621; /* Dark chat background */
   --foreground: #ffffff;
-  --primary: #2b5278;
+  --primary: #2b5278; /* Muted dark blue */
   --bubble-in: #182533;
   --bubble-out: #2b5278;
   --bubble-in-text: #ffffff;
