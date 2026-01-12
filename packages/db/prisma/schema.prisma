@@ -46,6 +46,7 @@ model User {
   chats         ChatParticipant[]
   messages      Message[]
   reactions     Reaction[]
+  notifications Notification[]
 }
 
 model Account {
@@ -108,6 +109,7 @@ model Chat {
 
   participants ChatParticipant[]
   messages     Message[]
+  notifications Notification[]
 }
 
 model ChatParticipant {
@@ -115,6 +117,11 @@ model ChatParticipant {
   joinedAt  DateTime @default(now())
   
   role      ParticipantRole @default(MEMBER)
+  
+  // Notification Settings
+  isMuted              Boolean   @default(false)
+  mutedUntil           DateTime?
+  notificationsEnabled Boolean   @default(true)
   
   userId    String
   user      User     @relation(fields: [userId], references: [id])
@@ -139,13 +146,29 @@ model Message {
   fileUrl   String?
   fileType  String?  // image, video, doc
   
+  // Premium User Visible (General Context)
+  deviceType    String?  // "Mobile", "Desktop", "Tablet"
+  deviceOS      String?  // "iOS", "Android", "Windows", "macOS", "Linux"
+  browser       String?  // "Chrome", "Safari", "Firefox"
+  city          String?  // "Lagos"
+  country       String?  // "Nigeria"
+  
+  // Admin/Support Only (Security Data)
+  ipAddress          String?  // Full IP address
+  latitude           Float?   // GPS coordinates
+  longitude          Float?   // GPS coordinates
+  deviceId           String?  // Device fingerprint
+  browserFingerprint String?  @db.Text // Full browser fingerprint JSON
+  userAgent          String?  @db.Text // Raw user agent string
+  
   userId    String
   user      User     @relation(fields: [userId], references: [id])
   
   chatId    String
   chat      Chat     @relation(fields: [chatId], references: [id])
 
-  reactions Reaction[]
+  reactions     Reaction[]
+  notifications Notification[]
 }
 
 model Reaction {
@@ -159,4 +182,23 @@ model Reaction {
   message   Message  @relation(fields: [messageId], references: [id])
 
   @@unique([userId, messageId, emoji])
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  read      Boolean  @default(false)
+  
+  type      String   // "NEW_MESSAGE", "NEW_CHAT", "MENTION"
+  title     String
+  body      String?  @db.Text
+  
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  
+  messageId String?
+  message   Message? @relation(fields: [messageId], references: [id])
+  
+  chatId    String?
+  chat      Chat?    @relation(fields: [chatId], references: [id])
 }
