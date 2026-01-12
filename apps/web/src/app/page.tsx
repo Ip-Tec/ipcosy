@@ -5,6 +5,7 @@ export const dynamic = "force-dynamic";
 import { useTheme } from "next-themes";
 import Image from "next/image";
 import Link from "next/link";
+import { APP_VERSION } from "@/lib/constants";
 import { useState, useEffect, useRef, Suspense } from "react";
 import { IpSocket } from "@ipcosy/ip-socket";
 import FingerprintJS from "@fingerprintjs/fingerprintjs";
@@ -347,7 +348,6 @@ function HomeContent() {
               <p className="text-xs text-white/70">Anonymous Identity</p>
             </div>
           </div>
-
           <nav className="p-2 space-y-1">
             <Link
               href="/profile"
@@ -394,9 +394,8 @@ function HomeContent() {
               <span className="font-medium">Invite Friends</span>
             </button>
           </nav>
-
           <div className="absolute bottom-4 left-0 w-full text-center text-[10px] text-muted">
-            IPCosy Desktop v0.1.0
+            IPCosy Desktop {APP_VERSION}
           </div>
         </div>
       </div>

@@ -9,6 +9,7 @@ import { useSession } from "next-auth/react";
 import nextDynamic from "next/dynamic";
 import { toast } from "sonner";
 import { LoginPrompt } from "@/components/login-prompt";
+import { APP_VERSION } from "@/lib/constants";
 
 const UpgradeButton = nextDynamic(() => import("@/components/upgrade-button"), {
   ssr: false,
@@ -236,7 +237,7 @@ export default function SettingsPage() {
               <div className="flex justify-between items-center">
                 <span className="font-medium">App Version</span>
                 <span className="text-xs font-mono text-muted">
-                  v2.0.0-beta
+                  {APP_VERSION}
                 </span>
               </div>
               <p className="text-xs text-muted leading-relaxed">
