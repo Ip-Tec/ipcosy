@@ -10,6 +10,8 @@ import nextDynamic from "next/dynamic";
 import { toast } from "sonner";
 import { LoginPrompt } from "@/components/login-prompt";
 import { APP_VERSION } from "@/lib/constants";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Loader2 } from "lucide-react";
 
 const UpgradeButton = nextDynamic(() => import("@/components/upgrade-button"), {
   ssr: false,
@@ -47,7 +49,17 @@ export default function SettingsPage() {
   const isPremium = user?.isPremium;
 
   if (!isMounted || status === "loading")
-    return <div className="h-screen bg-background" />;
+    return (
+      <div className="flex h-screen flex-col bg-background text-foreground">
+        <div className="flex items-center gap-4 border-b border-border bg-sidebar p-4 shadow-sm">
+          <Skeleton className="h-6 w-32" />
+        </div>
+        <div className="flex-1 p-4 md:p-8 max-w-2xl mx-auto w-full space-y-8">
+          <Skeleton className="h-40 w-full rounded-2xl" />
+          <Skeleton className="h-32 w-full rounded-2xl" />
+        </div>
+      </div>
+    );
   if (status === "unauthenticated") return <LoginPrompt />;
 
   return (

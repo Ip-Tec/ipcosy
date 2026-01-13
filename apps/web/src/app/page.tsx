@@ -15,7 +15,8 @@ import { useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { OnboardingModal } from "@/components/onboarding-modal";
 import { EmptyState } from "@/components/empty-state";
-import { CopyIcon } from "lucide-react";
+import { CopyIcon, Loader2 } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const MOCK_CHATS: any[] = [];
 
@@ -45,6 +46,9 @@ function HomeContent() {
   const [joinCodeInput, setJoinCodeInput] = useState("");
   const [chats, setChats] = useState<any[]>([]);
   const [selectedChatInfo, setSelectedChatInfo] = useState<any>(null);
+  const [isLoadingChats, setIsLoadingChats] = useState(false);
+  const [isLoadingMessages, setIsLoadingMessages] = useState(false);
+  const [isCreatingGroup, setIsCreatingGroup] = useState(false);
   const socketRef = useRef<IpSocket | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -79,11 +83,13 @@ function HomeContent() {
 
     // 2. Fetch Real Chats
     if (status === "authenticated") {
+      setIsLoadingChats(true);
       fetch("/api/groups/list")
         .then((res) => res.json())
         .then((data) => {
           if (Array.isArray(data)) setChats(data);
-        });
+        })
+        .finally(() => setIsLoadingChats(false));
     }
 
     // 3. Initialize Socket
@@ -161,13 +167,15 @@ function HomeContent() {
         });
 
       // Fetch Messages
+      setIsLoadingMessages(true);
       fetch(`/api/groups/messages?chatId=${selectedChat}`)
         .then((res) => res.json())
         .then((data) => {
           if (Array.isArray(data)) {
             setMessages(data);
           }
-        });
+        })
+        .finally(() => setIsLoadingMessages(false));
     } else {
       setSelectedChatInfo(null);
       if (selectedChat !== "mvp-lobby") setMessages([]); // Clear messages if deselected
@@ -198,6 +206,7 @@ function HomeContent() {
 
   const handleCreateGroup = async () => {
     if (!newGroupName.trim()) return;
+    setIsCreatingGroup(true);
     try {
       const res = await fetch("/api/groups/create", {
         method: "POST",
@@ -217,6 +226,8 @@ function HomeContent() {
     } catch (e) {
       console.error(e);
       toast.error("An error occurred while creating the group");
+    } finally {
+      setIsCreatingGroup(false);
     }
   };
 
@@ -557,6 +568,20 @@ function HomeContent() {
                 ))}
             </div>
           )}
+
+          {isLoadingChats && (
+            <div className="space-y-4 p-2">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="flex items-center gap-4 p-3 mx-2">
+                  <Skeleton className="h-12 w-12 rounded-full" />
+                  <div className="flex-1 space-y-2">
+                    <Skeleton className="h-4 w-24" />
+                    <Skeleton className="h-3 w-full" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Floating Action Button */}
@@ -680,6 +705,24 @@ function HomeContent() {
                     your safety.
                   </div>
                 </div>
+
+                {isLoadingMessages && (
+                  <div className="space-y-4">
+                    {[1, 2, 3].map((i) => (
+                      <div
+                        key={i}
+                        className={`flex flex-col ${i % 2 === 0 ? "items-end" : "items-start"}`}
+                      >
+                        <Skeleton
+                          className={`h-12 w-[60%] rounded-2xl ${
+                            i % 2 === 0 ? "rounded-tr-none" : "rounded-tl-none"
+                          }`}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                )}
+
                 {messages.map((msg, idx) => (
                   <div
                     key={idx}
@@ -858,10 +901,13 @@ function HomeContent() {
                 </button>
                 <button
                   onClick={handleCreateGroup}
-                  disabled={!newGroupName.trim()}
-                  className="cursor-pointer flex-1 py-4 text-sm font-bold bg-primary text-white rounded-2xl shadow-lg hover:opacity-90 disabled:opacity-50 transition-all"
+                  disabled={!newGroupName.trim() || isCreatingGroup}
+                  className="cursor-pointer flex-1 py-4 text-sm font-bold bg-primary text-white rounded-2xl shadow-lg hover:opacity-90 disabled:opacity-50 transition-all flex items-center justify-center gap-2"
                 >
-                  Create
+                  {isCreatingGroup && (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  )}
+                  <span>{isCreatingGroup ? "Creating..." : "Create"}</span>
                 </button>
               </div>
             </div>

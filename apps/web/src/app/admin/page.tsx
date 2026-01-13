@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { toast } from "sonner";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const ADMIN_EMAILS = ["iptecdev@gmail.com", "otakhorpeter@gmail.com"]; // Fallback legacy check
 export default function AdminPage() {
@@ -94,7 +95,19 @@ export default function AdminPage() {
     }
   };
 
-  if (status === "loading") return <div className="p-8">Loading...</div>;
+  if (status === "loading")
+    return (
+      <div className="p-8 max-w-4xl mx-auto space-y-12">
+        <div className="space-y-2">
+          <Skeleton className="h-10 w-64" />
+          <Skeleton className="h-4 w-48" />
+        </div>
+        <div className="grid md:grid-cols-2 gap-8">
+          <Skeleton className="h-64 w-full rounded-[2rem]" />
+          <Skeleton className="h-64 w-full rounded-[2rem]" />
+        </div>
+      </div>
+    );
 
   if (!isAdmin) {
     return (

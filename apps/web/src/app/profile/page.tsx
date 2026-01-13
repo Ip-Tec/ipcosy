@@ -18,6 +18,7 @@ import {
   ArrowLeft,
   Link as LinkIcon,
 } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 
 import { LoginPrompt } from "@/components/login-prompt";
 import nextDynamic from "next/dynamic";
@@ -46,7 +47,17 @@ export default function ProfilePage() {
   }, []);
 
   if (!hasMounted || status === "loading")
-    return <div className="h-screen bg-background" />;
+    return (
+      <div className="flex h-screen flex-col bg-background text-foreground">
+        <div className="flex items-center gap-4 border-b border-border bg-sidebar p-4 shadow-sm">
+          <Skeleton className="h-6 w-32" />
+        </div>
+        <div className="flex-1 p-4 md:p-8 max-w-2xl mx-auto w-full space-y-8">
+          <Skeleton className="h-64 w-full rounded-3xl" />
+          <Skeleton className="h-48 w-full rounded-[2rem]" />
+        </div>
+      </div>
+    );
   if (status === "unauthenticated") return <LoginPrompt />;
 
   const user = session?.user as any;

@@ -13,7 +13,9 @@ import {
   TrendingUp,
   Send,
   ShieldCheck,
+  Loader2,
 } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface SuggestionCategory {
   id: string;
@@ -150,12 +152,19 @@ export default function ClientPage({
 
   if (!userInfo)
     return (
-      <div className="h-screen bg-background flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-12 h-12 border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
-          <p className="text-sm text-muted-foreground font-medium">
-            Loading profile...
-          </p>
+      <div className="min-h-screen bg-background p-4 md:p-8 flex flex-col items-center">
+        <div className="w-full max-w-lg space-y-8">
+          <Skeleton className="h-48 w-full rounded-[2.5rem]" />
+          <div className="flex gap-2">
+            {[1, 2, 3].map((i) => (
+              <Skeleton key={i} className="h-10 w-24 rounded-full" />
+            ))}
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {[1, 2, 3, 4].map((i) => (
+              <Skeleton key={i} className="h-16 w-full rounded-2xl" />
+            ))}
+          </div>
         </div>
       </div>
     );
