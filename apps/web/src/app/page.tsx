@@ -15,7 +15,7 @@ import { useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { OnboardingModal } from "@/components/onboarding-modal";
 import { EmptyState } from "@/components/empty-state";
-import { Copy } from "lucide-react";
+import { Copy, CopyIcon } from "lucide-react";
 
 const MOCK_CHATS: any[] = [];
 
@@ -378,13 +378,20 @@ function HomeContent() {
               onClick={() => {
                 const link = `${window.location.origin}/${(user?.username || session?.user?.name || "").toLowerCase().replace(/\s+/g, "")}`;
                 navigator.clipboard.writeText(link);
-                toast.success("Public link copied!");
+                toast.success("Public message link copied!");
               }}
             >
-              <span className="text-xl group-hover:scale-110 transition-transform">
-                🔗
-              </span>
               <span className="font-medium">My Public Link</span>
+              <span className="text-xl group-hover:scale-110 transition-transform">
+                <CopyIcon
+                  className="w-5 h-5 cursor-pointer"
+                  onClick={() => {
+                    const link = `${window.location.origin}/${(user?.username || session?.user?.name || "").toLowerCase().replace(/\s+/g, "")}`;
+                    navigator.clipboard.writeText(link);
+                    toast.success("Public link copied!");
+                  }}
+                />
+              </span>
             </button>
             <button
               className="cursor-pointer w-full flex items-center gap-4 p-3 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 transition-colors group text-left"
@@ -395,10 +402,20 @@ function HomeContent() {
                 toast.success("Invite link copied!");
               }}
             >
-              <span className="text-xl group-hover:scale-110 transition-transform">
-                🔗
-              </span>
               <span className="font-medium">Invite Friends</span>
+              <span className="text-xl group-hover:scale-110 transition-transform">
+                <CopyIcon
+                  className="w-5 h-5 cursor-pointer"
+                  onClick={() => {
+                    navigator.clipboard.writeText(
+                      window.location.origin +
+                        "?r=" +
+                        (user?.referralCode || ""),
+                    );
+                    toast.success("Invite link copied!");
+                  }}
+                />
+              </span>
             </button>
           </nav>
           <div className="absolute bottom-4 left-0 w-full text-center text-[10px] text-muted">

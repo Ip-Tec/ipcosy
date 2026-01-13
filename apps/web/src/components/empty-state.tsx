@@ -126,9 +126,9 @@ export function EmptyState({ username }: EmptyStateProps) {
         ))}
       </div>
 
-      <div className="p-3 bg-zinc-100 dark:bg-zinc-900 rounded-lg text-[10px] text-muted-foreground w-full break-all font-mono">
+      <div className="flex items-center justify-between p-3 bg-zinc-100 dark:bg-zinc-900 rounded-lg text-[10px] text-muted-foreground w-full break-all font-mono">
         {shareUrl}
-        <CopyIcon className="w-5 h-5" onClick={handleCopy} />
+        <CopyIcon className="w-5 h-5 cursor-pointer" onClick={handleCopy} />
       </div>
     </div>
   );
