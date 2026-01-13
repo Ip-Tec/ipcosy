@@ -43,14 +43,14 @@ function HomeContent() {
   const [showGroupSettings, setShowGroupSettings] = useState(false);
   const [newGroupName, setNewGroupName] = useState("");
   const [joinCodeInput, setJoinCodeInput] = useState("");
-  const [chats, setChats] = useState<any[]>(MOCK_CHATS);
+  const [chats, setChats] = useState<any[]>([]);
   const [selectedChatInfo, setSelectedChatInfo] = useState<any>(null);
   const socketRef = useRef<IpSocket | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const user = session?.user as any;
   const isPremium = user?.isPremium;
-  const alias = session?.user?.name || "Anonymous";
+  const alias = session?.user?.username || "Anonymous";
 
   useEffect(() => {
     setHasMounted(true);
@@ -82,7 +82,7 @@ function HomeContent() {
       fetch("/api/groups/list")
         .then((res) => res.json())
         .then((data) => {
-          if (Array.isArray(data)) setChats([...MOCK_CHATS, ...data]);
+          if (Array.isArray(data)) setChats(data);
         });
     }
 
