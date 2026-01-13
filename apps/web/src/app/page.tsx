@@ -46,18 +46,28 @@ function HomeContent() {
   const [joinCodeInput, setJoinCodeInput] = useState("");
   const [chats, setChats] = useState<any[]>([]);
   const [selectedChatInfo, setSelectedChatInfo] = useState<any>(null);
+  const [dbUser, setDbUser] = useState<any>(null);
   const [isLoadingChats, setIsLoadingChats] = useState(false);
   const [isLoadingMessages, setIsLoadingMessages] = useState(false);
   const [isCreatingGroup, setIsCreatingGroup] = useState(false);
   const socketRef = useRef<IpSocket | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  const user = session?.user as any;
+  const user = dbUser || (session?.user as any);
   const isPremium = user?.isPremium;
-  const alias = session?.user?.username || "Anonymous";
+  const alias = user?.username || "Anonymous";
 
   useEffect(() => {
     setHasMounted(true);
+
+    // Fetch real-time status (for premium sync)
+    if (status === "authenticated") {
+      fetch("/api/user/status")
+        .then((res) => res.json())
+        .then((data) => {
+          if (!data.error) setDbUser(data);
+        });
+    }
 
     // Store referral code if present
     const ref = searchParams.get("r");
@@ -139,7 +149,7 @@ function HomeContent() {
     return () => {
       socketRef.current?.disconnect();
     };
-  }, [visitorId]);
+  }, [visitorId, session, status]);
 
   useEffect(() => {
     if (scrollRef.current) {

@@ -34,17 +34,25 @@ export default function ProfilePage() {
   const [hasMounted, setHasMounted] = useState(false);
   const [origin, setOrigin] = useState("");
   const [premiumPrice, setPremiumPrice] = useState(450);
+  const [dbUser, setDbUser] = useState<any>(null);
 
   useEffect(() => {
     setHasMounted(true);
     setOrigin(window.location.origin);
+
+    // Fetch latest DB status (for premium sync)
+    fetch("/api/user/status")
+      .then((res) => res.json())
+      .then((data) => {
+        if (!data.error) setDbUser(data);
+      });
 
     fetch("/api/admin/config")
       .then((res) => res.json())
       .then((data) => {
         if (data.premiumPrice) setPremiumPrice(data.premiumPrice);
       });
-  }, []);
+  }, [session]);
 
   if (!hasMounted || status === "loading")
     return (
@@ -60,7 +68,7 @@ export default function ProfilePage() {
     );
   if (status === "unauthenticated") return <LoginPrompt />;
 
-  const user = session?.user as any;
+  const user = dbUser || (session?.user as any);
   const username =
     user?.username || user?.name?.toLowerCase().replace(/\s+/g, "") || "user";
   const referralCode = user?.referralCode || "N/A";

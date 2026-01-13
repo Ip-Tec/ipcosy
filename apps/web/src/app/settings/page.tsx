@@ -26,13 +26,23 @@ export default function SettingsPage() {
   const [alias, setAlias] = useState("");
   const [isMounted, setIsMounted] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const [isSavingAlias, setIsSavingAlias] = useState(false);
   const [premiumPrice, setPremiumPrice] = useState(450);
+  const [dbUser, setDbUser] = useState<any>(null);
 
   useEffect(() => {
     setIsMounted(true);
-    if (session?.user) {
-      setAlias((session.user as any).username || session.user.name || "");
-    }
+
+    // Fetch latest DB status to override session (for premium sync)
+    fetch("/api/user/status")
+      .then((res) => res.json())
+      .then((data) => {
+        if (!data.error) {
+          setDbUser(data);
+          setAlias(data.username || data.name || "");
+        }
+      });
+
     fetch("/api/admin/config")
       .then((res) => res.json())
       .then((data) => {
@@ -41,11 +51,31 @@ export default function SettingsPage() {
   }, [session]);
 
   const handleSaveAlias = async () => {
-    setIsEditing(false);
-    toast.success("Username updated!");
+    if (!alias.trim() || isSavingAlias) return;
+
+    setIsSavingAlias(true);
+    try {
+      const res = await fetch("/api/user/username", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username: alias }),
+      });
+
+      if (res.ok) {
+        toast.success("Username updated!");
+        setIsEditing(false);
+      } else {
+        const errorText = await res.text();
+        toast.error(errorText || "Failed to update username");
+      }
+    } catch (e) {
+      toast.error("Error updating username");
+    } finally {
+      setIsSavingAlias(false);
+    }
   };
 
-  const user = session?.user as any;
+  const user = dbUser || (session?.user as any);
   const isPremium = user?.isPremium;
 
   if (!isMounted || status === "loading")
@@ -108,7 +138,7 @@ export default function SettingsPage() {
                     type="text"
                     value={alias}
                     onChange={(e) => setAlias(e.target.value)}
-                    disabled={!isPremium || !isEditing}
+                    disabled={!isPremium || !isEditing || isSavingAlias}
                     className={`flex-1 bg-background border border-border rounded-xl px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary/50 disabled:opacity-50 disabled:cursor-not-allowed`}
                     placeholder="Enter your alias..."
                   />
@@ -117,9 +147,17 @@ export default function SettingsPage() {
                       onClick={() =>
                         isEditing ? handleSaveAlias() : setIsEditing(true)
                       }
-                      className="cursor-pointer bg-primary text-white px-4 py-2 rounded-xl font-bold text-sm hover:opacity-90"
+                      disabled={isSavingAlias}
+                      className="cursor-pointer bg-primary text-white px-4 py-2 rounded-xl font-bold text-sm hover:opacity-90 disabled:opacity-50 flex items-center gap-2"
                     >
-                      {isEditing ? "Save" : "Edit"}
+                      {isSavingAlias && (
+                        <Loader2 className="w-3 h-3 animate-spin" />
+                      )}
+                      {isEditing
+                        ? isSavingAlias
+                          ? "Saving..."
+                          : "Save"
+                        : "Edit"}
                     </button>
                   )}
                 </div>
