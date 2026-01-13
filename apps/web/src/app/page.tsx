@@ -98,6 +98,7 @@ function HomeContent() {
       url: wsUrl,
       autoConnect: true,
     });
+    console.log("Connecting to WebSocket:", wsUrl);
 
     socketRef.current.on("error", (err: any) => {
       console.error(
@@ -208,9 +209,13 @@ function HomeContent() {
         // Reload or update chat list - for now a simple alert
         toast.success("Group created! Reloading...");
         window.location.reload();
+      } else {
+        const data = await res.json();
+        toast.error(data.error || "Failed to create group");
       }
     } catch (e) {
       console.error(e);
+      toast.error("An error occurred while creating the group");
     }
   };
 
