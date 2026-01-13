@@ -29,6 +29,7 @@ export async function GET(req: NextRequest) {
         email: true,
         username: true,
         isAdmin: true,
+        isPremium: true,
         image: true,
       },
       take: 20,
@@ -53,12 +54,17 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { userId, isAdmin } = await req.json();
-    if (!userId || typeof isAdmin !== "boolean") {
-      return NextResponse.json(
-        { error: "Missing required fields" },
-        { status: 400 },
-      );
+    const { userId, isAdmin, isPremium } = await req.json();
+    if (!userId) {
+      return NextResponse.json({ error: "Missing userId" }, { status: 400 });
+    }
+
+    const data: any = {};
+    if (typeof isAdmin === "boolean") data.isAdmin = isAdmin;
+    if (typeof isPremium === "boolean") data.isPremium = isPremium;
+
+    if (Object.keys(data).length === 0) {
+      return NextResponse.json({ error: "Nothing to update" }, { status: 400 });
     }
 
     // Prevent removing own admin status for safety?
@@ -66,7 +72,7 @@ export async function POST(req: NextRequest) {
 
     await prisma.user.update({
       where: { id: userId },
-      data: { isAdmin },
+      data,
     });
 
     return NextResponse.json({ success: true });

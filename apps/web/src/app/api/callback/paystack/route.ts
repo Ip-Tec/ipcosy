@@ -12,12 +12,35 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    // In a production app, you would verify the transaction here using Paystack API
-    // https://api.paystack.co/transaction/verify/:reference
+    // 1. Verify Transaction with Paystack
+    const verifyRes = await fetch(
+      `https://api.paystack.co/transaction/verify/${encodeURIComponent(reference)}`,
+      {
+        headers: {
+          Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}`,
+        },
+      },
+    );
 
-    // For now, we rely on the webhook for the source of truth,
-    // but we can proactively redirect the user back to settings.
-    return NextResponse.redirect(new URL("/settings?status=success", req.url));
+    const verifyData = await verifyRes.json();
+
+    if (verifyData.status && verifyData.data.status === "success") {
+      const userId = verifyData.data.metadata?.userId;
+      if (userId) {
+        await prisma.user.update({
+          where: { id: userId },
+          data: { isPremium: true },
+        });
+        console.log(`User ${userId} upgraded via backup callback verification`);
+      }
+      return NextResponse.redirect(
+        new URL("/settings?status=success", req.url),
+      );
+    }
+
+    return NextResponse.redirect(
+      new URL("/settings?status=processed", req.url),
+    );
   } catch (error) {
     console.error("Paystack callback error:", error);
     return NextResponse.redirect(

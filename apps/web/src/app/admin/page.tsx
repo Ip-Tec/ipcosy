@@ -95,6 +95,36 @@ export default function AdminPage() {
     }
   };
 
+  const handleTogglePremium = async (
+    targetUserId: string,
+    currentStatus: boolean,
+  ) => {
+    try {
+      const res = await fetch("/api/admin/users", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: targetUserId,
+          isPremium: !currentStatus,
+        }),
+      });
+      if (res.ok) {
+        toast.success("User premium status updated!");
+        // Update local state
+        setUsers((prev) =>
+          prev.map((u) =>
+            u.id === targetUserId ? { ...u, isPremium: !currentStatus } : u,
+          ),
+        );
+      } else {
+        const data = await res.json();
+        toast.error(data.error || "Failed to update user");
+      }
+    } catch (e) {
+      toast.error("Error updating user");
+    }
+  };
+
   if (status === "loading")
     return (
       <div className="p-8 max-w-4xl mx-auto space-y-12">
@@ -165,10 +195,8 @@ export default function AdminPage() {
         {/* User Management Search */}
         <section className="bg-sidebar rounded-[2rem] border border-border p-8 shadow-2xl space-y-6">
           <div className="space-y-1">
-            <h2 className="text-xl font-bold">Manage Admins</h2>
-            <p className="text-xs text-muted">
-              Grant or revoke admin privileges.
-            </p>
+            <h2 className="text-xl font-bold">Manage Users</h2>
+            <p className="text-xs text-muted">Grant Admin or Premium status.</p>
           </div>
 
           <div className="space-y-4">
@@ -216,16 +244,28 @@ export default function AdminPage() {
                     <p className="font-bold text-xs truncate">{u.name}</p>
                     <p className="text-[10px] text-muted truncate">{u.email}</p>
                   </div>
-                  <button
-                    onClick={() => handleToggleAdmin(u.id, u.isAdmin)}
-                    className={`cursor-pointer text-[10px] font-black px-3 py-1.5 rounded-lg border transition-all ${
-                      u.isAdmin
-                        ? "bg-red-500/10 text-red-600 border-red-500/20 hover:bg-red-500 hover:text-white"
-                        : "bg-green-500/10 text-green-600 border-green-500/20 hover:bg-green-500 hover:text-white"
-                    }`}
-                  >
-                    {u.isAdmin ? "REVOKE" : "GRANT"}
-                  </button>
+                  <div className="flex flex-col gap-1">
+                    <button
+                      onClick={() => handleToggleAdmin(u.id, u.isAdmin)}
+                      className={`cursor-pointer text-[9px] font-black px-2 py-1 rounded-lg border transition-all ${
+                        u.isAdmin
+                          ? "bg-red-500/10 text-red-600 border-red-500/20 hover:bg-red-500 hover:text-white"
+                          : "bg-green-500/10 text-green-600 border-green-500/20 hover:bg-green-500 hover:text-white"
+                      }`}
+                    >
+                      {u.isAdmin ? "REVOKE ADMIN" : "GRANT ADMIN"}
+                    </button>
+                    <button
+                      onClick={() => handleTogglePremium(u.id, u.isPremium)}
+                      className={`cursor-pointer text-[9px] font-black px-2 py-1 rounded-lg border transition-all ${
+                        u.isPremium
+                          ? "bg-yellow-500/10 text-yellow-600 border-yellow-500/20 hover:bg-yellow-500 hover:text-white"
+                          : "bg-blue-500/10 text-blue-600 border-blue-500/20 hover:bg-blue-500 hover:text-white"
+                      }`}
+                    >
+                      {u.isPremium ? "REVOKE PREMIUM" : "GRANT PREMIUM"}
+                    </button>
+                  </div>
                 </div>
               ))}
               {!isSearching && searchQuery && users.length === 0 && (
