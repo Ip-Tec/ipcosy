@@ -56,19 +56,15 @@ export async function POST(req: Request) {
       }
     } else {
       // Anonymous user - find or create system "Anonymous" user
-      let anonUser = await prisma.user.findUnique({
+      const anonUser = await prisma.user.upsert({
         where: { email: "anonymous@ipcosy.system" },
+        update: {},
+        create: {
+          email: "anonymous@ipcosy.system",
+          name: "Anonymous",
+          username: "anonymous",
+        },
       });
-
-      if (!anonUser) {
-        anonUser = await prisma.user.create({
-          data: {
-            email: "anonymous@ipcosy.system",
-            name: "Anonymous",
-            username: "anonymous",
-          },
-        });
-      }
 
       senderId = anonUser.id;
 
