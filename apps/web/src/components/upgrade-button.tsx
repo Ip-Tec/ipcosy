@@ -20,7 +20,7 @@ export default function UpgradeButton({
     reference: new Date().getTime().toString(),
     email: user?.email || "customer@example.com",
     amount: premiumPrice * 100,
-    publicKey: process.env.PAYSTACK_PUBLIC_KEY || "",
+    publicKey: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY || "",
     // Fallback URL for safety, though this component should only mount on client
     callback_url: `${typeof window !== "undefined" ? window.location.origin : ""}/api/callback/paystack`,
     metadata: {

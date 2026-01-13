@@ -853,6 +853,10 @@ function HomeContent() {
               </button>
             </div>
           </>
+        ) : isLoadingChats ? (
+          <div className="flex h-full items-center justify-center">
+            <Skeleton className="h-64 w-full max-w-sm rounded-[2rem]" />
+          </div>
         ) : chats.length > 0 ? (
           <div className="flex h-full flex-col items-center justify-center text-center p-8 bg-background">
             <div className="w-32 h-32 relative mb-6 opacity-30 grayscale hover:grayscale-0 transition-all duration-500">
