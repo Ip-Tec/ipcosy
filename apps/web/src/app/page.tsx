@@ -465,43 +465,100 @@ function HomeContent() {
         </div>
 
         {/* List */}
-        <div className="flex-1 overflow-y-auto">
-          {chats.map((chat) => (
-            <div
-              key={chat.id}
-              onClick={() => setSelectedChat(chat.id)}
-              className={`flex cursor-pointer items-center gap-4 p-3 mx-2 rounded-2xl transition-all ${
-                selectedChat === chat.id
-                  ? "bg-primary text-white shadow-lg"
-                  : "hover:bg-black/5 dark:hover:bg-white/5"
-              }`}
-            >
-              <div
-                className={`flex h-12 w-12 items-center justify-center rounded-full font-bold text-lg shadow-sm ${
-                  selectedChat === chat.id
-                    ? "bg-white/20"
-                    : "bg-gradient-to-br from-blue-400 to-purple-500 text-white"
-                }`}
-              >
-                {chat.name.substring(0, 2).toUpperCase()}
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex justify-between items-baseline">
-                  <h3 className="font-bold truncate">{chat.name}</h3>
-                  <span
-                    className={`text-[10px] ${selectedChat === chat.id ? "text-white/70" : "text-muted"}`}
+        <div className="flex-1 overflow-y-auto space-y-6 p-2">
+          {/* Groups Section */}
+          {chats.some((c) => c.isGroup) && (
+            <div className="space-y-1">
+              <h3 className="px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+                Groups
+              </h3>
+              {chats
+                .filter((c) => c.isGroup)
+                .map((chat) => (
+                  <div
+                    key={chat.id}
+                    onClick={() => setSelectedChat(chat.id)}
+                    className={`flex cursor-pointer items-center gap-4 p-3 mx-2 rounded-2xl transition-all ${
+                      selectedChat === chat.id
+                        ? "bg-primary text-white shadow-lg"
+                        : "hover:bg-black/5 dark:hover:bg-white/5"
+                    }`}
                   >
-                    {chat.time}
-                  </span>
-                </div>
-                <p
-                  className={`truncate text-xs ${selectedChat === chat.id ? "text-white/80" : "text-muted"}`}
-                >
-                  {chat.message}
-                </p>
-              </div>
+                    <div
+                      className={`flex h-12 w-12 items-center justify-center rounded-full font-bold text-lg shadow-sm ${
+                        selectedChat === chat.id
+                          ? "bg-white/20"
+                          : "bg-gradient-to-br from-blue-400 to-purple-500 text-white"
+                      }`}
+                    >
+                      {chat.name.substring(0, 2).toUpperCase()}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex justify-between items-baseline">
+                        <h3 className="font-bold truncate">{chat.name}</h3>
+                        <span
+                          className={`text-[10px] ${selectedChat === chat.id ? "text-white/70" : "text-muted"}`}
+                        >
+                          {chat.time}
+                        </span>
+                      </div>
+                      <p
+                        className={`truncate text-xs ${selectedChat === chat.id ? "text-white/80" : "text-muted"}`}
+                      >
+                        {chat.message}
+                      </p>
+                    </div>
+                  </div>
+                ))}
             </div>
-          ))}
+          )}
+
+          {/* Direct Messages Section */}
+          {chats.some((c) => !c.isGroup) && (
+            <div className="space-y-1">
+              <h3 className="px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+                Direct Messages
+              </h3>
+              {chats
+                .filter((c) => !c.isGroup)
+                .map((chat) => (
+                  <div
+                    key={chat.id}
+                    onClick={() => setSelectedChat(chat.id)}
+                    className={`flex cursor-pointer items-center gap-4 p-3 mx-2 rounded-2xl transition-all ${
+                      selectedChat === chat.id
+                        ? "bg-primary text-white shadow-lg"
+                        : "hover:bg-black/5 dark:hover:bg-white/5"
+                    }`}
+                  >
+                    <div
+                      className={`flex h-12 w-12 items-center justify-center rounded-full font-bold text-lg shadow-sm ${
+                        selectedChat === chat.id
+                          ? "bg-white/20"
+                          : "bg-gradient-to-br from-green-400 to-teal-500 text-white"
+                      }`}
+                    >
+                      {chat.name.substring(0, 2).toUpperCase()}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex justify-between items-baseline">
+                        <h3 className="font-bold truncate">{chat.name}</h3>
+                        <span
+                          className={`text-[10px] ${selectedChat === chat.id ? "text-white/70" : "text-muted"}`}
+                        >
+                          {chat.time}
+                        </span>
+                      </div>
+                      <p
+                        className={`truncate text-xs ${selectedChat === chat.id ? "text-white/80" : "text-muted"}`}
+                      >
+                        {chat.message}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+            </div>
+          )}
         </div>
 
         {/* Floating Action Button */}
@@ -636,11 +693,7 @@ function HomeContent() {
                       msg.sender === "me" ? "items-end" : "items-start"
                     }`}
                   >
-                    {msg.sender !== "me" && (
-                      <span className="text-[10px] font-bold text-primary mb-1 ml-2">
-                        {msg.alias || "Anonymous"}
-                      </span>
-                    )}
+                    {/* Usernames are hidden for anonymity */}
                     <div
                       className={`max-w-[85%] rounded-[18px] px-3 py-2 shadow-sm relative group overflow-hidden ${
                         msg.sender === "me"
