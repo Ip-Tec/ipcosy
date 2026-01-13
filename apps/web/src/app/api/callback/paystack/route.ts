@@ -13,6 +13,12 @@ export async function GET(req: NextRequest) {
 
   try {
     // 1. Verify Transaction with Paystack
+    console.log("Paystack Callback Triggered. Reference:", reference);
+
+    if (!process.env.PAYSTACK_SECRET_KEY) {
+      console.error("CRITICAL: PAYSTACK_SECRET_KEY is missing in callback!");
+    }
+
     const verifyRes = await fetch(
       `https://api.paystack.co/transaction/verify/${encodeURIComponent(reference)}`,
       {
@@ -24,25 +30,31 @@ export async function GET(req: NextRequest) {
 
     const verifyData = await verifyRes.json();
     console.log(
-      "Paystack verification data:",
+      "Paystack Callback Verification Response:",
       JSON.stringify(verifyData, null, 2),
     );
 
     if (verifyData.status && verifyData.data.status === "success") {
       const userId = verifyData.data.metadata?.userId;
-      console.log("Paystack metadata userId:", userId);
+      console.log("Paystack Callback Metadata userId:", userId);
+
       if (userId) {
-        await prisma.user.update({
+        const updateResult = await prisma.user.update({
           where: { id: userId },
           data: { isPremium: true },
         });
-        console.log(`User ${userId} upgraded via backup callback verification`);
+        console.log(
+          `CALLBACK ACTIVATION: User ${userId} (${updateResult.email}) upgraded.`,
+        );
       }
       return NextResponse.redirect(
         new URL("/settings?status=success", req.url),
       );
     }
 
+    console.warn(
+      "Paystack Callback: Transaction not successful according to verification API.",
+    );
     return NextResponse.redirect(
       new URL("/settings?status=processed", req.url),
     );

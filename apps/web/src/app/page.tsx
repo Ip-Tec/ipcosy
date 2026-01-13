@@ -15,8 +15,8 @@ import { useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { OnboardingModal } from "@/components/onboarding-modal";
 import { EmptyState } from "@/components/empty-state";
-import { CopyIcon, Loader2 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { SUPER_ADMIN_EMAILS } from "@/lib/constants";
 
 const MOCK_CHATS: any[] = [];
 
@@ -406,6 +406,17 @@ function HomeContent() {
               </span>
               <span className="font-medium">Settings</span>
             </Link>
+            {user?.email && SUPER_ADMIN_EMAILS.includes(user.email) && (
+              <Link
+                href="/admin"
+                className="flex items-center gap-4 p-3 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 transition-colors group"
+              >
+                <span className="text-xl group-hover:scale-110 transition-transform">
+                  🛡️
+                </span>
+                <span className="font-medium">Admin Panel</span>
+              </Link>
+            )}
             <div className="h-px bg-border my-2 mx-2" />
             <button className="cursor-pointer w-full flex items-center justify-between gap-4 p-3 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 transition-colors group text-left">
               <span className="font-medium">My Public Link</span>
