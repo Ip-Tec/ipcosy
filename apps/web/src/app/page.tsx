@@ -15,7 +15,7 @@ import { useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { OnboardingModal } from "@/components/onboarding-modal";
 import { EmptyState } from "@/components/empty-state";
-import { Copy, CopyIcon } from "lucide-react";
+import { CopyIcon } from "lucide-react";
 
 const MOCK_CHATS: any[] = [];
 
@@ -335,10 +335,10 @@ function HomeContent() {
         >
           <div className="p-6 bg-primary text-white space-y-4">
             <div className="h-16 w-16 rounded-full bg-white/20 flex items-center justify-center text-2xl font-bold border-2 border-white/30 shadow-inner">
-              {alias.substring(0, 2).toUpperCase()}
+              {user.username.substring(0, 2).toUpperCase()}
             </div>
             <div>
-              <p className="font-bold text-lg">{alias}</p>
+              <p className="font-bold text-lg">{user.username}</p>
               <p className="text-xs text-white/70">Anonymous Identity</p>
             </div>
           </div>
@@ -373,14 +373,7 @@ function HomeContent() {
               <span className="font-medium">Settings</span>
             </Link>
             <div className="h-px bg-border my-2 mx-2" />
-            <button
-              className="cursor-pointer w-full flex items-center justify-between gap-4 p-3 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 transition-colors group text-left"
-              onClick={() => {
-                const link = `${window.location.origin}/${(user?.username || session?.user?.name || "").toLowerCase().replace(/\s+/g, "")}`;
-                navigator.clipboard.writeText(link);
-                toast.success("Public message link copied!");
-              }}
-            >
+            <button className="cursor-pointer w-full flex items-center justify-between gap-4 p-3 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 transition-colors group text-left">
               <span className="font-medium">My Public Link</span>
               <span className="text-xl group-hover:scale-110 transition-transform">
                 <CopyIcon
@@ -393,15 +386,7 @@ function HomeContent() {
                 />
               </span>
             </button>
-            <button
-              className="cursor-pointer w-full flex items-center justify-between gap-4 p-3 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 transition-colors group text-left"
-              onClick={() => {
-                navigator.clipboard.writeText(
-                  window.location.origin + "?r=" + (user?.referralCode || ""),
-                );
-                toast.success("Invite link copied!");
-              }}
-            >
+            <button className="cursor-pointer w-full flex items-center justify-between gap-4 p-3 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 transition-colors group text-left">
               <span className="font-medium">Invite Friends</span>
               <span className="text-xl group-hover:scale-110 transition-transform">
                 <CopyIcon
@@ -596,7 +581,7 @@ function HomeContent() {
                 }
                 setShowCreateGroup(true);
               }}
-              className="cursor-pointer w-14 h-14 bg-primary text-white rounded-full flex items-center justify-center shadow-2xl hover:scale-110 active:scale-95 transition-all text-2xl group"
+              className="cursor-pointer w-12 h-12 bg-primary text-white rounded-full flex items-center justify-center shadow-2xl hover:scale-110 active:scale-95 transition-all text-2xl group"
               title="Create Group"
             >
               <span className="group-hover:rotate-90 transition-transform duration-300">
