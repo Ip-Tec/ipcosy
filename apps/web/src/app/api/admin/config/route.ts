@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@ipcosy/db";
+import { SUPER_ADMIN_EMAILS } from "@/lib/constants";
 
 export async function GET(req: NextRequest) {
   try {
@@ -30,7 +31,12 @@ export async function POST(req: NextRequest) {
     const session = await getServerSession(authOptions);
     const user = session?.user as any;
 
-    if (!session || !user || !user.isAdmin) {
+    if (
+      !session ||
+      !user ||
+      !user.email ||
+      !SUPER_ADMIN_EMAILS.includes(user.email)
+    ) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 

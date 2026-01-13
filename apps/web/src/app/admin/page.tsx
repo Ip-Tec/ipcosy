@@ -5,8 +5,7 @@ import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
-
-const ADMIN_EMAILS = ["iptecdev@gmail.com", "otakhorpeter@gmail.com"]; // Fallback legacy check
+import { SUPER_ADMIN_EMAILS } from "@/lib/constants";
 export default function AdminPage() {
   const { data: session, status } = useSession();
   const [price, setPrice] = useState(450);
@@ -18,8 +17,8 @@ export default function AdminPage() {
   const [isSearching, setIsSearching] = useState(false);
 
   const user = session?.user as any;
-  const isAdmin =
-    user?.isAdmin || (user?.email && ADMIN_EMAILS.includes(user.email));
+  const isSuperAdmin = user?.email && SUPER_ADMIN_EMAILS.includes(user.email);
+  const isAdmin = isSuperAdmin; // Only super admins can access the control center now
 
   useEffect(() => {
     fetch("/api/admin/config")
