@@ -152,13 +152,24 @@ function HomeContent() {
       selectedChat !== "mvp-lobby" &&
       status === "authenticated"
     ) {
+      // Fetch Chat Info
       fetch(`/api/groups/info?chatId=${selectedChat}`)
         .then((res) => res.json())
         .then((data) => {
           if (!data.error) setSelectedChatInfo(data);
         });
+
+      // Fetch Messages
+      fetch(`/api/groups/messages?chatId=${selectedChat}`)
+        .then((res) => res.json())
+        .then((data) => {
+          if (Array.isArray(data)) {
+            setMessages(data);
+          }
+        });
     } else {
       setSelectedChatInfo(null);
+      if (selectedChat !== "mvp-lobby") setMessages([]); // Clear messages if deselected
     }
   }, [selectedChat, status]);
 
@@ -835,7 +846,7 @@ function HomeContent() {
               <div className="flex gap-3">
                 <button
                   onClick={() => setShowCreateGroup(false)}
-                  className="flex-1 py-4 text-sm font-bold text-muted hover:bg-black/5 dark:hover:bg-white/5 rounded-2xl transition-colors"
+                  className="cursor-pointer flex-1 py-4 text-sm font-bold text-muted hover:bg-black/5 dark:hover:bg-white/5 rounded-2xl transition-colors"
                 >
                   Cancel
                 </button>
