@@ -1,6 +1,6 @@
 "use client";
 
-import { MessageSquare, Share2, Upload } from "lucide-react";
+import { CopyIcon, MessageSquare, Share2, Upload } from "lucide-react";
 import { toast } from "sonner";
 
 interface EmptyStateProps {
@@ -118,7 +118,7 @@ export function EmptyState({ username }: EmptyStateProps) {
                 ? handleSocialAction()
                 : window.open(s.url, "_blank")
             }
-            className={`${s.color} ${s.textColor || "text-white"} p-3 rounded-xl flex items-center justify-center gap-2 text-xs font-bold transition-transform active:scale-95 hover:opacity-90 shadow-lg`}
+            className={`${s.color} ${s.textColor || "text-white"} cursor-pointer p-3 rounded-xl flex items-center justify-center gap-2 text-xs font-bold transition-transform active:scale-95 hover:opacity-90 shadow-lg`}
           >
             {s.icon}
             {s.name}
@@ -128,6 +128,7 @@ export function EmptyState({ username }: EmptyStateProps) {
 
       <div className="p-3 bg-zinc-100 dark:bg-zinc-900 rounded-lg text-[10px] text-muted-foreground w-full break-all font-mono">
         {shareUrl}
+        <CopyIcon className="w-5 h-5" onClick={handleCopy} />
       </div>
     </div>
   );
