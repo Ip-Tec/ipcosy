@@ -11,11 +11,15 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const user = session.user as any;
-    const userId = user.id;
+    const userId = (session.user as any).id;
 
-    // 1. Checks for Creation Limits
-    const isPremium = user.isPremium;
+    // 1. Checks for Creation Limits (Fetch from DB to avoid stale session)
+    const dbUser = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { isPremium: true },
+    });
+
+    const isPremium = dbUser?.isPremium;
     if (!isPremium) {
       const createdCount = await prisma.chatParticipant.count({
         where: {

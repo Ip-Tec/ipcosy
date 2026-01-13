@@ -23,9 +23,14 @@ export async function GET(req: NextRequest) {
     );
 
     const verifyData = await verifyRes.json();
+    console.log(
+      "Paystack verification data:",
+      JSON.stringify(verifyData, null, 2),
+    );
 
     if (verifyData.status && verifyData.data.status === "success") {
       const userId = verifyData.data.metadata?.userId;
+      console.log("Paystack metadata userId:", userId);
       if (userId) {
         await prisma.user.update({
           where: { id: userId },

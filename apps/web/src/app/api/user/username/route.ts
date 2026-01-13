@@ -27,6 +27,18 @@ export async function PUT(req: Request) {
 
     const userEmail = session.user.email;
 
+    // Check premium status from DB (avoid stale session)
+    const dbUser = await prisma.user.findUnique({
+      where: { email: userEmail },
+      select: { isPremium: true },
+    });
+
+    if (!dbUser?.isPremium) {
+      return new NextResponse("Premium shortcut detected! Upgrade required.", {
+        status: 403,
+      });
+    }
+
     // Check availability
     const existing = await prisma.user.findUnique({
       where: { username },
