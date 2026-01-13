@@ -21,6 +21,9 @@ export async function POST(req: NextRequest) {
         where: {
           userId: userId,
           role: "OWNER",
+          chat: {
+            isGroup: true,
+          },
         },
       });
 
