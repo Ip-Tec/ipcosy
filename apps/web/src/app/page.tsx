@@ -374,7 +374,7 @@ function HomeContent() {
             </Link>
             <div className="h-px bg-border my-2 mx-2" />
             <button
-              className="cursor-pointer w-full flex items-center gap-4 p-3 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 transition-colors group text-left"
+              className="cursor-pointer w-full flex items-center justify-between gap-4 p-3 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 transition-colors group text-left"
               onClick={() => {
                 const link = `${window.location.origin}/${(user?.username || session?.user?.name || "").toLowerCase().replace(/\s+/g, "")}`;
                 navigator.clipboard.writeText(link);
@@ -394,7 +394,7 @@ function HomeContent() {
               </span>
             </button>
             <button
-              className="cursor-pointer w-full flex items-center gap-4 p-3 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 transition-colors group text-left"
+              className="cursor-pointer w-full flex items-center justify-between gap-4 p-3 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 transition-colors group text-left"
               onClick={() => {
                 navigator.clipboard.writeText(
                   window.location.origin + "?r=" + (user?.referralCode || ""),
