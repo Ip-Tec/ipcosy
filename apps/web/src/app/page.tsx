@@ -189,7 +189,7 @@ function HomeContent() {
         minute: "2-digit",
         hour12: false,
       }),
-      chatId: selectedChat,
+      chatId: selectedChat || undefined,
     };
 
     socketRef.current?.send(msg);
