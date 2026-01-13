@@ -9,6 +9,7 @@ FROM base AS build
 COPY . /usr/src/app
 WORKDIR /usr/src/app
 RUN pnpm install --no-frozen-lockfile
+RUN pnpm --filter @ipcosy/db db:generate
 RUN pnpm --filter @ipcosy/db build
 RUN pnpm --filter @ipcosy/ip-socket build
 RUN pnpm --filter @ipcosy/server build
