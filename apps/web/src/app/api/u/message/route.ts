@@ -103,27 +103,33 @@ export async function POST(req: Request) {
       }
     }
 
-    // Create message with metadata
-    await prisma.message.create({
-      data: {
-        content,
-        userId: senderId,
-        chatId: chatId!,
-        // Premium visible metadata
-        deviceType: metadata.deviceType,
-        deviceOS: metadata.deviceOS,
-        browser: metadata.browser,
-        city: metadata.city,
-        country: metadata.country,
-        // Admin-only metadata
-        ipAddress: metadata.ipAddress,
-        latitude: metadata.latitude,
-        longitude: metadata.longitude,
-        deviceId: metadata.deviceId,
-        browserFingerprint: metadata.browserFingerprint,
-        userAgent: metadata.userAgent,
-      },
-    });
+    // Create message with metadata and update chat timestamp
+    await prisma.$transaction([
+      prisma.message.create({
+        data: {
+          content,
+          userId: senderId,
+          chatId: chatId!,
+          // Premium visible metadata
+          deviceType: metadata.deviceType,
+          deviceOS: metadata.deviceOS,
+          browser: metadata.browser,
+          city: metadata.city,
+          country: metadata.country,
+          // Admin-only metadata
+          ipAddress: metadata.ipAddress,
+          latitude: metadata.latitude,
+          longitude: metadata.longitude,
+          deviceId: metadata.deviceId,
+          browserFingerprint: metadata.browserFingerprint,
+          userAgent: metadata.userAgent,
+        },
+      }),
+      prisma.chat.update({
+        where: { id: chatId! },
+        data: { updatedAt: new Date() },
+      }),
+    ]);
 
     return NextResponse.json({ success: true });
   } catch (error) {
