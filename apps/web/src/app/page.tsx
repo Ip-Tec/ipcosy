@@ -184,10 +184,6 @@ function HomeContent() {
   };
 
   const handleCreateGroup = async () => {
-    if (!isPremium) {
-      toast.error("Please upgrade to Premium to create groups!");
-      return;
-    }
     if (!newGroupName.trim()) return;
     try {
       const res = await fetch("/api/groups/create", {
@@ -575,10 +571,6 @@ function HomeContent() {
             {/* Create Group Button (Only if Premium, but maybe show alert if free?) */}
             <button
               onClick={() => {
-                if (!isPremium) {
-                  toast.error("Upgrade to Premium to create groups!");
-                  return;
-                }
                 setShowCreateGroup(true);
               }}
               className="cursor-pointer w-12 h-12 bg-primary text-white rounded-full flex items-center justify-center shadow-2xl hover:scale-110 active:scale-95 transition-all text-2xl group"

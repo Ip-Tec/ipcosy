@@ -39,25 +39,35 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 3. Check Join Limits for Free Users
-    const isPremium = user.isPremium;
-    if (!isPremium) {
-      const joinedCount = await prisma.chatParticipant.count({
-        where: {
-          userId: userId,
-          role: { in: ["MEMBER", "ADMIN"] }, // OWNER doesn't count towards joined? Or all do?
-        },
-      });
+    // 3. Check Member Limits based on Group Owner's Plan
+    const ownerParticipant = chat.participants.find((p) => p.role === "OWNER");
+    if (!ownerParticipant) {
+      // Should theoretically not happen if data integrity is good
+      return NextResponse.json(
+        { error: "Group has no owner" },
+        { status: 500 },
+      );
+    }
 
-      if (joinedCount >= 2) {
-        return NextResponse.json(
-          {
-            error:
-              "Free users can only join 2 groups. Upgrade to Premium for unlimited access!",
-          },
-          { status: 403 },
-        );
-      }
+    // Fetch owner's plan details
+    const owner = await prisma.user.findUnique({
+      where: { id: ownerParticipant.userId },
+      select: { isPremium: true },
+    });
+
+    const isOwnerPremium = owner?.isPremium || false;
+    const currentMemberCount = chat.participants.length;
+    const MEMBER_LIMIT = isOwnerPremium ? 100000 : 10;
+
+    if (currentMemberCount >= MEMBER_LIMIT) {
+      return NextResponse.json(
+        {
+          error: isOwnerPremium
+            ? "This group has reached its maximum capacity."
+            : "This group has reached the free limit of 10 members. The owner needs to upgrade to Premium.",
+        },
+        { status: 403 },
+      );
     }
 
     // 4. Join the Group

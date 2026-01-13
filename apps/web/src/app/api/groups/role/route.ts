@@ -41,22 +41,13 @@ export async function POST(req: NextRequest) {
     const isPremium = ownerUser.isPremium;
 
     if (!isPremium && role === "ADMIN") {
-      const adminCount = await prisma.chatParticipant.count({
-        where: {
-          chatId: chatId,
-          role: "ADMIN",
+      return NextResponse.json(
+        {
+          error:
+            "Free group owners cannot create Admins. Upgrade to Premium to manage roles!",
         },
-      });
-
-      if (adminCount >= 1) {
-        return NextResponse.json(
-          {
-            error:
-              "Free group owners can only have 1 admin. Upgrade to Premium for unlimited admins!",
-          },
-          { status: 403 },
-        );
-      }
+        { status: 403 },
+      );
     }
 
     // 3. Update target participant's role
