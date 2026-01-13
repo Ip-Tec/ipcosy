@@ -66,18 +66,35 @@ class ChatServer extends IpServer {
 
     if (payload.text || payload.fileUrl) {
       // 4. Push to Database
-      const chat = await prisma.chat.upsert({
-        where: { id: "mvp-lobby" },
-        update: {},
-        create: { id: "mvp-lobby", isGroup: true, name: "Public Lobby" },
+      let chatId = payload.chatId;
+
+      // Fallback for lobby or legacy clients
+      if (!chatId) {
+        chatId = "mvp-lobby";
+        await prisma.chat.upsert({
+          where: { id: "mvp-lobby" },
+          update: {},
+          create: { id: "mvp-lobby", isGroup: true, name: "Public Lobby" },
+        });
+      }
+
+      // Verify chat exists before saving
+      const chatExists = await prisma.chat.findUnique({
+        where: { id: chatId },
       });
+      if (!chatExists) {
+        ws.send(
+          JSON.stringify({ type: "error", message: "Chat does not exist" }),
+        );
+        return;
+      }
 
       await prisma.message.create({
         data: {
           content: payload.text || "",
           fileUrl: payload.fileUrl,
           userId: user.id,
-          chatId: chat.id,
+          chatId: chatId,
         },
       });
     }

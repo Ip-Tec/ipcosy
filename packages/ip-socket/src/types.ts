@@ -9,4 +9,5 @@ export type MessagePayload = {
 export type ServerEvent =
   | { type: "echo"; data: MessagePayload }
   | { type: "error"; message: string }
-  | { type: "typing"; visitorId: string; isTyping: boolean };
+  | { type: "typing"; visitorId: string; isTyping: boolean; chatId?: string }
+  | { type: "chat"; data: MessagePayload; chatId?: string };
