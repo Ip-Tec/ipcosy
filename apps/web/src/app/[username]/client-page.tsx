@@ -17,6 +17,7 @@ import {
   Dices,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import FingerprintJS from "@fingerprintjs/fingerprintjs";
 
 interface SuggestionCategory {
   id: string;
@@ -108,6 +109,22 @@ export default function ClientPage({
   const [message, setMessage] = useState("");
   const [isSending, setIsSending] = useState(false);
   const [showRegPopup, setShowRegPopup] = useState(false);
+  const [visitorId, setVisitorId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const initFp = async () => {
+      try {
+        const fp = await FingerprintJS.load();
+        const result = await fp.get();
+        setVisitorId(result.visitorId);
+        // Set cookie so API can read it
+        document.cookie = `ipcosy-fingerprint=${result.visitorId}; path=/; max-age=31536000`;
+      } catch (e) {
+        console.error("Fingerprint error:", e);
+      }
+    };
+    initFp();
+  }, []);
 
   useEffect(() => {
     // Increment visit only

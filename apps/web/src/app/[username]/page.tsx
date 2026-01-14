@@ -21,7 +21,7 @@ export async function generateMetadata(
     select: { name: true, image: true },
   });
 
-  const displayName = user?.name || username;
+  const displayName = username || user?.name;
   const title = `Send an anonymous message to ${displayName}`;
   const description =
     "Start an anonymous conversation. They won't know it's you unless you tell them!";

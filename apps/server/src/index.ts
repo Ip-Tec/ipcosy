@@ -23,8 +23,8 @@ class ChatServer extends IpServer {
       return;
     }
 
-    // Associate userId with the socket for targeted broadcasting
-    (ws as any).userId = visitorId;
+    // Temporarily associate visitorId with the socket
+    (ws as any).visitorId = visitorId;
 
     // 1. Handle Typing Events (requires chatId in payload)
     if (payload.type === "typing") {
@@ -86,12 +86,15 @@ class ChatServer extends IpServer {
       });
     }
 
+    // Associate the REAL database userId with the socket for correct broadcasting
+    (ws as any).userId = user.id;
+
     if (payload.text || payload.fileUrl) {
       // 4. Push to Database
       let chatId = payload.chatId;
 
       // Fallback for lobby or legacy clients
-      if (!chatId) {
+      if (!chatId || chatId === "mvp-lobby") {
         chatId = "mvp-lobby";
         await prisma.chat.upsert({
           where: { id: "mvp-lobby" },
