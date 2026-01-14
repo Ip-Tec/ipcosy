@@ -177,10 +177,10 @@ model Reaction {
   emoji     String
   
   userId    String
-  user      User     @relation(fields: [userId], references: [id])
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   
   messageId String
-  message   Message  @relation(fields: [messageId], references: [id])
+  message   Message  @relation(fields: [messageId], references: [id], onDelete: Cascade)
 
   @@unique([userId, messageId, emoji])
 }
@@ -195,11 +195,11 @@ model Notification {
   body      String?  @db.Text
   
   userId    String
-  user      User     @relation(fields: [userId], references: [id])
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   
   messageId String?
-  message   Message? @relation(fields: [messageId], references: [id])
+  message   Message? @relation(fields: [messageId], references: [id], onDelete: Cascade)
   
   chatId    String?
-  chat      Chat?    @relation(fields: [chatId], references: [id])
+  chat      Chat?    @relation(fields: [chatId], references: [id], onDelete: Cascade)
 }

@@ -156,7 +156,7 @@ export default function ClientPage({
     const random =
       ALL_SUGGESTIONS[Math.floor(Math.random() * ALL_SUGGESTIONS.length)];
     setMessage(random);
-    toast.success("Random message selected!");
+    // toast.success("Random message selected!");
   };
 
   if (!userInfo)

@@ -26,15 +26,14 @@ export async function POST(req: Request) {
       // Authenticated user sending message
       senderId = (session.user as any).id;
 
-      // Check for existing DM
+      // Check for existing DM (precisely between these two users)
       const existingChat = await prisma.chat.findFirst({
         where: {
           isGroup: false,
-          participants: {
-            every: {
-              userId: { in: [senderId, targetUserId] },
-            },
-          },
+          AND: [
+            { participants: { some: { userId: senderId } } },
+            { participants: { some: { userId: targetUserId } } },
+          ],
         },
       });
 
@@ -72,11 +71,10 @@ export async function POST(req: Request) {
       const existingChat = await prisma.chat.findFirst({
         where: {
           isGroup: false,
-          participants: {
-            every: {
-              userId: { in: [senderId, targetUserId] },
-            },
-          },
+          AND: [
+            { participants: { some: { userId: senderId } } },
+            { participants: { some: { userId: targetUserId } } },
+          ],
         },
       });
 
@@ -99,13 +97,24 @@ export async function POST(req: Request) {
       }
     }
 
+    if (!chatId) {
+      console.error("Failed to resolve chatId for message", {
+        senderId,
+        targetUserId,
+      });
+      return NextResponse.json(
+        { error: "Conversation initialization failed" },
+        { status: 500 },
+      );
+    }
+
     // Create message with metadata and update chat timestamp
     await prisma.$transaction([
       prisma.message.create({
         data: {
           content,
           userId: senderId,
-          chatId: chatId!,
+          chatId: chatId,
           // Premium visible metadata
           deviceType: metadata.deviceType,
           deviceOS: metadata.deviceOS,
@@ -122,14 +131,17 @@ export async function POST(req: Request) {
         },
       }),
       prisma.chat.update({
-        where: { id: chatId! },
+        where: { id: chatId },
         data: { updatedAt: new Date() },
       }),
     ]);
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error(error);
-    return NextResponse.json({ error: "Server error" }, { status: 500 });
+    console.error("Error in api/u/message:", error);
+    return NextResponse.json(
+      { error: "Server error", details: (error as any).message },
+      { status: 500 },
+    );
   }
 }

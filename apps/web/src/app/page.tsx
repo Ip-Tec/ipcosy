@@ -19,7 +19,7 @@ import { CopyIcon, Loader2 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SUPER_ADMIN_EMAILS } from "@/lib/constants";
 import { toPng } from "html-to-image";
-import { Share2, Download, ShieldIcon } from "lucide-react";
+import { Share2, Download, ShieldIcon, Trash2 } from "lucide-react";
 
 const MOCK_CHATS: any[] = [];
 
@@ -79,7 +79,6 @@ function AnonymousMessageCard({
               <p className="text-[10px] font-bold text-foreground">
                 To: {username}
               </p>
-              <p className="text-[8px] text-muted-foreground">{time}</p>
             </div>
           </div>
           <div className="text-right">
@@ -87,7 +86,7 @@ function AnonymousMessageCard({
               IP~COSY
             </p>
             <p className="text-[8px] text-muted-foreground uppercase tracking-widest">
-              ipcosy.com
+              {process.env.NEXT_PUBLIC_APP_URL}
             </p>
           </div>
         </div>
@@ -390,6 +389,42 @@ function HomeContent() {
       }
     } catch (e) {
       console.error(e);
+    }
+  };
+
+  const handleDeleteGroup = async () => {
+    if (!selectedChatInfo) return;
+    if (
+      !window.confirm(
+        `Are you sure you want to delete "${selectedChatInfo.name}"? This action cannot be undone.`,
+      )
+    )
+      return;
+
+    try {
+      const res = await fetch("/api/groups/delete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ chatId: selectedChat }),
+      });
+      if (res.ok) {
+        toast.success("Group deleted successfully");
+        setShowGroupSettings(false);
+        setSelectedChat(null);
+        setSelectedChatInfo(null);
+        // Refresh chats list
+        fetch("/api/groups/list")
+          .then((res) => res.json())
+          .then((data) => {
+            if (!data.error) setChats(data);
+          });
+      } else {
+        const data = await res.json();
+        toast.error(data.error || "Failed to delete group");
+      }
+    } catch (e) {
+      console.error(e);
+      toast.error("An error occurred while deleting the group");
     }
   };
 
@@ -1196,6 +1231,15 @@ function HomeContent() {
                     className="cursor-pointer text-xs bg-primary text-white px-3 py-1.5 rounded-lg font-bold hover:opacity-90"
                   >
                     Copy
+                  </button>
+                </div>
+                <div className="pt-4 border-t border-border">
+                  <button
+                    onClick={handleDeleteGroup}
+                    className="cursor-pointer w-full flex items-center justify-center gap-2 py-3 text-xs font-bold text-red-500 bg-red-500/10 hover:bg-red-500/20 rounded-xl transition-all"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    Delete Group Permanently
                   </button>
                 </div>
               </div>
