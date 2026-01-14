@@ -23,6 +23,7 @@ interface ChatViewProps {
   alias: string;
   scrollRef: any;
   chats: any[];
+  isLoadingChats: boolean;
 }
 
 export function ChatView({
@@ -42,6 +43,7 @@ export function ChatView({
   alias,
   scrollRef,
   chats,
+  isLoadingChats,
 }: ChatViewProps) {
   const currentChat = chats.find((c) => c.id === selectedChat);
 
@@ -286,7 +288,7 @@ export function ChatView({
             </button>
           </div>
         </>
-      ) : isLoadingMessages ? (
+      ) : isLoadingMessages || isLoadingChats ? (
         <div className="flex h-full items-center justify-center">
           <Skeleton className="h-64 w-full max-w-sm rounded-[2rem]" />
         </div>

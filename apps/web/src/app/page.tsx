@@ -431,6 +431,7 @@ function HomeContent() {
         alias={alias}
         scrollRef={scrollRef}
         chats={chats}
+        isLoadingChats={isLoadingChats}
       />
 
       <CreateGroupModal

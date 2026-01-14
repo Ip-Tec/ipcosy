@@ -50,7 +50,11 @@ export function Sidebar({
         >
           <div className="p-6 bg-primary text-white space-y-4">
             <div className="h-16 w-16 rounded-full bg-white/20 flex items-center justify-center text-2xl font-bold border-2 border-white/30 shadow-inner">
-              {user?.username?.substring(0, 2).toUpperCase() || "IP"}
+              {user?.image ? (
+                <Image src={user?.image} alt="Avatar" width={64} height={64} />
+              ) : (
+                user?.username?.substring(0, 2).toUpperCase()
+              )}
             </div>
             <div>
               <p className="font-bold text-lg">
@@ -130,7 +134,7 @@ export function Sidebar({
             </button>
           </nav>
           <div className="absolute bottom-4 left-0 w-full text-center text-[10px] text-muted">
-            IPCosy Desktop {APP_VERSION}
+            Ip~Cosy WebApp {APP_VERSION}
           </div>
         </div>
       </div>
@@ -140,7 +144,7 @@ export function Sidebar({
         className={`w-full md:w-[350px] lg:w-[400px] flex-col bg-sidebar border-r border-border h-full ${
           selectedChat
             ? "hidden md:flex"
-            : chats.length === 0
+            : chats.length === 0 && !isLoadingChats
               ? "hidden md:flex"
               : "flex"
         }`}
