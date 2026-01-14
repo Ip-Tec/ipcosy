@@ -117,7 +117,7 @@ function HomeContent() {
       initFp();
     }
 
-    if (status === "authenticated") {
+    const fetchChats = () => {
       setIsLoadingChats(true);
       fetch("/api/groups/list")
         .then((res) => res.json())
@@ -125,6 +125,10 @@ function HomeContent() {
           if (Array.isArray(data)) setChats(data);
         })
         .finally(() => setIsLoadingChats(false));
+    };
+
+    if (status === "authenticated") {
+      fetchChats();
     }
 
     let wsUrl = process.env.NEXT_PUBLIC_WS_URL;
@@ -167,9 +171,17 @@ function HomeContent() {
               sender: payload.data.visitorId === visitorId ? "me" : "them",
             },
           ]);
+        } else if (
+          payload.data.visitorId === visitorId &&
+          payload.data.isAnonymous
+        ) {
+          // Message was re-routed to an anonymous chat!
+          setSelectedChat(msgChatId);
+          fetchChats();
         } else if (payload.data.visitorId !== visitorId) {
           // Message in another chat - show notification
           showNotification(payload.data);
+          fetchChats();
         }
       } else if (payload.type === "typing") {
         const typingChatId = payload.chatId || "mvp-lobby";
