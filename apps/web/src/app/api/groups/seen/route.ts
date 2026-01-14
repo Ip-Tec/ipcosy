@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
       },
       data: {
         lastSeenAt: new Date(),
-      },
+      } as any,
     });
 
     return NextResponse.json({ success: true });

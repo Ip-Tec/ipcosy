@@ -35,7 +35,7 @@ export async function GET(req: NextRequest) {
         const unreadCount = await prisma.message.count({
           where: {
             chatId: p.chat.id,
-            createdAt: { gt: p.lastSeenAt },
+            createdAt: { gt: (p as any).lastSeenAt },
             userId: { not: userId }, // Don't count own messages
           },
         });
@@ -52,7 +52,7 @@ export async function GET(req: NextRequest) {
               })
             : "",
           unread: unreadCount,
-          lastSeenAt: p.lastSeenAt,
+          lastSeenAt: (p as any).lastSeenAt,
         };
       }),
     );
