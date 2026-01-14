@@ -32,14 +32,14 @@ export async function generateMetadata(
     openGraph: {
       title: title,
       description: description,
-      images: ["/logo.png", ...(user?.image ? [user.image] : [])],
+      images: ["./logo.png", ...(user?.image ? [user.image] : [])],
       type: "profile",
     },
     twitter: {
       card: "summary_large_image",
       title: title,
       description: description,
-      images: ["/logo.png", ...(user?.image ? [user.image] : [])],
+      images: ["./logo.png", ...(user?.image ? [user.image] : [])],
     },
   };
 }

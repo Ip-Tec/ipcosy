@@ -222,6 +222,19 @@ class ChatServer extends IpServer {
 }
 
 const port = Number(process.env.PORT) || 8080;
+
+// Pre-flight check for Render/Deployment
+if (!process.env.DATABASE_URL) {
+  console.error(
+    "CRITICAL ERROR: DATABASE_URL environment variable is missing.",
+  );
+  console.error(
+    "Please add DATABASE_URL to your environment variables on Render.",
+  );
+  process.exit(1);
+}
+
 const server = new ChatServer(port);
 
 console.log(`WebSocket server started on port ${port} using IpServer engine`);
+console.log(`Database connected successfully (Pre-flight)`);
