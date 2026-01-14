@@ -24,6 +24,7 @@ interface ChatViewProps {
   scrollRef: any;
   chats: any[];
   isLoadingChats: boolean;
+  currentChat?: any;
 }
 
 export function ChatView({
