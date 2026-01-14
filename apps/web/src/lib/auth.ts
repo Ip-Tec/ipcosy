@@ -87,9 +87,7 @@ export const authOptions: NextAuthOptions = {
   },
   events: {
     async createUser({ user }) {
-      // Generate initial username and referral code
-      const baseName = user.name?.toLowerCase().replace(/\s+/g, "") || "user";
-      const username = `${baseName}-${nanoid(4)}`;
+      // Don't generate username automatically - user will choose during onboarding
       const referralCode = nanoid(10);
 
       const cookieStore = await cookies();
@@ -107,7 +105,7 @@ export const authOptions: NextAuthOptions = {
       await prisma.user.update({
         where: { id: user.id },
         data: {
-          username,
+          // username is null - user must set it via onboarding
           referralCode,
           referredById,
           registrationFingerprint: fingerprint,

@@ -59,6 +59,22 @@ function HomeContent() {
   const socketRef = useRef<IpSocket | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
+  const showNotification = (messageData: any) => {
+    if ("Notification" in window && Notification.permission === "granted") {
+      const notification = new Notification("IP~Cosy", {
+        body: messageData.text || "You have a new message",
+        icon: "/logo.png",
+        tag: messageData.chatId, // Prevent duplicate notifications for same chat
+      });
+
+      notification.onclick = () => {
+        window.focus();
+        setSelectedChat(messageData.chatId);
+        notification.close();
+      };
+    }
+  };
+
   const user = dbUser || (session?.user as any);
   const isPremium = user?.isPremium;
   const alias = user?.username || "Anonymous";
@@ -135,6 +151,9 @@ function HomeContent() {
               sender: payload.data.visitorId === visitorId ? "me" : "them",
             },
           ]);
+        } else if (payload.data.visitorId !== visitorId) {
+          // Message in another chat - show notification
+          showNotification(payload.data);
         }
       } else if (payload.type === "typing") {
         const typingChatId = payload.chatId || "mvp-lobby";

@@ -1,8 +1,9 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { CopyIcon } from "lucide-react";
+import { CopyIcon, Users, MessageCircle, LogOut } from "lucide-react";
 import { toast } from "sonner";
 import { signOut } from "next-auth/react";
 import { APP_VERSION, SUPER_ADMIN_EMAILS } from "@/lib/constants";
@@ -36,6 +37,12 @@ export function Sidebar({
   setShowCreateGroup,
   isPremium,
 }: SidebarProps) {
+  const [activeTab, setActiveTab] = useState<"groups" | "dms">("groups");
+
+  const groupChats = chats.filter((c) => c.isGroup);
+  const dmChats = chats.filter((c) => !c.isGroup);
+  const displayChats = activeTab === "groups" ? groupChats : dmChats;
+
   return (
     <>
       {/* Sidebar Menu Drawer */}
@@ -152,17 +159,19 @@ export function Sidebar({
                 <CopyIcon className="w-5 h-5" />
               </span>
             </button>
+          </nav>
+
+          {/* Logout at bottom */}
+          <div className="absolute bottom-16 left-0 w-full px-2">
             <div className="h-px bg-border my-2 mx-2" />
             <button
               onClick={() => signOut()}
               className="cursor-pointer w-full flex items-center gap-4 p-3 rounded-xl hover:bg-red-500/10 text-red-500 transition-colors group"
             >
-              <span className="text-xl group-hover:scale-110 transition-transform">
-                🚪
-              </span>
+              <LogOut className="w-5 h-5 group-hover:scale-110 transition-transform" />
               <span className="font-medium">Logout</span>
             </button>
-          </nav>
+          </div>
           <div className="absolute bottom-4 left-0 w-full text-center text-[10px] text-muted">
             Ip~Cosy WebApp {APP_VERSION}
           </div>
@@ -209,113 +218,121 @@ export function Sidebar({
           </div>
         </div>
 
-        {/* List */}
-        <div className="flex-1 overflow-y-auto space-y-6 p-2">
-          {/* Groups Section */}
-          {chats.some((c) => c.isGroup) && (
-            <div className="space-y-1">
-              <h3 className="px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
-                Groups
-              </h3>
-              {chats
-                .filter((c) => c.isGroup)
-                .map((chat) => (
-                  <div
-                    key={chat.id}
-                    onClick={() => setSelectedChat(chat.id)}
-                    className={`flex cursor-pointer items-center gap-4 p-3 mx-2 rounded-2xl transition-all ${
-                      selectedChat === chat.id
-                        ? "bg-primary text-white shadow-lg"
-                        : "hover:bg-black/5 dark:hover:bg-white/5"
-                    }`}
-                  >
-                    <div
-                      className={`flex h-12 w-12 items-center justify-center rounded-full font-bold text-lg shadow-sm ${
-                        selectedChat === chat.id
-                          ? "bg-white/20"
-                          : "bg-gradient-to-br from-blue-400 to-purple-500 text-white"
-                      }`}
-                    >
-                      {chat.name.substring(0, 2).toUpperCase()}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex justify-between items-baseline">
-                        <h3 className="font-bold truncate">{chat.name}</h3>
-                        <div className="flex flex-col items-end gap-1">
-                          <span
-                            className={`text-[10px] ${selectedChat === chat.id ? "text-white/70" : "text-muted"}`}
-                          >
-                            {chat.time}
-                          </span>
-                          {chat.unread > 0 && selectedChat !== chat.id && (
-                            <span className="bg-white text-primary text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center shadow-sm">
-                              {chat.unread}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                      <p
-                        className={`truncate text-xs ${selectedChat === chat.id ? "text-white/80" : "text-muted"}`}
-                      >
-                        {chat.message}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-            </div>
-          )}
+        {/* Tab Switcher */}
+        <div className="flex gap-2 p-2 bg-background/50 mx-2 rounded-xl mb-2">
+          <button
+            onClick={() => setActiveTab("groups")}
+            className={`flex-1 py-2.5 px-4 rounded-lg font-medium text-sm transition-all flex items-center justify-center gap-2 ${
+              activeTab === "groups"
+                ? "bg-primary text-white shadow-sm"
+                : "hover:bg-black/5 dark:hover:bg-white/5 text-muted-foreground"
+            }`}
+          >
+            <Users className="w-4 h-4" />
+            <span>Groups</span>
+            {groupChats.length > 0 && (
+              <span
+                className={`px-1.5 py-0.5 rounded-full text-xs font-bold ${
+                  activeTab === "groups"
+                    ? "bg-white/20 text-white"
+                    : "bg-primary/10 text-primary"
+                }`}
+              >
+                {groupChats.length}
+              </span>
+            )}
+          </button>
+          <button
+            onClick={() => setActiveTab("dms")}
+            className={`flex-1 py-2.5 px-4 rounded-lg font-medium text-sm transition-all flex items-center justify-center gap-2 ${
+              activeTab === "dms"
+                ? "bg-primary text-white shadow-sm"
+                : "hover:bg-black/5 dark:hover:bg-white/5 text-muted-foreground"
+            }`}
+          >
+            <MessageCircle className="w-4 h-4" />
+            <span>Direct</span>
+            {dmChats.length > 0 && (
+              <span
+                className={`px-1.5 py-0.5 rounded-full text-xs font-bold ${
+                  activeTab === "dms"
+                    ? "bg-white/20 text-white"
+                    : "bg-primary/10 text-primary"
+                }`}
+              >
+                {dmChats.length}
+              </span>
+            )}
+          </button>
+        </div>
 
-          {/* Direct Messages Section */}
-          {chats.some((c) => !c.isGroup) && (
-            <div className="space-y-1">
-              <h3 className="px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
-                Direct Messages
-              </h3>
-              {chats
-                .filter((c) => !c.isGroup)
-                .map((chat) => (
-                  <div
-                    key={chat.id}
-                    onClick={() => setSelectedChat(chat.id)}
-                    className={`flex cursor-pointer items-center gap-4 p-3 mx-2 rounded-2xl transition-all ${
-                      selectedChat === chat.id
-                        ? "bg-primary text-white shadow-lg"
-                        : "hover:bg-black/5 dark:hover:bg-white/5"
-                    }`}
-                  >
-                    <div
-                      className={`flex h-12 w-12 items-center justify-center rounded-full font-bold text-lg shadow-sm ${
-                        selectedChat === chat.id
-                          ? "bg-white/20"
-                          : "bg-gradient-to-br from-green-400 to-teal-500 text-white"
-                      }`}
+        {/* List */}
+        <div className="flex-1 overflow-y-auto space-y-1 p-2">
+          {/* Display chats based on active tab */}
+          {displayChats.map((chat) => (
+            <div
+              key={chat.id}
+              onClick={() => setSelectedChat(chat.id)}
+              className={`flex cursor-pointer items-center gap-4 p-3 mx-2 rounded-2xl transition-all ${
+                selectedChat === chat.id
+                  ? "bg-primary text-white shadow-lg"
+                  : "hover:bg-black/5 dark:hover:bg-white/5"
+              }`}
+            >
+              <div
+                className={`flex h-12 w-12 items-center justify-center rounded-full font-bold text-lg shadow-sm ${
+                  selectedChat === chat.id
+                    ? "bg-white/20"
+                    : chat.isGroup
+                      ? "bg-gradient-to-br from-blue-400 to-purple-500 text-white"
+                      : "bg-gradient-to-br from-green-400 to-teal-500 text-white"
+                }`}
+              >
+                {chat.name.substring(0, 2).toUpperCase()}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex justify-between items-baseline">
+                  <h3 className="font-bold truncate">{chat.name}</h3>
+                  <div className="flex flex-col items-end gap-1">
+                    <span
+                      className={`text-[10px] ${selectedChat === chat.id ? "text-white/70" : "text-muted"}`}
                     >
-                      {chat.name.substring(0, 2).toUpperCase()}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex justify-between items-baseline">
-                        <h3 className="font-bold truncate">{chat.name}</h3>
-                        <div className="flex flex-col items-end gap-1">
-                          <span
-                            className={`text-[10px] ${selectedChat === chat.id ? "text-white/70" : "text-muted"}`}
-                          >
-                            {chat.time}
-                          </span>
-                          {chat.unread > 0 && selectedChat !== chat.id && (
-                            <span className="bg-white text-primary text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center shadow-sm">
-                              {chat.unread}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                      <p
-                        className={`truncate text-xs ${selectedChat === chat.id ? "text-white/80" : "text-muted"}`}
-                      >
-                        {chat.message}
-                      </p>
-                    </div>
+                      {chat.time}
+                    </span>
+                    {chat.unread > 0 && selectedChat !== chat.id && (
+                      <span className="bg-white text-primary text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center shadow-sm">
+                        {chat.unread}
+                      </span>
+                    )}
                   </div>
-                ))}
+                </div>
+                <p
+                  className={`truncate text-xs ${selectedChat === chat.id ? "text-white/80" : "text-muted"}`}
+                >
+                  {chat.message}
+                </p>
+              </div>
+            </div>
+          ))}
+
+          {/* Empty state */}
+          {!isLoadingChats && displayChats.length === 0 && (
+            <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
+              <div className="w-16 h-16 rounded-full bg-muted/20 flex items-center justify-center mb-4">
+                {activeTab === "groups" ? (
+                  <Users className="w-8 h-8 text-muted-foreground" />
+                ) : (
+                  <MessageCircle className="w-8 h-8 text-muted-foreground" />
+                )}
+              </div>
+              <h3 className="font-bold text-sm mb-1">
+                No {activeTab === "groups" ? "Groups" : "Direct Messages"}
+              </h3>
+              <p className="text-xs text-muted-foreground">
+                {activeTab === "groups"
+                  ? "Create or join a group to get started"
+                  : "Start a conversation to see it here"}
+              </p>
             </div>
           )}
 

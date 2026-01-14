@@ -27,16 +27,23 @@ export async function PUT(req: Request) {
 
     const userEmail = session.user.email;
 
-    // Check premium status from DB (avoid stale session)
+    // Get current user data
     const dbUser = await prisma.user.findUnique({
       where: { email: userEmail },
-      select: { isPremium: true },
+      select: { isPremium: true, username: true },
     });
 
-    if (!dbUser?.isPremium) {
-      return new NextResponse("Premium shortcut detected! Upgrade required.", {
-        status: 403,
-      });
+    if (!dbUser) {
+      return new NextResponse("User not found", { status: 404 });
+    }
+
+    // Allow initial username setup for all users (onboarding)
+    // Only require premium for username changes
+    if (dbUser.username && !dbUser.isPremium) {
+      return new NextResponse(
+        "Changing username requires premium. Upgrade to customize your username.",
+        { status: 403 },
+      );
     }
 
     // Check availability

@@ -8,6 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { UploadButton } from "../../utils/uploadthing";
 import { AnonymousMessageCard } from "./anonymous-message-card";
 import { EmptyState } from "@/components/empty-state";
+import { DeleteMessageModal } from "./modals/delete-message-modal";
 
 interface ChatViewProps {
   selectedChat: string | null;
@@ -52,24 +53,30 @@ export function ChatView({
   setMessages,
 }: ChatViewProps) {
   const currentChat = chats.find((c) => c.id === selectedChat);
-  const [deletingMessageId, setDeletingMessageId] = useState<string | null>(
-    null,
-  );
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [messageToDelete, setMessageToDelete] = useState<string | null>(null);
 
-  const handleDeleteMessage = async (messageId: string) => {
-    if (!confirm("Are you sure you want to delete this message?")) return;
+  const handleDeleteClick = (messageId: string) => {
+    setMessageToDelete(messageId);
+    setShowDeleteModal(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!messageToDelete) return;
+    setShowDeleteModal(false);
 
     try {
       const res = await fetch("/api/messages/delete", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messageId }),
+        body: JSON.stringify({ messageId: messageToDelete }),
       });
 
       if (res.ok) {
         // Remove message from local state immediately
-        setMessages((prev) => prev.filter((m) => m.id !== messageId));
+        setMessages((prev) => prev.filter((m) => m.id !== messageToDelete));
         toast.success("Message deleted");
+        setMessageToDelete(null);
       } else {
         const data = await res.json();
         toast.error(data.error || "Failed to delete message");
@@ -280,7 +287,7 @@ export function ChatView({
                           {/* Delete button - only for own messages */}
                           {msg.sender === "me" && msg.id && (
                             <button
-                              onClick={() => handleDeleteMessage(msg.id)}
+                              onClick={() => handleDeleteClick(msg.id)}
                               className="absolute -top-2 -right-2 opacity-0 group-hover:opacity-100 transition-opacity bg-red-500 hover:bg-red-600 text-white rounded-full p-1.5 shadow-lg"
                               title="Delete message"
                             >
@@ -386,6 +393,16 @@ export function ChatView({
       ) : (
         <EmptyState username={alias} />
       )}
+
+      {/* Delete Message Modal */}
+      <DeleteMessageModal
+        show={showDeleteModal}
+        onConfirm={handleConfirmDelete}
+        onCancel={() => {
+          setShowDeleteModal(false);
+          setMessageToDelete(null);
+        }}
+      />
     </div>
   );
 }

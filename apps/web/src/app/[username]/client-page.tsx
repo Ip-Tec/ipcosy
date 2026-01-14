@@ -238,7 +238,7 @@ export default function ClientPage({
         {/* Footer */}
         <div className="text-center space-y-2 pb-8">
           <p className="text-[10px] text-muted font-bold uppercase tracking-[0.2em]">
-            Powered by IP~Cosy
+            Powered by IP~Tec
           </p>
           <p className="text-[10px] text-muted-foreground italic flex items-center justify-center gap-1">
             <ShieldCheck className="w-3 h-3" /> End-to-end anonymous encryption

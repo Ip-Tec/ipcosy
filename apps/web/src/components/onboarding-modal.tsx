@@ -23,11 +23,8 @@ export function OnboardingModal({
   const router = useRouter();
 
   useEffect(() => {
-    // Check if username is default (user-xxxx) or missing
-    // Also trigger if "name" is generic "User" or similar if we want, but sticking to username check
-    const isDefaultUsername =
-      !user.username || user.username.startsWith("user-");
-    if (forceOpen || isDefaultUsername) {
+    // Show modal if user has no username
+    if (forceOpen || !user.username) {
       setIsOpen(true);
       setUsername(user.username || "");
     }
