@@ -228,6 +228,7 @@ function HomeContent() {
   const [joinCodeInput, setJoinCodeInput] = useState("");
   const [chats, setChats] = useState<any[]>([]);
   const [selectedChatInfo, setSelectedChatInfo] = useState<any>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const selectedChatRef = useRef<string | null>(null);
 
   useEffect(() => {
@@ -492,14 +493,12 @@ function HomeContent() {
   };
 
   const handleDeleteGroup = async () => {
-    if (!selectedChatInfo) return;
-    if (
-      !window.confirm(
-        `Are you sure you want to delete "${selectedChatInfo.name}"? This action cannot be undone.`,
-      )
-    )
-      return;
+    setShowDeleteConfirm(true);
+  };
 
+  const confirmDeleteGroup = async () => {
+    if (!selectedChatInfo) return;
+    setIsCreatingGroup(true); // Using this as a general loading state for simplicity
     try {
       const res = await fetch("/api/groups/delete", {
         method: "POST",
@@ -508,6 +507,7 @@ function HomeContent() {
       });
       if (res.ok) {
         toast.success("Group deleted successfully");
+        setShowDeleteConfirm(false);
         setShowGroupSettings(false);
         setSelectedChat(null);
         setSelectedChatInfo(null);
@@ -515,7 +515,7 @@ function HomeContent() {
         fetch("/api/groups/list")
           .then((res) => res.json())
           .then((data) => {
-            if (!data.error) setChats(data);
+            if (Array.isArray(data)) setChats(data);
           });
       } else {
         const data = await res.json();
@@ -524,6 +524,8 @@ function HomeContent() {
     } catch (e) {
       console.error(e);
       toast.error("An error occurred while deleting the group");
+    } finally {
+      setIsCreatingGroup(false);
     }
   };
 
@@ -1384,6 +1386,49 @@ function HomeContent() {
             >
               Close
             </button>
+          </div>
+        </div>
+      )}
+      {/* Delete Group Confirmation Modal */}
+      {showDeleteConfirm && selectedChatInfo && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/70 backdrop-blur-md p-4 animate-in fade-in duration-300">
+          <div className="bg-sidebar w-full max-w-sm rounded-[2.5rem] border border-red-500/20 p-10 shadow-3xl space-y-8 animate-in zoom-in duration-300 text-center">
+            <div className="w-20 h-20 bg-red-500/10 rounded-full flex items-center justify-center mx-auto text-red-500">
+              <Trash2 className="w-10 h-10" />
+            </div>
+            <div className="space-y-2">
+              <h2 className="text-2xl font-black text-foreground">
+                Delete Group?
+              </h2>
+              <p className="text-sm text-muted px-2">
+                Are you sure you want to permanently delete{" "}
+                <span className="font-bold text-foreground">
+                  "{selectedChatInfo.name}"
+                </span>
+                ? All messages and members will be removed. This action is
+                irreversible.
+              </p>
+            </div>
+            <div className="flex flex-col gap-3 pt-2">
+              <button
+                onClick={confirmDeleteGroup}
+                disabled={isCreatingGroup}
+                className="cursor-pointer w-full py-5 text-sm font-bold bg-red-500 text-white rounded-[1.5rem] shadow-lg shadow-red-500/20 hover:opacity-90 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+              >
+                {isCreatingGroup && (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                )}
+                <span>
+                  {isCreatingGroup ? "Deleting..." : "Delete Permanently"}
+                </span>
+              </button>
+              <button
+                onClick={() => setShowDeleteConfirm(false)}
+                className="cursor-pointer w-full py-5 text-sm font-bold text-muted hover:bg-black/5 dark:hover:bg-white/5 rounded-[1.5rem] transition-colors"
+              >
+                Go Back
+              </button>
+            </div>
           </div>
         </div>
       )}
