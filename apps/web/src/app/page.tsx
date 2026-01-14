@@ -18,8 +18,91 @@ import { EmptyState } from "@/components/empty-state";
 import { CopyIcon, Loader2 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SUPER_ADMIN_EMAILS } from "@/lib/constants";
+import { toPng } from "html-to-image";
+import { Share2, Download, ShieldIcon } from "lucide-react";
 
 const MOCK_CHATS: any[] = [];
+
+function AnonymousMessageCard({
+  content,
+  time,
+  username,
+}: {
+  content: string;
+  time: string;
+  username: string;
+}) {
+  const cardRef = useRef<HTMLDivElement>(null);
+
+  const downloadCard = async () => {
+    if (cardRef.current === null) return;
+    try {
+      const dataUrl = await toPng(cardRef.current, { cacheBust: true });
+      const link = document.createElement("a");
+      link.download = `ipcosy-message-${Date.now()}.png`;
+      link.href = dataUrl;
+      link.click();
+      toast.success("Card downloaded!");
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to download image");
+    }
+  };
+
+  return (
+    <div className="flex flex-col items-center gap-3 w-full max-w-sm mx-auto">
+      <div
+        ref={cardRef}
+        className="w-full bg-gradient-to-br from-primary/10 via-background to-purple-500/10 border-2 border-primary/20 rounded-[2.5rem] p-8 shadow-2xl space-y-6 relative overflow-hidden"
+      >
+        {/* Decorative elements */}
+        <div className="absolute -top-10 -right-10 w-32 h-32 bg-primary/5 rounded-full blur-3xl"></div>
+        <div className="absolute -bottom-10 -left-10 w-32 h-32 bg-purple-500/5 rounded-full blur-3xl"></div>
+
+        <div className="flex justify-between items-start relative z-10">
+          <div className="bg-primary/10 px-3 py-1 rounded-full text-[10px] font-black text-primary uppercase tracking-widest">
+            Anonymous Message
+          </div>
+          <ShieldIcon className="w-5 h-5 text-primary opacity-50" />
+        </div>
+
+        <p className="text-lg font-bold leading-relaxed text-foreground italic relative z-10 py-4">
+          "{content}"
+        </p>
+
+        <div className="flex items-center justify-between pt-4 border-t border-primary/10 relative z-10">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white text-[10px] font-bold">
+              IP
+            </div>
+            <div>
+              <p className="text-[10px] font-bold text-foreground">
+                To: {username}
+              </p>
+              <p className="text-[8px] text-muted-foreground">{time}</p>
+            </div>
+          </div>
+          <div className="text-right">
+            <p className="text-[10px] font-black text-primary tracking-tighter">
+              IP~COSY
+            </p>
+            <p className="text-[8px] text-muted-foreground uppercase tracking-widest">
+              ipcosy.com
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <button
+        onClick={downloadCard}
+        className="flex items-center gap-2 bg-primary/10 hover:bg-primary/20 text-primary px-4 py-2 rounded-full text-xs font-bold transition-all active:scale-95"
+      >
+        <Download className="w-4 h-4" />
+        Download & Share Card
+      </button>
+    </div>
+  );
+}
 
 export default function Home() {
   return (
@@ -47,6 +130,12 @@ function HomeContent() {
   const [joinCodeInput, setJoinCodeInput] = useState("");
   const [chats, setChats] = useState<any[]>([]);
   const [selectedChatInfo, setSelectedChatInfo] = useState<any>(null);
+  const selectedChatRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    selectedChatRef.current = selectedChat;
+  }, [selectedChat]);
+
   const [dbUser, setDbUser] = useState<any>(null);
   const [isLoadingChats, setIsLoadingChats] = useState(false);
   const [isLoadingMessages, setIsLoadingMessages] = useState(false);
@@ -74,6 +163,13 @@ function HomeContent() {
     const ref = searchParams.get("r");
     if (ref) {
       localStorage.setItem("ipcosy-referral", ref);
+    }
+
+    // Check for join code in URL
+    const jc = searchParams.get("join");
+    if (jc) {
+      setJoinCodeInput(jc.toUpperCase());
+      setShowJoinGroup(true);
     }
 
     if (status === "authenticated" && session.user) {
@@ -131,17 +227,25 @@ function HomeContent() {
 
     socketRef.current.on("message", (payload: any) => {
       if (payload.type === "echo") {
-        setMessages((prev) => [
-          ...prev,
-          {
-            ...payload.data,
-            sender: payload.data.visitorId === visitorId ? "me" : "them",
-          },
-        ]);
+        const msgChatId = payload.data.chatId || "mvp-lobby";
+        const currentChatId = selectedChatRef.current || "mvp-lobby";
+
+        if (msgChatId === currentChatId) {
+          setMessages((prev) => [
+            ...prev,
+            {
+              ...payload.data,
+              sender: payload.data.visitorId === visitorId ? "me" : "them",
+            },
+          ]);
+        }
       } else if (payload.type === "error") {
         console.error(payload.message);
       } else if (payload.type === "typing") {
-        if (payload.visitorId !== visitorId) {
+        const typingChatId = payload.chatId || "mvp-lobby";
+        const currentChatId = selectedChatRef.current || "mvp-lobby";
+
+        if (typingChatId === currentChatId && payload.visitorId !== visitorId) {
           setTypingUser(payload.isTyping ? "Someone" : null);
         }
       }
@@ -277,6 +381,31 @@ function HomeContent() {
       });
       if (res.ok) {
         toast.success("User promoted to Admin!");
+        // Refresh info
+        fetch(`/api/groups/info?chatId=${selectedChat}`)
+          .then((res) => res.json())
+          .then((data) => {
+            if (!data.error) setSelectedChatInfo(data);
+          });
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const handleToggleJoinCodePrivacy = async () => {
+    try {
+      const newVal = !selectedChatInfo.isJoinCodePrivate;
+      const res = await fetch("/api/groups/settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          chatId: selectedChat,
+          isJoinCodePrivate: newVal,
+        }),
+      });
+      if (res.ok) {
+        toast.success(`Join code is now ${newVal ? "private" : "public"}`);
         // Refresh info
         fetch(`/api/groups/info?chatId=${selectedChat}`)
           .then((res) => res.json())
@@ -745,60 +874,82 @@ function HomeContent() {
                   </div>
                 )}
 
-                {messages.map((msg, idx) => (
-                  <div
-                    key={idx}
-                    className={`flex flex-col ${
-                      msg.sender === "me" ? "items-end" : "items-start"
-                    }`}
-                  >
-                    {/* Usernames are hidden for anonymity */}
+                {messages.map((msg, idx) => {
+                  const isAnonymousMessage =
+                    msg.sender === "them" &&
+                    selectedChatInfo?.name === "Anonymous Messages";
+
+                  if (isAnonymousMessage) {
+                    return (
+                      <div key={idx} className="flex justify-start w-full mb-4">
+                        <AnonymousMessageCard
+                          content={msg.text}
+                          time={msg.time}
+                          username={user.username}
+                        />
+                      </div>
+                    );
+                  }
+
+                  return (
                     <div
-                      className={`max-w-[85%] rounded-[18px] px-3 py-2 shadow-sm relative group overflow-hidden ${
-                        msg.sender === "me"
-                          ? "bg-bubble-out text-bubble-out-text rounded-tr-[4px]"
-                          : "bg-bubble-in text-bubble-in-text rounded-tl-[4px]"
+                      key={idx}
+                      className={`flex flex-col ${
+                        msg.sender === "me" ? "items-end" : "items-start"
                       }`}
                     >
-                      {msg.fileUrl && (
-                        <div className="mb-2 -mx-1 -mt-1 overflow-hidden rounded-lg">
-                          {msg.fileUrl.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? (
-                            <img
-                              src={msg.fileUrl}
-                              alt="shared"
-                              className="max-h-[300px] w-full object-cover"
-                              onClick={() => window.open(msg.fileUrl)}
-                            />
-                          ) : (
-                            <div className="flex items-center gap-3 p-3 bg-black/5 dark:bg-white/10 rounded-lg">
-                              <div className="h-10 w-10 bg-primary/20 rounded-full flex items-center justify-center text-xl">
-                                📄
+                      {/* Usernames are hidden for anonymity */}
+                      <div
+                        className={`max-w-[85%] rounded-[18px] px-3 py-2 shadow-sm relative group overflow-hidden ${
+                          msg.sender === "me"
+                            ? "bg-bubble-out text-bubble-out-text rounded-tr-[4px]"
+                            : "bg-bubble-in text-bubble-in-text rounded-tl-[4px]"
+                        }`}
+                      >
+                        {msg.fileUrl && (
+                          <div className="mb-2 -mx-1 -mt-1 overflow-hidden rounded-lg">
+                            {msg.fileUrl.match(
+                              /\.(jpg|jpeg|png|gif|webp)$/i,
+                            ) ? (
+                              <img
+                                src={msg.fileUrl}
+                                alt="shared"
+                                className="max-h-[300px] w-full object-cover"
+                                onClick={() => window.open(msg.fileUrl)}
+                              />
+                            ) : (
+                              <div className="flex items-center gap-3 p-3 bg-black/5 dark:bg-white/10 rounded-lg">
+                                <div className="h-10 w-10 bg-primary/20 rounded-full flex items-center justify-center text-xl">
+                                  📄
+                                </div>
+                                <span className="truncate text-xs font-medium">
+                                  Document
+                                </span>
                               </div>
-                              <span className="truncate text-xs font-medium">
-                                Document
-                              </span>
-                            </div>
+                            )}
+                          </div>
+                        )}
+
+                        {msg.text && (
+                          <p className="text-[13px] leading-[1.4] whitespace-pre-wrap break-words">
+                            {msg.text}
+                          </p>
+                        )}
+
+                        <div className="flex items-center justify-end gap-1 mt-1">
+                          <span className="text-[9px] opacity-60 font-medium">
+                            {msg.time}
+                          </span>
+                          {msg.sender === "me" && (
+                            <span className="text-[10px] text-blue-500">
+                              ✓✓
+                            </span>
                           )}
                         </div>
-                      )}
-
-                      {msg.text && (
-                        <p className="text-[13px] leading-[1.4] whitespace-pre-wrap break-words">
-                          {msg.text}
-                        </p>
-                      )}
-
-                      <div className="flex items-center justify-end gap-1 mt-1">
-                        <span className="text-[9px] opacity-60 font-medium">
-                          {msg.time}
-                        </span>
-                        {msg.sender === "me" && (
-                          <span className="text-[10px] text-blue-500">✓✓</span>
-                        )}
                       </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
 
                 {typingUser && (
                   <div className="flex justify-start">
@@ -1002,6 +1153,31 @@ function HomeContent() {
                 ✕
               </button>
             </div>
+
+            {selectedChatInfo.myRole === "OWNER" && (
+              <div className="flex items-center justify-between p-4 bg-primary/5 border border-primary/10 rounded-2xl">
+                <div>
+                  <p className="text-sm font-bold">Private Join Code</p>
+                  <p className="text-[10px] text-muted-foreground">
+                    Only you can see the join code.
+                  </p>
+                </div>
+                <button
+                  onClick={handleToggleJoinCodePrivacy}
+                  className={`w-12 h-6 rounded-full transition-all relative ${
+                    selectedChatInfo.isJoinCodePrivate
+                      ? "bg-primary"
+                      : "bg-muted-foreground/30"
+                  }`}
+                >
+                  <div
+                    className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all shadow-sm ${
+                      selectedChatInfo.isJoinCodePrivate ? "right-1" : "left-1"
+                    }`}
+                  />
+                </button>
+              </div>
+            )}
 
             {selectedChatInfo.joinCode && (
               <div className="bg-primary/5 border border-primary/20 rounded-2xl p-4 space-y-2">

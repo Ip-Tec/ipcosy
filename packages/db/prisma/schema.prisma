@@ -106,6 +106,7 @@ model Chat {
   isGroup   Boolean  @default(false)
   name      String?  // For groups
   joinCode  String?  @unique // For joining groups
+  isJoinCodePrivate Boolean @default(true) // OWNER can toggle if members see join code
 
   participants ChatParticipant[]
   messages     Message[]

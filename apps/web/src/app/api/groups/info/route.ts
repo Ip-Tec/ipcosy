@@ -47,14 +47,18 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "Not a member" }, { status: 403 });
     }
 
-    // Only owners and and admins can see the join code?
-    // User said "group owner can make user admin", usually settings are for admins.
-    const canSeeCode = ["OWNER", "ADMIN"].includes(participant.role);
+    // Join Code Visibility logic:
+    // 1. If not private, everyone in group sees it.
+    // 2. If private, only OWNER and ADMIN see it (or just OWNER per new requirement "only the group owner can view or change").
+    // Let's stick to OWNER for view/change per user comment.
+    const canSeeCode =
+      !(chat as any).isJoinCodePrivate || participant.role === "OWNER";
 
     return NextResponse.json({
       id: chat.id,
       name: chat.name,
       isGroup: chat.isGroup,
+      isJoinCodePrivate: (chat as any).isJoinCodePrivate,
       joinCode: canSeeCode ? chat.joinCode : null,
       myRole: participant.role,
       participants: chat.participants.map((p) => ({

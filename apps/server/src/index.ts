@@ -23,9 +23,18 @@ class ChatServer extends IpServer {
       return;
     }
 
-    // 1. Handle Typing Events
+    // Associate userId with the socket for targeted broadcasting
+    (ws as any).userId = visitorId;
+
+    // 1. Handle Typing Events (requires chatId in payload)
     if (payload.type === "typing") {
-      this.broadcast({ type: "typing", visitorId, isTyping: !!payload.text });
+      const chatId = payload.chatId || "mvp-lobby";
+      this.broadcastToChat(chatId, {
+        type: "typing",
+        visitorId,
+        isTyping: !!payload.text,
+        chatId,
+      });
       return;
     }
 
@@ -97,10 +106,39 @@ class ChatServer extends IpServer {
           chatId: chatId,
         },
       });
+
+      // 5. Broadcast to participants only
+      this.broadcastToChat(chatId, { type: "echo", data: payload });
+    }
+  }
+
+  private async broadcastToChat(chatId: string, event: any) {
+    // For the public lobby, we still broadcast to everyone (or we could make it a "group" everyone joins)
+    // But per requirements, other groups must be private.
+    const data = JSON.stringify(event);
+
+    if (chatId === "mvp-lobby") {
+      this.broadcast(event);
+      return;
     }
 
-    // 5. Broadcast to all connected clients
-    this.broadcast({ type: "echo", data: payload });
+    // Find all participants for this chat
+    const participants = await prisma.chatParticipant.findMany({
+      where: { chatId },
+      select: { userId: true },
+    });
+    const participantIds = new Set(participants.map((p) => p.userId));
+
+    // Send only to connected clients who are participants
+    (this.wss as any).clients.forEach((client: any) => {
+      if (
+        client.readyState === 1 && // WebSocket.OPEN
+        client.userId &&
+        participantIds.has(client.userId)
+      ) {
+        client.send(data);
+      }
+    });
   }
 }
 

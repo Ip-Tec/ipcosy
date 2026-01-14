@@ -14,6 +14,7 @@ import {
   Send,
   ShieldCheck,
   Loader2,
+  Dices,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -93,6 +94,8 @@ const CATEGORIES: SuggestionCategory[] = [
   },
 ];
 
+const ALL_SUGGESTIONS = CATEGORIES.flatMap((c) => c.suggestions);
+
 export default function ClientPage({
   initialUserInfo,
   username,
@@ -103,7 +106,6 @@ export default function ClientPage({
   const { data: session, status } = useSession();
   const [userInfo, setUserInfo] = useState<any>(initialUserInfo);
   const [message, setMessage] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState(CATEGORIES[2]); // Default Friendly
   const [isSending, setIsSending] = useState(false);
   const [showRegPopup, setShowRegPopup] = useState(false);
 
@@ -150,21 +152,19 @@ export default function ClientPage({
     }
   };
 
+  const handleRandomSuggestion = () => {
+    const random =
+      ALL_SUGGESTIONS[Math.floor(Math.random() * ALL_SUGGESTIONS.length)];
+    setMessage(random);
+    toast.success("Random message selected!");
+  };
+
   if (!userInfo)
     return (
       <div className="min-h-screen bg-background p-4 md:p-8 flex flex-col items-center">
         <div className="w-full max-w-lg space-y-8">
           <Skeleton className="h-48 w-full rounded-[2.5rem]" />
-          <div className="flex gap-2">
-            {[1, 2, 3].map((i) => (
-              <Skeleton key={i} className="h-10 w-24 rounded-full" />
-            ))}
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {[1, 2, 3, 4].map((i) => (
-              <Skeleton key={i} className="h-16 w-full rounded-2xl" />
-            ))}
-          </div>
+          <Skeleton className="h-[250px] w-full rounded-[2rem]" />
         </div>
       </div>
     );
@@ -198,37 +198,6 @@ export default function ClientPage({
           </p>
         </div>
 
-        {/* Categories */}
-        <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-none no-scrollbar">
-          {CATEGORIES.map((cat) => (
-            <button
-              key={cat.id}
-              onClick={() => setSelectedCategory(cat)}
-              className={`cursor-pointer flex items-center gap-2 px-4 py-2 rounded-full whitespace-nowrap text-sm font-bold transition-all ${
-                selectedCategory.id === cat.id
-                  ? "bg-primary text-white shadow-md scale-105"
-                  : "bg-sidebar text-muted-foreground hover:bg-primary/10"
-              }`}
-            >
-              <span>{cat.icon}</span>
-              <span>{cat.label}</span>
-            </button>
-          ))}
-        </div>
-
-        {/* Suggestions */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          {selectedCategory.suggestions.map((suggestion, idx) => (
-            <button
-              key={idx}
-              onClick={() => setMessage(suggestion)}
-              className="cursor-pointer p-4 bg-sidebar/50 border border-border/50 rounded-2xl text-xs text-left text-foreground hover:bg-primary/5 hover:border-primary/30 transition-all active:scale-95"
-            >
-              {suggestion}
-            </button>
-          ))}
-        </div>
-
         {/* Message Input Area */}
         <div className="space-y-4">
           <div className="relative">
@@ -236,8 +205,15 @@ export default function ClientPage({
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               placeholder="Type your anonymous message here..."
-              className="w-full bg-sidebar border border-border/50 rounded-[2rem] p-6 text-sm text-foreground placeholder:text-muted-foreground/50 min-h-[150px] focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all shadow-inner resize-none"
+              className="w-full bg-sidebar border border-border/50 rounded-[2rem] p-6 pr-14 text-sm text-foreground placeholder:text-muted-foreground/50 min-h-[150px] focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all shadow-inner resize-none"
             />
+            <button
+              onClick={handleRandomSuggestion}
+              className="absolute top-4 right-4 p-3 bg-primary/10 text-primary rounded-2xl hover:bg-primary/20 transition-all active:scale-95 group"
+              title="Roll for a random message"
+            >
+              <Dices className="w-5 h-5 group-hover:rotate-12 transition-transform" />
+            </button>
             <div className="absolute bottom-4 right-6 text-[10px] text-muted font-bold uppercase tracking-widest opacity-40">
               {message.length} Characters
             </div>
