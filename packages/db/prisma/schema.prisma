@@ -130,6 +130,8 @@ model ChatParticipant {
   chatId    String
   chat      Chat     @relation(fields: [chatId], references: [id])
 
+  lastSeenAt DateTime @default(now())
+
   @@unique([userId, chatId])
 }
 

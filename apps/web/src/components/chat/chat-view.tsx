@@ -105,14 +105,22 @@ export function ChatView({
           {/* Messages Area */}
           <div
             ref={scrollRef}
-            className="h-[calc(100vh-100px)] flex-1 overflow-y-auto p-4 space-y-4 bg-[#f0f2f5] dark:bg-[#0e1621] relative"
-            style={{
-              backgroundImage: `url('https://images.unsplash.com/photo-1519681393784-d120267973ba?q=80&w=2070&auto=format&fit=crop')`,
-              backgroundSize: "cover",
-              backgroundBlendMode: theme === "dark" ? "multiply" : "soft-light",
-            }}
+            className="h-[calc(100vh-100px)] flex-1 overflow-y-auto p-4 space-y-4 bg-background relative"
           >
-            <div className="absolute inset-0 bg-background/60 backdrop-blur-[2px]" />
+            {/* Fixed Background Layer */}
+            <div
+              className="absolute inset-0 z-0 pointer-events-none"
+              style={{
+                backgroundImage: `url('https://images.unsplash.com/photo-1519681393784-d120267973ba?q=80&w=2070&auto=format&fit=crop')`,
+                backgroundSize: "cover",
+                backgroundPosition: "center",
+                backgroundAttachment: "fixed",
+                backgroundBlendMode:
+                  theme === "dark" ? "multiply" : "soft-light",
+                opacity: 0.15,
+              }}
+            />
+            <div className="absolute inset-0 bg-background/40 backdrop-blur-[1px] z-0 pointer-events-none" />
 
             <div className="relative space-y-3 max-w-3xl mx-auto">
               <div className="flex justify-center mb-6">
@@ -145,70 +153,97 @@ export function ChatView({
                   msg.sender === "them" &&
                   selectedChatInfo?.name === "Anonymous Messages";
 
-                if (isAnonymousMessage) {
-                  return (
-                    <div key={idx} className="flex justify-start w-full mb-4">
-                      <AnonymousMessageCard
-                        content={msg.text}
-                        time={msg.time}
-                        username={user?.username || "You"}
-                        metadata={msg.metadata}
-                      />
-                    </div>
-                  );
-                }
+                const isUnread =
+                  msg.sender === "them" &&
+                  currentChat?.lastSeenAt &&
+                  new Date(msg.createdAt) > new Date(currentChat.lastSeenAt);
+
+                // Show "Unread Messages" bar before the first unread message
+                const showUnreadBar =
+                  isUnread &&
+                  (idx === 0 ||
+                    !(
+                      new Date(messages[idx - 1].createdAt) >
+                      new Date(currentChat.lastSeenAt)
+                    ));
 
                 return (
-                  <div
-                    key={idx}
-                    className={`flex flex-col ${
-                      msg.sender === "me" ? "items-end" : "items-start"
-                    }`}
-                  >
-                    <div
-                      className={`max-w-[85%] rounded-[18px] px-3 py-2 shadow-sm relative group overflow-hidden ${
-                        msg.sender === "me"
-                          ? "bg-primary text-white rounded-tr-[4px]"
-                          : "bg-sidebar text-foreground rounded-tl-[4px] border border-border"
-                      }`}
-                    >
-                      {msg.fileUrl && (
-                        <div className="mb-2 -mx-1 -mt-1 overflow-hidden rounded-lg">
-                          {msg.fileUrl.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? (
-                            <img
-                              src={msg.fileUrl}
-                              alt="shared"
-                              className="max-h-[300px] w-full object-cover"
-                              onClick={() => window.open(msg.fileUrl)}
-                            />
-                          ) : (
-                            <div className="flex items-center gap-3 p-3 bg-black/5 dark:bg-white/10 rounded-lg">
-                              <div className="h-10 w-10 bg-primary/20 rounded-full flex items-center justify-center text-xl">
-                                📄
-                              </div>
-                              <span className="truncate text-xs font-medium">
-                                Document
-                              </span>
+                  <div key={idx} className="space-y-3">
+                    {showUnreadBar && (
+                      <div className="flex items-center gap-4 my-6">
+                        <div className="h-px bg-primary/20 flex-1" />
+                        <span className="text-[10px] font-bold text-primary uppercase tracking-widest bg-primary/5 px-3 py-1 rounded-full">
+                          Unread Messages
+                        </span>
+                        <div className="h-px bg-primary/20 flex-1" />
+                      </div>
+                    )}
+
+                    {isAnonymousMessage ? (
+                      <div className="flex justify-start w-full mb-4">
+                        <AnonymousMessageCard
+                          content={msg.text}
+                          time={msg.time}
+                          username={user?.username || "You"}
+                          metadata={msg.metadata}
+                        />
+                      </div>
+                    ) : (
+                      <div
+                        className={`flex flex-col ${
+                          msg.sender === "me" ? "items-end" : "items-start"
+                        }`}
+                      >
+                        <div
+                          className={`max-w-[85%] rounded-[18px] px-3 py-2 shadow-sm relative group overflow-hidden ${
+                            msg.sender === "me"
+                              ? "bg-primary text-white rounded-tr-[4px]"
+                              : "bg-sidebar text-foreground rounded-tl-[4px] border border-border"
+                          }`}
+                        >
+                          {msg.fileUrl && (
+                            <div className="mb-2 -mx-1 -mt-1 overflow-hidden rounded-lg">
+                              {msg.fileUrl.match(
+                                /\.(jpg|jpeg|png|gif|webp)$/i,
+                              ) ? (
+                                <img
+                                  src={msg.fileUrl}
+                                  alt="shared"
+                                  className="max-h-[300px] w-full object-cover"
+                                  onClick={() => window.open(msg.fileUrl)}
+                                />
+                              ) : (
+                                <div className="flex items-center gap-3 p-3 bg-black/5 dark:bg-white/10 rounded-lg">
+                                  <div className="h-10 w-10 bg-primary/20 rounded-full flex items-center justify-center text-xl">
+                                    📄
+                                  </div>
+                                  <span className="truncate text-xs font-medium">
+                                    Document
+                                  </span>
+                                </div>
+                              )}
                             </div>
                           )}
+
+                          {msg.text && (
+                            <p className="text-[13px] leading-[1.4] whitespace-pre-wrap break-words">
+                              {msg.text}
+                            </p>
+                          )}
+
+                          <div className="flex items-center justify-end gap-1 mt-1">
+                            <span className="text-[9px] opacity-60 font-medium">
+                              {msg.time}
+                            </span>
+                            {msg.sender === "me" && (
+                              <span className="text-[10px] text-blue-500">
+                                ✓✓
+                              </span>
+                            )}
+                          </div>
                         </div>
-                      )}
-
-                      {msg.text && (
-                        <p className="text-[13px] leading-[1.4] whitespace-pre-wrap break-words">
-                          {msg.text}
-                        </p>
-                      )}
-
-                      <div className="flex items-center justify-end gap-1 mt-1">
-                        <span className="text-[9px] opacity-60 font-medium">
-                          {msg.time}
-                        </span>
-                        {msg.sender === "me" && (
-                          <span className="text-[10px] text-blue-500">✓✓</span>
-                        )}
                       </div>
-                    </div>
+                    )}
                   </div>
                 );
               })}

@@ -175,6 +175,20 @@ function HomeContent() {
           if (!data.error) setSelectedChatInfo(data);
         });
 
+      // Mark as seen
+      fetch("/api/groups/seen", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ chatId: selectedChat }),
+      }).then(() => {
+        // Refresh chat list to clear unread counts
+        fetch("/api/groups/list")
+          .then((res) => res.json())
+          .then((data) => {
+            if (Array.isArray(data)) setChats(data);
+          });
+      });
+
       setIsLoadingMessages(true);
       fetch(`/api/groups/messages?chatId=${selectedChat}`)
         .then((res) => res.json())

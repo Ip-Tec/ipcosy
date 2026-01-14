@@ -27,22 +27,35 @@ export async function GET(req: NextRequest) {
       orderBy: { chat: { updatedAt: "desc" } },
     });
 
-    const chats = participations.map((p) => {
-      const lastMsg = p.chat.messages[0];
-      return {
-        id: p.chat.id,
-        name: p.chat.name || "Direct Message",
-        isGroup: p.chat.isGroup,
-        message: lastMsg ? lastMsg.content : "No messages yet",
-        time: lastMsg
-          ? lastMsg.createdAt.toLocaleTimeString([], {
-              hour: "2-digit",
-              minute: "2-digit",
-            })
-          : "",
-        unread: 0, // Implement later
-      };
-    });
+    const chats = await Promise.all(
+      participations.map(async (p) => {
+        const lastMsg = p.chat.messages[0];
+
+        // Count messages since lastSeenAt
+        const unreadCount = await prisma.message.count({
+          where: {
+            chatId: p.chat.id,
+            createdAt: { gt: p.lastSeenAt },
+            userId: { not: userId }, // Don't count own messages
+          },
+        });
+
+        return {
+          id: p.chat.id,
+          name: p.chat.name || "Direct Message",
+          isGroup: p.chat.isGroup,
+          message: lastMsg ? lastMsg.content : "No messages yet",
+          time: lastMsg
+            ? lastMsg.createdAt.toLocaleTimeString([], {
+                hour: "2-digit",
+                minute: "2-digit",
+              })
+            : "",
+          unread: unreadCount,
+          lastSeenAt: p.lastSeenAt,
+        };
+      }),
+    );
 
     return NextResponse.json(chats);
   } catch (error) {

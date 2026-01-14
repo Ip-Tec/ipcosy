@@ -4,6 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { CopyIcon } from "lucide-react";
 import { toast } from "sonner";
+import { signOut } from "next-auth/react";
 import { APP_VERSION, SUPER_ADMIN_EMAILS } from "@/lib/constants";
 
 interface SidebarProps {
@@ -49,11 +50,17 @@ export function Sidebar({
           className={`absolute top-0 left-0 h-full w-[280px] bg-sidebar border-r border-border transition-transform duration-300 shadow-2xl ${isMenuOpen ? "translate-x-0" : "-translate-x-full"}`}
         >
           <div className="p-6 bg-primary text-white space-y-4">
-            <div className="h-16 w-16 rounded-full bg-white/20 flex items-center justify-center text-2xl font-bold border-2 border-white/30 shadow-inner">
+            <div className="h-16 w-16 rounded-full bg-white/20 flex items-center justify-center text-2xl font-bold border-2 border-white/30 shadow-inner overflow-hidden">
               {user?.image ? (
-                <Image src={user?.image} alt="Avatar" width={64} height={64} />
+                <Image
+                  src={user.image}
+                  alt="Avatar"
+                  width={64}
+                  height={64}
+                  className="w-full h-full object-cover"
+                />
               ) : (
-                user?.username?.substring(0, 2).toUpperCase()
+                user?.username?.substring(0, 2).toUpperCase() || "IP"
               )}
             </div>
             <div>
@@ -145,6 +152,16 @@ export function Sidebar({
                 <CopyIcon className="w-5 h-5" />
               </span>
             </button>
+            <div className="h-px bg-border my-2 mx-2" />
+            <button
+              onClick={() => signOut()}
+              className="cursor-pointer w-full flex items-center gap-4 p-3 rounded-xl hover:bg-red-500/10 text-red-500 transition-colors group"
+            >
+              <span className="text-xl group-hover:scale-110 transition-transform">
+                🚪
+              </span>
+              <span className="font-medium">Logout</span>
+            </button>
           </nav>
           <div className="absolute bottom-4 left-0 w-full text-center text-[10px] text-muted">
             Ip~Cosy WebApp {APP_VERSION}
@@ -224,11 +241,18 @@ export function Sidebar({
                     <div className="flex-1 min-w-0">
                       <div className="flex justify-between items-baseline">
                         <h3 className="font-bold truncate">{chat.name}</h3>
-                        <span
-                          className={`text-[10px] ${selectedChat === chat.id ? "text-white/70" : "text-muted"}`}
-                        >
-                          {chat.time}
-                        </span>
+                        <div className="flex flex-col items-end gap-1">
+                          <span
+                            className={`text-[10px] ${selectedChat === chat.id ? "text-white/70" : "text-muted"}`}
+                          >
+                            {chat.time}
+                          </span>
+                          {chat.unread > 0 && selectedChat !== chat.id && (
+                            <span className="bg-white text-primary text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center shadow-sm">
+                              {chat.unread}
+                            </span>
+                          )}
+                        </div>
                       </div>
                       <p
                         className={`truncate text-xs ${selectedChat === chat.id ? "text-white/80" : "text-muted"}`}
@@ -271,11 +295,18 @@ export function Sidebar({
                     <div className="flex-1 min-w-0">
                       <div className="flex justify-between items-baseline">
                         <h3 className="font-bold truncate">{chat.name}</h3>
-                        <span
-                          className={`text-[10px] ${selectedChat === chat.id ? "text-white/70" : "text-muted"}`}
-                        >
-                          {chat.time}
-                        </span>
+                        <div className="flex flex-col items-end gap-1">
+                          <span
+                            className={`text-[10px] ${selectedChat === chat.id ? "text-white/70" : "text-muted"}`}
+                          >
+                            {chat.time}
+                          </span>
+                          {chat.unread > 0 && selectedChat !== chat.id && (
+                            <span className="bg-white text-primary text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center shadow-sm">
+                              {chat.unread}
+                            </span>
+                          )}
+                        </div>
                       </div>
                       <p
                         className={`truncate text-xs ${selectedChat === chat.id ? "text-white/80" : "text-muted"}`}
