@@ -1,4 +1,6 @@
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient, ChatType, ParticipantRole } from "@prisma/client";
+
+export { ChatType, ParticipantRole };
 
 declare global {
   var prisma: PrismaClient | undefined;

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@ipcosy/db";
+import { prisma, ChatType } from "@ipcosy/db";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { captureMessageMetadata } from "@/lib/metadata";
@@ -31,7 +31,7 @@ export async function POST(req: Request) {
       const existingChat = await prisma.chat.findFirst({
         where: {
           isGroup: false,
-          type: "ANONYMOUS",
+          type: ChatType.ANONYMOUS,
           AND: [
             { participants: { some: { userId: senderId } } },
             { participants: { some: { userId: targetUserId } } },
@@ -45,7 +45,7 @@ export async function POST(req: Request) {
         const newChat = await prisma.chat.create({
           data: {
             isGroup: false,
-            type: "ANONYMOUS",
+            type: ChatType.ANONYMOUS,
             name: "Anonymous Messages",
             participants: {
               create: [
@@ -98,7 +98,7 @@ export async function POST(req: Request) {
       const existingChat = await prisma.chat.findFirst({
         where: {
           isGroup: false,
-          type: "ANONYMOUS",
+          type: ChatType.ANONYMOUS,
           AND: [
             { participants: { some: { userId: senderId } } },
             { participants: { some: { userId: targetUserId } } },
@@ -112,7 +112,7 @@ export async function POST(req: Request) {
         const newChat = await prisma.chat.create({
           data: {
             isGroup: false,
-            type: "ANONYMOUS",
+            type: ChatType.ANONYMOUS,
             name: "Anonymous Messages",
             participants: {
               create: [
