@@ -1,0 +1,308 @@
+"use client";
+
+import Image from "next/image";
+import { Skeleton } from "@/components/ui/skeleton";
+import { UploadButton } from "../../utils/uploadthing";
+import { AnonymousMessageCard } from "./anonymous-message-card";
+import { EmptyState } from "@/components/empty-state";
+
+interface ChatViewProps {
+  selectedChat: string | null;
+  setSelectedChat: (chat: string | null) => void;
+  selectedChatInfo: any;
+  messages: any[];
+  isLoadingMessages: boolean;
+  inputText: string;
+  setInputText: (text: string) => void;
+  handleSend: (fileUrl?: string) => void;
+  typingUser: string | null;
+  setShowGroupSettings: (show: boolean) => void;
+  status: string;
+  user: any;
+  theme: string | undefined;
+  alias: string;
+  scrollRef: any;
+  chats: any[];
+}
+
+export function ChatView({
+  selectedChat,
+  setSelectedChat,
+  selectedChatInfo,
+  messages,
+  isLoadingMessages,
+  inputText,
+  setInputText,
+  handleSend,
+  typingUser,
+  setShowGroupSettings,
+  status,
+  user,
+  theme,
+  alias,
+  scrollRef,
+  chats,
+}: ChatViewProps) {
+  const currentChat = chats.find((c) => c.id === selectedChat);
+
+  return (
+    <div
+      className={`flex-1 flex-col bg-background relative h-full ${
+        !selectedChat && chats.length === 0
+          ? "flex"
+          : !selectedChat
+            ? "hidden md:flex"
+            : "flex"
+      }`}
+    >
+      {selectedChat ? (
+        <>
+          {/* Chat Header */}
+          <div className="flex items-center gap-4 border-b border-border bg-sidebar p-3 z-10">
+            <button
+              onClick={() => setSelectedChat(null)}
+              className="md:hidden p-4 -ml-2 cursor-pointer hover:bg-black/5 dark:hover:bg-white/5 rounded-full touch-manipulation"
+            >
+              <span className="text-2xl">←</span>
+            </button>
+            <div className="h-10 w-10 flex items-center justify-center rounded-full bg-primary text-white font-bold">
+              {selectedChat === "mvp-lobby"
+                ? "L"
+                : currentChat?.name.substring(0, 1).toUpperCase()}
+            </div>
+            <div className="flex-1">
+              <h2 className="font-bold leading-tight">
+                {currentChat?.name || "Chat"}
+              </h2>
+              <p className="text-[10px] text-green-500 font-medium">Online</p>
+            </div>
+            {selectedChat !== "mvp-lobby" && status === "authenticated" && (
+              <button
+                onClick={() => setShowGroupSettings(true)}
+                className="cursor-pointer p-2 hover:bg-black/5 dark:hover:bg-white/5 rounded-full text-muted transition-colors"
+                title="Group Settings"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <circle cx="12" cy="12" r="3" />
+                  <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 kitchens-1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+                </svg>
+              </button>
+            )}
+          </div>
+
+          {/* Messages Area */}
+          <div
+            ref={scrollRef}
+            className="flex-1 overflow-y-auto p-4 space-y-4 bg-[#f0f2f5] dark:bg-[#0e1621] relative"
+            style={{
+              backgroundImage: `url('https://images.unsplash.com/photo-1519681393784-d120267973ba?q=80&w=2070&auto=format&fit=crop')`,
+              backgroundSize: "cover",
+              backgroundBlendMode: theme === "dark" ? "multiply" : "soft-light",
+            }}
+          >
+            <div className="absolute inset-0 bg-background/60 backdrop-blur-[2px]" />
+
+            <div className="relative space-y-3 max-w-3xl mx-auto">
+              <div className="flex justify-center mb-6">
+                <div className="bg-black/5 dark:bg-white/5 backdrop-blur-md px-4 py-2 rounded-2xl text-[10px] text-muted border border-border/50 text-center max-w-xs">
+                  🔒 Messages are end-to-end anonymous. All data is
+                  automatically deleted from our servers after 72 hours for your
+                  safety.
+                </div>
+              </div>
+
+              {isLoadingMessages && (
+                <div className="space-y-4">
+                  {[1, 2, 3].map((i) => (
+                    <div
+                      key={i}
+                      className={`flex flex-col ${i % 2 === 0 ? "items-end" : "items-start"}`}
+                    >
+                      <Skeleton
+                        className={`h-12 w-[60%] rounded-2xl ${
+                          i % 2 === 0 ? "rounded-tr-none" : "rounded-tl-none"
+                        }`}
+                      />
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {messages.map((msg, idx) => {
+                const isAnonymousMessage =
+                  msg.sender === "them" &&
+                  selectedChatInfo?.name === "Anonymous Messages";
+
+                if (isAnonymousMessage) {
+                  return (
+                    <div key={idx} className="flex justify-start w-full mb-4">
+                      <AnonymousMessageCard
+                        content={msg.text}
+                        time={msg.time}
+                        username={user?.username || "You"}
+                        metadata={msg.metadata}
+                      />
+                    </div>
+                  );
+                }
+
+                return (
+                  <div
+                    key={idx}
+                    className={`flex flex-col ${
+                      msg.sender === "me" ? "items-end" : "items-start"
+                    }`}
+                  >
+                    <div
+                      className={`max-w-[85%] rounded-[18px] px-3 py-2 shadow-sm relative group overflow-hidden ${
+                        msg.sender === "me"
+                          ? "bg-primary text-white rounded-tr-[4px]"
+                          : "bg-sidebar text-foreground rounded-tl-[4px] border border-border"
+                      }`}
+                    >
+                      {msg.fileUrl && (
+                        <div className="mb-2 -mx-1 -mt-1 overflow-hidden rounded-lg">
+                          {msg.fileUrl.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? (
+                            <img
+                              src={msg.fileUrl}
+                              alt="shared"
+                              className="max-h-[300px] w-full object-cover"
+                              onClick={() => window.open(msg.fileUrl)}
+                            />
+                          ) : (
+                            <div className="flex items-center gap-3 p-3 bg-black/5 dark:bg-white/10 rounded-lg">
+                              <div className="h-10 w-10 bg-primary/20 rounded-full flex items-center justify-center text-xl">
+                                📄
+                              </div>
+                              <span className="truncate text-xs font-medium">
+                                Document
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {msg.text && (
+                        <p className="text-[13px] leading-[1.4] whitespace-pre-wrap break-words">
+                          {msg.text}
+                        </p>
+                      )}
+
+                      <div className="flex items-center justify-end gap-1 mt-1">
+                        <span className="text-[9px] opacity-60 font-medium">
+                          {msg.time}
+                        </span>
+                        {msg.sender === "me" && (
+                          <span className="text-[10px] text-blue-500">✓✓</span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+
+              {typingUser && (
+                <div className="flex justify-start">
+                  <div className="bg-sidebar text-foreground border border-border rounded-2xl rounded-bl-sm px-4 py-2 text-xs shadow-sm animate-pulse italic flex items-center gap-2">
+                    <span className="flex gap-1">
+                      <span className="w-1 h-1 bg-muted rounded-full animate-bounce [animation-delay:-0.3s]" />
+                      <span className="w-1 h-1 bg-muted rounded-full animate-bounce [animation-delay:-0.15s]" />
+                      <span className="w-1 h-1 bg-muted rounded-full animate-bounce" />
+                    </span>
+                    Someone is typing...
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Input Area */}
+          <div className="p-3 bg-sidebar flex items-center gap-2 max-w-4xl mx-auto w-full">
+            <div className="relative group p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors overflow-hidden">
+              <span className="text-2xl text-muted grayscale group-hover:grayscale-0 transition-all">
+                📎
+              </span>
+              <div className="absolute inset-0 opacity-0 cursor-pointer">
+                <UploadButton
+                  endpoint="imageUploader"
+                  onClientUploadComplete={(res) => {
+                    handleSend(res?.[0]?.url);
+                  }}
+                  onUploadError={(error) =>
+                    console.error(`Upload Failed: ${error.message}`)
+                  }
+                  appearance={{
+                    button: { width: "100%", height: "100%" },
+                    allowedContent: { display: "none" },
+                  }}
+                />
+              </div>
+            </div>
+
+            <div className="flex-1 relative flex items-center">
+              <input
+                type="text"
+                value={inputText}
+                onChange={(e) => setInputText(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleSend()}
+                placeholder="Your message..."
+                className="w-full bg-background/50 border border-border rounded-full px-5 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all placeholder:text-muted"
+              />
+            </div>
+
+            <button
+              onClick={() => handleSend()}
+              disabled={!inputText.trim()}
+              className={`p-3 rounded-full transition-all flex items-center justify-center ${
+                inputText.trim()
+                  ? "cursor-pointer bg-primary text-white shadow-lg scale-100 hover:opacity-90 active:scale-95"
+                  : "bg-transparent text-muted scale-90 opacity-40 cursor-default"
+              }`}
+            >
+              <svg
+                width="22"
+                height="22"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="rotate-45 -mt-0.5 ml-0.5"
+              >
+                <line x1="22" y1="2" x2="11" y2="13"></line>
+                <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+              </svg>
+            </button>
+          </div>
+        </>
+      ) : isLoadingMessages ? (
+        <div className="flex h-full items-center justify-center">
+          <Skeleton className="h-64 w-full max-w-sm rounded-[2rem]" />
+        </div>
+      ) : chats.length > 0 ? (
+        <div className="flex h-full flex-col items-center justify-center text-center p-8 bg-background">
+          <div className="w-32 h-32 relative mb-6 opacity-30 grayscale hover:grayscale-0 transition-all duration-500">
+            <Image src="/logo.png" alt="Logo" fill className="object-contain" />
+          </div>
+          <h2 className="text-xl font-bold mb-2">Select a chat</h2>
+          <p className="text-muted text-sm max-w-[200px]">
+            Choose one from the sidebar to start messaging anonymously.
+          </p>
+        </div>
+      ) : (
+        <EmptyState username={alias} />
+      )}
+    </div>
+  );
+}
