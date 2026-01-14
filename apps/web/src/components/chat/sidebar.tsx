@@ -114,13 +114,13 @@ export function Sidebar({
               className="cursor-pointer w-full flex items-center justify-between gap-4 p-3 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 transition-colors group text-left"
             >
               <span className="font-medium">
-                My Public Link
-                <i className="text-xs text-muted">
-                  ${window.location.origin}/$
+                <p>My Public Link</p>
+                <p className="text-xs text-muted">
+                  {window.location.origin}/
                   {(user?.username || session?.user?.name || "")
                     .toLowerCase()
                     .replace(/\s+/g, "")}
-                </i>
+                </p>
               </span>
               <span className="text-xl group-hover:scale-110 transition-transform">
                 <CopyIcon className="w-5 h-5" />
@@ -136,10 +136,10 @@ export function Sidebar({
               className="cursor-pointer w-full flex items-center justify-between gap-4 p-3 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 transition-colors group text-left"
             >
               <span className="font-medium">
-                Invite Friends
-                <i className="text-xs text-muted">
+                <p>Invite Friends</p>
+                <p className="text-xs text-muted">
                   {window.location.origin}/?r={user?.referralCode}
-                </i>
+                </p>
               </span>
               <span className="text-xl group-hover:scale-110 transition-transform">
                 <CopyIcon className="w-5 h-5" />

@@ -105,7 +105,7 @@ export function ChatView({
           {/* Messages Area */}
           <div
             ref={scrollRef}
-            className="flex-1 overflow-y-auto p-4 space-y-4 bg-[#f0f2f5] dark:bg-[#0e1621] relative"
+            className="h-[calc(100vh-100px)] flex-1 overflow-y-auto p-4 space-y-4 bg-[#f0f2f5] dark:bg-[#0e1621] relative"
             style={{
               backgroundImage: `url('https://images.unsplash.com/photo-1519681393784-d120267973ba?q=80&w=2070&auto=format&fit=crop')`,
               backgroundSize: "cover",
