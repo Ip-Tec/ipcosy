@@ -36,6 +36,7 @@ export async function GET(req: NextRequest) {
         username: true,
         isAdmin: true,
         isPremium: true,
+        isBanned: true,
         image: true,
       },
       take: 20,
@@ -65,7 +66,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { userId, isAdmin, isPremium } = await req.json();
+    const { userId, isAdmin, isPremium, isBanned } = await req.json();
     if (!userId) {
       return NextResponse.json({ error: "Missing userId" }, { status: 400 });
     }
@@ -73,6 +74,7 @@ export async function POST(req: NextRequest) {
     const data: any = {};
     if (typeof isAdmin === "boolean") data.isAdmin = isAdmin;
     if (typeof isPremium === "boolean") data.isPremium = isPremium;
+    if (typeof isBanned === "boolean") data.isBanned = isBanned;
 
     if (Object.keys(data).length === 0) {
       return NextResponse.json({ error: "Nothing to update" }, { status: 400 });
