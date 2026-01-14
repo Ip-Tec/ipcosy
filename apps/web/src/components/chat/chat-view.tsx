@@ -244,6 +244,7 @@ export function ChatView({
                           time={msg.time}
                           username={user?.username || "You"}
                           metadata={msg.metadata}
+                          fileUrl={msg.fileUrl}
                         />
                       </div>
                     ) : (

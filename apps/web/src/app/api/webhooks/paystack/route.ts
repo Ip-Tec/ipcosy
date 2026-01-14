@@ -30,7 +30,12 @@ export async function POST(req: NextRequest) {
     console.log("Paystack Event Type:", event.event);
 
     if (event.event === "charge.success") {
-      const userId = event.data.metadata?.userId;
+      // Paystack sometimes sends metadata as a string
+      const rawMetadata = event.data.metadata;
+      const metadata =
+        typeof rawMetadata === "string" ? JSON.parse(rawMetadata) : rawMetadata;
+
+      const userId = metadata?.userId;
       const amount = event.data.amount;
       const status = event.data.status;
 

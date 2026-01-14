@@ -16,6 +16,7 @@ export interface AnonymousMessageCardProps {
     city?: string;
     country?: string;
   } | null;
+  fileUrl?: string;
 }
 
 export function AnonymousMessageCard({
@@ -23,6 +24,7 @@ export function AnonymousMessageCard({
   time,
   username,
   metadata,
+  fileUrl,
 }: AnonymousMessageCardProps) {
   const cardRef = useRef<HTMLDivElement>(null);
   const [showMetadata, setShowMetadata] = useState(false);
@@ -87,6 +89,29 @@ export function AnonymousMessageCard({
           <p className="text-lg font-bold leading-relaxed text-foreground italic relative z-10 py-4">
             "{content}"
           </p>
+
+          {fileUrl && (
+            <div className="relative z-10 rounded-2xl overflow-hidden border border-primary/20 bg-black/5 dark:bg-white/5">
+              {fileUrl.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? (
+                <img
+                  src={fileUrl}
+                  alt="Shared file"
+                  className="w-full max-h-64 object-cover cursor-pointer hover:scale-105 transition-transform"
+                  onClick={() => window.open(fileUrl, "_blank")}
+                />
+              ) : (
+                <div
+                  className="p-6 flex flex-col items-center gap-2 cursor-pointer hover:bg-black/10 transition-colors"
+                  onClick={() => window.open(fileUrl, "_blank")}
+                >
+                  <div className="text-4xl">📄</div>
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-primary">
+                    View Document
+                  </span>
+                </div>
+              )}
+            </div>
+          )}
 
           <div className="flex items-center justify-between pt-4 border-t border-primary/10 relative z-10">
             <div className="flex items-center gap-2">

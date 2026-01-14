@@ -35,7 +35,11 @@ export async function GET(req: NextRequest) {
     );
 
     if (verifyData.status && verifyData.data.status === "success") {
-      const userId = verifyData.data.metadata?.userId;
+      const rawMetadata = verifyData.data.metadata;
+      const metadata =
+        typeof rawMetadata === "string" ? JSON.parse(rawMetadata) : rawMetadata;
+
+      const userId = metadata?.userId;
       console.log("Paystack Callback Metadata userId:", userId);
 
       if (userId) {

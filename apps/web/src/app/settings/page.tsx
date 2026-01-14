@@ -11,7 +11,7 @@ import { toast } from "sonner";
 import { LoginPrompt } from "@/components/login-prompt";
 import { APP_VERSION } from "@/lib/constants";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Loader2 } from "lucide-react";
+import { Loader2, Bell, BellOff, Shield, User as UserIcon } from "lucide-react";
 
 const UpgradeButton = nextDynamic(() => import("@/components/upgrade-button"), {
   ssr: false,
@@ -29,6 +29,26 @@ export default function SettingsPage() {
   const [isSavingAlias, setIsSavingAlias] = useState(false);
   const [premiumPrice, setPremiumPrice] = useState(450);
   const [dbUser, setDbUser] = useState<any>(null);
+  const [notifPermission, setNotifPermission] =
+    useState<NotificationPermission>("default");
+
+  useEffect(() => {
+    if ("Notification" in window) {
+      setNotifPermission(Notification.permission);
+    }
+  }, []);
+
+  const requestNotifPermission = async () => {
+    if ("Notification" in window) {
+      const result = await Notification.requestPermission();
+      setNotifPermission(result);
+      if (result === "granted") {
+        toast.success("Notifications enabled!");
+      } else {
+        toast.error("Notifications " + result);
+      }
+    }
+  };
 
   useEffect(() => {
     setIsMounted(true);
@@ -108,66 +128,145 @@ export default function SettingsPage() {
       <div className="flex-1 overflow-y-auto p-4 md:p-8 max-w-2xl mx-auto w-full space-y-8">
         {/* Profile Section */}
         <section className="space-y-4">
-          <h2 className="text-sm font-semibold text-muted uppercase tracking-wider">
-            Profile
+          <h2 className="text-xs font-bold text-muted-foreground/60 uppercase tracking-[0.2em] flex items-center gap-2">
+            <UserIcon className="w-3 h-3" />
+            Account Profile
           </h2>
-          <div className="bg-sidebar rounded-2xl border border-border p-6 shadow-sm space-y-6">
-            <div className="flex items-center gap-6">
-              <div className="h-20 w-20 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white text-2xl font-bold shadow-lg overflow-hidden">
-                {user?.image ? (
-                  <img
-                    src={user.image}
-                    alt={user.name || ""}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  (alias || "??").substring(0, 2).toUpperCase()
+          <div className="bg-sidebar rounded-[2rem] border border-border p-8 shadow-xl space-y-8 relative overflow-hidden">
+            <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-primary to-purple-600"></div>
+
+            <div className="flex flex-col sm:flex-row items-center sm:items-start gap-8">
+              {/* Avatar Column */}
+              <div className="relative group">
+                <div className="h-24 w-24 rounded-full bg-gradient-to-br from-primary via-purple-500 to-blue-600 p-1 shadow-2xl">
+                  <div className="w-full h-full rounded-full bg-sidebar flex items-center justify-center overflow-hidden border-4 border-sidebar">
+                    {user?.image ? (
+                      <img
+                        src={user.image}
+                        alt={user.name || ""}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <span className="text-3xl font-black text-primary">
+                        {(alias || "??").substring(0, 2).toUpperCase()}
+                      </span>
+                    )}
+                  </div>
+                </div>
+                {isPremium && (
+                  <div className="absolute -bottom-1 -right-1 bg-yellow-400 text-black p-1.5 rounded-full shadow-lg border-2 border-sidebar">
+                    <Shield className="w-3 h-3 fill-current" />
+                  </div>
                 )}
               </div>
-              <div className="flex-1 space-y-1">
-                <label className="text-xs text-muted flex justify-between">
-                  <span>Username</span>
-                  {!isPremium && (
-                    <span className="text-primary font-bold">
-                      🔒 Locked (Premium Only)
-                    </span>
-                  )}
-                </label>
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={alias}
-                    onChange={(e) => setAlias(e.target.value)}
-                    disabled={!isPremium || !isEditing || isSavingAlias}
-                    className={`flex-1 bg-background border border-border rounded-xl px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary/50 disabled:opacity-50 disabled:cursor-not-allowed`}
-                    placeholder="Enter your alias..."
-                  />
-                  {isPremium && (
-                    <button
-                      onClick={() =>
-                        isEditing ? handleSaveAlias() : setIsEditing(true)
-                      }
-                      disabled={isSavingAlias}
-                      className="cursor-pointer bg-primary text-white px-4 py-2 rounded-xl font-bold text-sm hover:opacity-90 disabled:opacity-50 flex items-center gap-2"
-                    >
-                      {isSavingAlias && (
-                        <Loader2 className="w-3 h-3 animate-spin" />
+
+              {/* Info Column */}
+              <div className="flex-1 w-full space-y-6">
+                <div className="space-y-4">
+                  <div className="flex flex-col gap-2">
+                    <div className="flex items-center justify-between">
+                      <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+                        Display Alias
+                      </label>
+                      {!isPremium && (
+                        <span className="text-[9px] font-bold text-yellow-500 bg-yellow-500/10 px-2 py-0.5 rounded-full flex items-center gap-1">
+                          🔒 Premium Feature
+                        </span>
                       )}
-                      {isEditing
-                        ? isSavingAlias
-                          ? "Saving..."
-                          : "Save"
-                        : "Edit"}
-                    </button>
+                    </div>
+
+                    <div className="flex flex-col sm:flex-row gap-3">
+                      <div className="relative flex-1">
+                        <input
+                          type="text"
+                          value={alias}
+                          onChange={(e) => setAlias(e.target.value)}
+                          disabled={!isPremium || !isEditing || isSavingAlias}
+                          className="w-full bg-background/50 border border-border rounded-2xl px-5 py-4 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all disabled:opacity-60 placeholder:text-muted/30"
+                          placeholder="What should we call you?"
+                        />
+                      </div>
+
+                      {isPremium && (
+                        <button
+                          onClick={() =>
+                            isEditing ? handleSaveAlias() : setIsEditing(true)
+                          }
+                          disabled={isSavingAlias}
+                          className="cursor-pointer bg-primary text-white px-8 py-4 rounded-2xl font-black text-sm hover:translate-y-[-2px] hover:shadow-primary/20 shadow-lg transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2 min-w-[120px]"
+                        >
+                          {isSavingAlias ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : isEditing ? (
+                            "Save Changes"
+                          ) : (
+                            "Edit Profile"
+                          )}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  {!isPremium && (
+                    <div className="bg-primary/5 p-4 rounded-xl border border-primary/10">
+                      <p className="text-[11px] text-muted-foreground leading-relaxed">
+                        <span className="font-bold text-primary">TIP:</span>{" "}
+                        Unlock the ability to change your display name and hide
+                        your identity even further with a custom alias.
+                      </p>
+                    </div>
                   )}
                 </div>
-                {!isPremium && (
-                  <p className="text-[10px] text-muted">
-                    Upgrade to premium to change your username.
-                  </p>
-                )}
               </div>
             </div>
+          </div>
+        </section>
+
+        {/* Notifications Section */}
+        <section className="space-y-4">
+          <h2 className="text-xs font-bold text-muted-foreground/60 uppercase tracking-[0.2em] flex items-center gap-2">
+            <Bell className="w-3 h-3" />
+            System Notifications
+          </h2>
+          <div className="bg-sidebar rounded-[2rem] border border-border p-6 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-6">
+            <div className="flex items-center gap-4 text-center sm:text-left">
+              <div
+                className={`p-4 rounded-2xl ${
+                  notifPermission === "granted"
+                    ? "bg-green-500/10 text-green-500"
+                    : notifPermission === "denied"
+                      ? "bg-red-500/10 text-red-500"
+                      : "bg-primary/10 text-primary"
+                }`}
+              >
+                {notifPermission === "granted" ? (
+                  <Bell className="w-6 h-6" />
+                ) : (
+                  <BellOff className="w-6 h-6" />
+                )}
+              </div>
+              <div className="space-y-1">
+                <p className="font-bold">Browser Notifications</p>
+                <p className="text-xs text-muted-foreground">
+                  {notifPermission === "granted"
+                    ? "You are receiving real-time alerts."
+                    : notifPermission === "denied"
+                      ? "Notifications are blocked in your browser."
+                      : "Click to enable background message alerts."}
+                </p>
+              </div>
+            </div>
+
+            {notifPermission !== "granted" && (
+              <button
+                onClick={requestNotifPermission}
+                className="cursor-pointer bg-sidebar border-2 border-primary/20 text-primary hover:bg-primary hover:text-white px-6 py-3 rounded-2xl font-bold text-xs transition-all active:scale-95 whitespace-nowrap shadow-sm"
+              >
+                {notifPermission === "denied"
+                  ? "Re-enable in Settings"
+                  : "Enable Notifications"}
+              </button>
+            )}
           </div>
         </section>
 
