@@ -1,6 +1,9 @@
 "use client";
 
+import { useState } from "react";
 import Image from "next/image";
+import { Trash2 } from "lucide-react";
+import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
 import { UploadButton } from "../../utils/uploadthing";
 import { AnonymousMessageCard } from "./anonymous-message-card";
@@ -25,6 +28,7 @@ interface ChatViewProps {
   chats: any[];
   isLoadingChats: boolean;
   currentChat?: any;
+  setMessages: (messages: any[] | ((prev: any[]) => any[])) => void;
 }
 
 export function ChatView({
@@ -45,8 +49,36 @@ export function ChatView({
   scrollRef,
   chats,
   isLoadingChats,
+  setMessages,
 }: ChatViewProps) {
   const currentChat = chats.find((c) => c.id === selectedChat);
+  const [deletingMessageId, setDeletingMessageId] = useState<string | null>(
+    null,
+  );
+
+  const handleDeleteMessage = async (messageId: string) => {
+    if (!confirm("Are you sure you want to delete this message?")) return;
+
+    try {
+      const res = await fetch("/api/messages/delete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ messageId }),
+      });
+
+      if (res.ok) {
+        // Remove message from local state immediately
+        setMessages((prev) => prev.filter((m) => m.id !== messageId));
+        toast.success("Message deleted");
+      } else {
+        const data = await res.json();
+        toast.error(data.error || "Failed to delete message");
+      }
+    } catch (error) {
+      console.error("Delete error:", error);
+      toast.error("Failed to delete message");
+    }
+  };
 
   return (
     <div
@@ -244,6 +276,17 @@ export function ChatView({
                               </span>
                             )}
                           </div>
+
+                          {/* Delete button - only for own messages */}
+                          {msg.sender === "me" && msg.id && (
+                            <button
+                              onClick={() => handleDeleteMessage(msg.id)}
+                              className="absolute -top-2 -right-2 opacity-0 group-hover:opacity-100 transition-opacity bg-red-500 hover:bg-red-600 text-white rounded-full p-1.5 shadow-lg"
+                              title="Delete message"
+                            >
+                              <Trash2 className="w-3 h-3" />
+                            </button>
+                          )}
                         </div>
                       </div>
                     )}

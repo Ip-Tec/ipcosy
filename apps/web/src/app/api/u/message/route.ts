@@ -54,14 +54,40 @@ export async function POST(req: Request) {
         chatId = newChat.id;
       }
     } else {
-      // Anonymous user - find or create system "Anonymous" user
+      // Anonymous user - create individual user per fingerprint
+      // This allows proper account linking when they register later
+
+      // Get fingerprint from cookie or generate temporary ID
+      const cookieHeader = req.headers.get("cookie");
+      let fingerprint = null;
+
+      if (cookieHeader) {
+        const cookies = cookieHeader.split(";").map((c) => c.trim());
+        const fpCookie = cookies.find((c) =>
+          c.startsWith("ipcosy-fingerprint="),
+        );
+        if (fpCookie) {
+          fingerprint = fpCookie.split("=")[1];
+        }
+      }
+
+      // If no fingerprint, we can't create a proper anonymous user
+      if (!fingerprint) {
+        return NextResponse.json(
+          { error: "Anonymous messaging requires browser fingerprint" },
+          { status: 400 },
+        );
+      }
+
+      // Create or find anonymous user with this fingerprint
       const anonUser = await prisma.user.upsert({
-        where: { email: "anonymous@ipcosy.system" },
+        where: { fingerprint: fingerprint },
         update: {},
         create: {
-          email: "anonymous@ipcosy.system",
+          id: fingerprint, // Use fingerprint as ID for easy lookup
+          fingerprint: fingerprint,
           name: "Anonymous",
-          username: "anonymous",
+          username: `anon-${fingerprint.substring(0, 8)}`,
         },
       });
 

@@ -446,6 +446,7 @@ function HomeContent() {
         scrollRef={scrollRef}
         chats={chats}
         isLoadingChats={isLoadingChats}
+        setMessages={setMessages}
       />
 
       <CreateGroupModal

@@ -4,6 +4,7 @@ import { PrismaAdapter } from "@next-auth/prisma-adapter";
 import { prisma } from "@ipcosy/db";
 import { nanoid } from "nanoid";
 import { cookies } from "next/headers";
+import { linkAnonymousAccount } from "./link-account";
 
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma) as any,
@@ -112,6 +113,16 @@ export const authOptions: NextAuthOptions = {
           registrationFingerprint: fingerprint,
         },
       });
+
+      // Link anonymous account if fingerprint exists
+      if (fingerprint) {
+        try {
+          await linkAnonymousAccount(user.id, fingerprint);
+        } catch (error) {
+          console.error("Failed to link anonymous account:", error);
+          // Don't fail registration if linking fails
+        }
+      }
     },
   },
   pages: {

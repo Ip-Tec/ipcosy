@@ -53,6 +53,7 @@ export async function GET(req: NextRequest) {
             username: true,
             email: true, // To identify anonymous user
             name: true,
+            fingerprint: true, // To identify anonymous users
           },
         },
       },
@@ -64,11 +65,9 @@ export async function GET(req: NextRequest) {
       const isMe = msg.userId === userId;
 
       // Determine alias
-      // If it's an anonymous user (email is anonymous@ipcosy.system), use "Anonymous" or custom alias logic
-      // But the UI just uses msg.alias.
-
+      // If user has a fingerprint but no email, they're anonymous
       let alias = msg.user.username || msg.user.name || "Anonymous";
-      if (msg.user.email === "anonymous@ipcosy.system") {
+      if (msg.user.fingerprint && !msg.user.email) {
         alias = "Anonymous";
       }
 
