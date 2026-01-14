@@ -4,6 +4,7 @@ export type MessagePayload = {
   fileUrl?: string;
   type?: "chat" | "typing";
   chatId?: string;
+  isAnonymous?: boolean;
 };
 
 export type ServerEvent =

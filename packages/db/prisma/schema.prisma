@@ -100,11 +100,18 @@ enum ParticipantRole {
   MEMBER
 }
 
+enum ChatType {
+  DM
+  GROUP
+  ANONYMOUS
+}
+
 model Chat {
   id        String   @id @default(uuid())
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   
+  type      ChatType @default(DM)
   isGroup   Boolean  @default(false)
   name      String?  // For groups
   joinCode  String?  @unique // For joining groups
@@ -120,7 +127,6 @@ model ChatParticipant {
   joinedAt  DateTime @default(now())
   
   role      ParticipantRole @default(MEMBER)
-  
   // Notification Settings
   isMuted              Boolean   @default(false)
   mutedUntil           DateTime?
@@ -131,7 +137,6 @@ model ChatParticipant {
   
   chatId    String
   chat      Chat     @relation(fields: [chatId], references: [id])
-
   lastSeenAt DateTime @default(now())
 
   @@unique([userId, chatId])
@@ -148,6 +153,7 @@ model Message {
   createdAt DateTime @default(now())
   
   content   String?  @db.Text
+  isAnonymous Boolean @default(false)
   fileUrl   String?
   fileType  String?  // image, video, doc
   

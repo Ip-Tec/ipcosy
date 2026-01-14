@@ -1,5 +1,5 @@
 import { WebSocket } from "ws";
-import { prisma } from "@ipcosy/db";
+import { prisma, ChatType } from "@ipcosy/db";
 import { IpServer, MessagePayload } from "@ipcosy/ip-socket";
 
 class ChatServer extends IpServer {
@@ -103,12 +103,57 @@ class ChatServer extends IpServer {
       // Verify chat exists before saving
       const chatExists = await prisma.chat.findUnique({
         where: { id: chatId },
+        include: { participants: true },
       });
+
       if (!chatExists) {
         ws.send(
           JSON.stringify({ type: "error", message: "Chat does not exist" }),
         );
         return;
+      }
+
+      // Handle Anonymous Rerouting
+      const isAnonymous = payload.isAnonymous || false;
+      if (isAnonymous && chatExists.type !== ChatType.ANONYMOUS) {
+        // Find the other participant to start anonymous chat with
+        const otherParticipant = chatExists.participants.find(
+          (p) => p.userId !== user.id,
+        );
+
+        if (otherParticipant) {
+          const targetUserId = otherParticipant.userId;
+          const senderId = user.id;
+
+          // Find or Create Anonymous Chat
+          let anonChat = await prisma.chat.findFirst({
+            where: {
+              type: ChatType.ANONYMOUS,
+              AND: [
+                { participants: { some: { userId: senderId } } },
+                { participants: { some: { userId: targetUserId } } },
+              ],
+            },
+          });
+
+          if (!anonChat) {
+            anonChat = await prisma.chat.create({
+              data: {
+                type: ChatType.ANONYMOUS,
+                name: "Anonymous Messages",
+                isGroup: false,
+                participants: {
+                  create: [
+                    { userId: senderId, role: "MEMBER" }, // Sender is member
+                    { userId: targetUserId, role: "OWNER" }, // Recipient owns the inbox
+                  ],
+                },
+              },
+            });
+          }
+
+          chatId = anonChat.id;
+        }
       }
 
       await prisma.message.create({
@@ -117,6 +162,7 @@ class ChatServer extends IpServer {
           fileUrl: payload.fileUrl,
           userId: user.id,
           chatId: chatId,
+          isAnonymous: isAnonymous,
         },
       });
 

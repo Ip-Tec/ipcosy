@@ -2,13 +2,14 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { Trash2 } from "lucide-react";
+import { Share2, Trash2, Shield } from "lucide-react";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
 import { UploadButton } from "../../utils/uploadthing";
 import { AnonymousMessageCard } from "./anonymous-message-card";
 import { EmptyState } from "@/components/empty-state";
 import { DeleteMessageModal } from "./modals/delete-message-modal";
+import { MessageCardModal } from "./modals/message-card-modal";
 
 interface ChatViewProps {
   selectedChat: string | null;
@@ -30,6 +31,8 @@ interface ChatViewProps {
   isLoadingChats: boolean;
   currentChat?: any;
   setMessages: (messages: any[] | ((prev: any[]) => any[])) => void;
+  isAnonymous: boolean;
+  setIsAnonymous: (val: boolean) => void;
 }
 
 export function ChatView({
@@ -51,14 +54,26 @@ export function ChatView({
   chats,
   isLoadingChats,
   setMessages,
+  isAnonymous,
+  setIsAnonymous,
 }: ChatViewProps) {
   const currentChat = chats.find((c) => c.id === selectedChat);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [messageToDelete, setMessageToDelete] = useState<string | null>(null);
 
+  // Card Sharing Modal State
+  const [showCardModal, setShowCardModal] = useState(false);
+  const [selectedMessageForCard, setSelectedMessageForCard] =
+    useState<any>(null);
+
   const handleDeleteClick = (messageId: string) => {
     setMessageToDelete(messageId);
     setShowDeleteModal(true);
+  };
+
+  const handleShareClick = (msg: any) => {
+    setSelectedMessageForCard(msg);
+    setShowCardModal(true);
   };
 
   const handleConfirmDelete = async () => {
@@ -73,7 +88,6 @@ export function ChatView({
       });
 
       if (res.ok) {
-        // Remove message from local state immediately
         setMessages((prev) => prev.filter((m) => m.id !== messageToDelete));
         toast.success("Message deleted");
         setMessageToDelete(null);
@@ -189,11 +203,13 @@ export function ChatView({
               )}
 
               {messages.map((msg, idx) => {
+                // If message is explicitly anonymous OR matches legacy anonymous conditions
                 const isAnonymousMessage =
-                  msg.sender === "them" &&
-                  msg.text && // Ensure message has content
-                  (selectedChatInfo?.name === "Anonymous Messages" ||
-                    msg.alias === "Anonymous");
+                  msg.isAnonymous ||
+                  (msg.sender === "them" &&
+                    msg.text &&
+                    (selectedChatInfo?.name === "Anonymous Messages" ||
+                      msg.alias === "Anonymous"));
 
                 const isUnread =
                   msg.sender === "them" &&
@@ -284,16 +300,26 @@ export function ChatView({
                             )}
                           </div>
 
-                          {/* Delete button - only for own messages */}
-                          {msg.sender === "me" && msg.id && (
+                          {/* Action Buttons: Delete & Share */}
+                          <div className="absolute -top-2 -right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
                             <button
-                              onClick={() => handleDeleteClick(msg.id)}
-                              className="absolute -top-2 -right-2 opacity-0 group-hover:opacity-100 transition-opacity bg-red-500 hover:bg-red-600 text-white rounded-full p-1.5 shadow-lg"
-                              title="Delete message"
+                              onClick={() => handleShareClick(msg)}
+                              className="bg-sidebar hover:bg-muted text-foreground rounded-full p-1.5 shadow-lg border border-border"
+                              title="Share as Card"
                             >
-                              <Trash2 className="w-3 h-3" />
+                              <Share2 className="w-3 h-3" />
                             </button>
-                          )}
+
+                            {msg.sender === "me" && msg.id && (
+                              <button
+                                onClick={() => handleDeleteClick(msg.id)}
+                                className="bg-red-500 hover:bg-red-600 text-white rounded-full p-1.5 shadow-lg"
+                                title="Delete message"
+                              >
+                                <Trash2 className="w-3 h-3" />
+                              </button>
+                            )}
+                          </div>
                         </div>
                       </div>
                     )}
@@ -339,14 +365,35 @@ export function ChatView({
               </div>
             </div>
 
+            {/* Anonymous Toggle */}
+            <button
+              onClick={() => setIsAnonymous(!isAnonymous)}
+              className={`p-2 rounded-full transition-all ${
+                isAnonymous
+                  ? "bg-purple-500/10 text-purple-600"
+                  : "hover:bg-black/5 dark:hover:bg-white/5 text-muted"
+              }`}
+              title="Toggle Anonymous Mode"
+            >
+              <Shield
+                className={`w-6 h-6 ${isAnonymous ? "fill-purple-600" : ""}`}
+              />
+            </button>
+
             <div className="flex-1 relative flex items-center">
               <input
                 type="text"
                 value={inputText}
                 onChange={(e) => setInputText(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleSend()}
-                placeholder="Your message..."
-                className="w-full bg-background/50 border border-border rounded-full px-5 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all placeholder:text-muted"
+                placeholder={
+                  isAnonymous ? "Send anonymously..." : "Your message..."
+                }
+                className={`w-full bg-background/50 border rounded-full px-5 py-3 text-sm focus:outline-none focus:ring-2 transition-all placeholder:text-muted ${
+                  isAnonymous
+                    ? "border-purple-500/30 focus:ring-purple-500/20"
+                    : "border-border focus:ring-primary/20"
+                }`}
               />
             </div>
 
@@ -402,6 +449,14 @@ export function ChatView({
           setShowDeleteModal(false);
           setMessageToDelete(null);
         }}
+      />
+
+      {/* Share Card Modal */}
+      <MessageCardModal
+        show={showCardModal}
+        onClose={() => setShowCardModal(false)}
+        message={selectedMessageForCard}
+        username={alias || "User"}
       />
     </div>
   );

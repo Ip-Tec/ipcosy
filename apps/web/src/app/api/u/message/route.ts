@@ -21,15 +21,17 @@ export async function POST(req: Request) {
 
     let chatId: string | null = null;
     let senderId: string;
+    const isAnonymous = true; // All messages via this route are anonymous
 
     if (session?.user) {
       // Authenticated user sending message
       senderId = (session.user as any).id;
 
-      // Check for existing DM (precisely between these two users)
+      // Check for existing ANONYMOUS DM
       const existingChat = await prisma.chat.findFirst({
         where: {
           isGroup: false,
+          type: "ANONYMOUS",
           AND: [
             { participants: { some: { userId: senderId } } },
             { participants: { some: { userId: targetUserId } } },
@@ -43,6 +45,8 @@ export async function POST(req: Request) {
         const newChat = await prisma.chat.create({
           data: {
             isGroup: false,
+            type: "ANONYMOUS",
+            name: "Anonymous Messages",
             participants: {
               create: [
                 { userId: senderId, role: "OWNER" },
@@ -54,9 +58,7 @@ export async function POST(req: Request) {
         chatId = newChat.id;
       }
     } else {
-      // Anonymous user - create individual user per fingerprint
-      // This allows proper account linking when they register later
-
+      // Anonymous user (visitor)
       // Get fingerprint from cookie or generate temporary ID
       const cookieHeader = req.headers.get("cookie");
       let fingerprint = null;
@@ -71,7 +73,6 @@ export async function POST(req: Request) {
         }
       }
 
-      // If no fingerprint, we can't create a proper anonymous user
       if (!fingerprint) {
         return NextResponse.json(
           { error: "Anonymous messaging requires browser fingerprint" },
@@ -84,7 +85,7 @@ export async function POST(req: Request) {
         where: { fingerprint: fingerprint },
         update: {},
         create: {
-          id: fingerprint, // Use fingerprint as ID for easy lookup
+          id: fingerprint,
           fingerprint: fingerprint,
           name: "Anonymous",
           username: `anon-${fingerprint.substring(0, 8)}`,
@@ -93,10 +94,11 @@ export async function POST(req: Request) {
 
       senderId = anonUser.id;
 
-      // Check for existing anonymous chat with target
+      // Check for existing anonymous chat
       const existingChat = await prisma.chat.findFirst({
         where: {
           isGroup: false,
+          type: "ANONYMOUS",
           AND: [
             { participants: { some: { userId: senderId } } },
             { participants: { some: { userId: targetUserId } } },
@@ -110,6 +112,7 @@ export async function POST(req: Request) {
         const newChat = await prisma.chat.create({
           data: {
             isGroup: false,
+            type: "ANONYMOUS",
             name: "Anonymous Messages",
             participants: {
               create: [
@@ -124,14 +127,8 @@ export async function POST(req: Request) {
     }
 
     if (!chatId) {
-      console.error("Failed to resolve chatId for message", {
-        senderId,
-        targetUserId,
-      });
-      return NextResponse.json(
-        { error: "Conversation initialization failed" },
-        { status: 500 },
-      );
+      // ... existing error handler ...
+      return NextResponse.json({ error: "Failed" }, { status: 500 });
     }
 
     // Create message with metadata and update chat timestamp
@@ -141,6 +138,7 @@ export async function POST(req: Request) {
           content,
           userId: senderId,
           chatId: chatId,
+          isAnonymous: true,
           // Premium visible metadata
           deviceType: metadata.deviceType,
           deviceOS: metadata.deviceOS,

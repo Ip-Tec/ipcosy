@@ -83,6 +83,7 @@ export async function GET(req: NextRequest) {
           minute: "2-digit",
           hour12: false,
         }),
+        isAnonymous: msg.isAnonymous,
         metadata:
           isPremium && !isMe
             ? {

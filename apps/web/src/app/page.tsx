@@ -56,6 +56,7 @@ function HomeContent() {
   const [isLoadingChats, setIsLoadingChats] = useState(false);
   const [isLoadingMessages, setIsLoadingMessages] = useState(false);
   const [isCreatingGroup, setIsCreatingGroup] = useState(false);
+  const [isAnonymous, setIsAnonymous] = useState(false);
   const socketRef = useRef<IpSocket | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -248,6 +249,7 @@ function HomeContent() {
       fileUrl: fileUrl,
       visitorId: visitorId,
       alias: alias,
+      isAnonymous: isAnonymous,
       time: new Date().toLocaleTimeString([], {
         hour: "2-digit",
         minute: "2-digit",
@@ -481,6 +483,8 @@ function HomeContent() {
         chats={chats}
         isLoadingChats={isLoadingChats}
         setMessages={setMessages}
+        isAnonymous={isAnonymous}
+        setIsAnonymous={setIsAnonymous}
       />
 
       <CreateGroupModal
