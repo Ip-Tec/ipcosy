@@ -64,14 +64,23 @@ class ChatServer extends IpServer {
     this.messageCounts.set(visitorId, userRate);
 
     // 3. Resolve or Create User by Fingerprint
-    const user = await prisma.user.upsert({
-      where: { fingerprint: visitorId },
-      update: {},
-      create: {
-        id: visitorId,
-        fingerprint: visitorId,
-      },
+    // 3. Resolve or Create User
+    // First try to find by ID (if visitorId is a userId)
+    let user = await prisma.user.findUnique({
+      where: { id: visitorId },
     });
+
+    if (!user) {
+      // If not found by ID, treat as anonymous fingerprint
+      user = await prisma.user.upsert({
+        where: { fingerprint: visitorId },
+        update: {},
+        create: {
+          id: visitorId,
+          fingerprint: visitorId,
+        },
+      });
+    }
 
     if (payload.text || payload.fileUrl) {
       // 4. Push to Database
@@ -108,7 +117,8 @@ class ChatServer extends IpServer {
       });
 
       // 5. Broadcast to participants only
-      this.broadcastToChat(chatId, { type: "echo", data: payload });
+      const echoPayload = { ...payload, chatId };
+      this.broadcastToChat(chatId, { type: "echo", data: echoPayload });
     }
   }
 
