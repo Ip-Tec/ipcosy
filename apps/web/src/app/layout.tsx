@@ -17,6 +17,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_BASE_URL || "https://ipcosy.vercel.app",
+  ),
   title: "IP~Cosy - Secure & Anonymous Messaging",
   description:
     "The most secure way to connect anonymously. Everything flows from Google identity. No tracking, no logs, just pure privacy.",

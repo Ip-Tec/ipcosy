@@ -29,12 +29,16 @@ class ChatServer extends IpServer {
     // 1. Handle Typing Events (requires chatId in payload)
     if (payload.type === "typing") {
       const chatId = payload.chatId || "mvp-lobby";
-      this.broadcastToChat(chatId, {
-        type: "typing",
-        visitorId,
-        isTyping: !!payload.text,
+      this.broadcastToChat(
         chatId,
-      });
+        {
+          type: "typing",
+          visitorId,
+          isTyping: !!payload.text,
+          chatId,
+        },
+        ws,
+      );
       return;
     }
 
@@ -118,17 +122,30 @@ class ChatServer extends IpServer {
 
       // 5. Broadcast to participants only
       const echoPayload = { ...payload, chatId };
-      this.broadcastToChat(chatId, { type: "echo", data: echoPayload });
+      this.broadcastToChat(chatId, { type: "echo", data: echoPayload }, ws);
     }
   }
 
-  private async broadcastToChat(chatId: string, event: any) {
-    // For the public lobby, we still broadcast to everyone (or we could make it a "group" everyone joins)
-    // But per requirements, other groups must be private.
+  private async broadcastToChat(
+    chatId: string,
+    event: any,
+    senderWs?: WebSocket,
+  ) {
+    // For the public lobby, we still broadcast to everyone
     const data = JSON.stringify(event);
 
+    // Ensure sender always gets the echo immediately (UX responsiveness)
+    if (senderWs && senderWs.readyState === 1) {
+      senderWs.send(data);
+    }
+
     if (chatId === "mvp-lobby") {
-      this.broadcast(event);
+      // Broadcast to everyone else
+      (this.wss as any).clients.forEach((client: any) => {
+        if (client !== senderWs && client.readyState === 1) {
+          client.send(data);
+        }
+      });
       return;
     }
 
@@ -141,6 +158,9 @@ class ChatServer extends IpServer {
 
     // Send only to connected clients who are participants
     (this.wss as any).clients.forEach((client: any) => {
+      // Skip sender (already sent)
+      if (client === senderWs) return;
+
       if (
         client.readyState === 1 && // WebSocket.OPEN
         client.userId &&

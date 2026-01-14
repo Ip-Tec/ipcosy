@@ -138,6 +138,18 @@ function HomeContent() {
       autoConnect: true,
     });
 
+    // Identify immediately to ensure we receive targeted messages
+    if (visitorId) {
+      // Small delay to ensure connection is ready if queueing isn't robust
+      setTimeout(() => {
+        socketRef.current?.send({
+          visitorId,
+          type: "identify",
+          chatId: "mvp-lobby", // Default context
+        } as any);
+      }, 500);
+    }
+
     socketRef.current.on("message", (payload: any) => {
       if (payload.type === "echo") {
         const msgChatId = payload.data.chatId || "mvp-lobby";
