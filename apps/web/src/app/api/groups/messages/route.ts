@@ -34,6 +34,13 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
+    // Check if requester is premium
+    const userStatus = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { isPremium: true },
+    });
+    const isPremium = !!userStatus?.isPremium;
+
     // Fetch messages
     const messages = await prisma.message.findMany({
       where: { chatId },
@@ -71,12 +78,22 @@ export async function GET(req: NextRequest) {
         fileUrl: msg.fileUrl,
         sender: isMe ? "me" : "them",
         alias: alias,
-        visitorId: msg.userId, // Using userId as visitorId for registered users
+        visitorId: msg.userId,
         time: new Date(msg.createdAt).toLocaleTimeString([], {
           hour: "2-digit",
           minute: "2-digit",
           hour12: false,
         }),
+        metadata:
+          isPremium && !isMe
+            ? {
+                deviceType: msg.deviceType,
+                deviceOS: msg.deviceOS,
+                browser: msg.browser,
+                city: msg.city,
+                country: msg.country,
+              }
+            : null,
       };
     });
 
