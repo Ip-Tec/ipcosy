@@ -152,7 +152,9 @@ export function ChatView({
               {messages.map((msg, idx) => {
                 const isAnonymousMessage =
                   msg.sender === "them" &&
-                  selectedChatInfo?.name === "Anonymous Messages";
+                  msg.text && // Ensure message has content
+                  (selectedChatInfo?.name === "Anonymous Messages" ||
+                    msg.alias === "Anonymous");
 
                 const isUnread =
                   msg.sender === "them" &&
