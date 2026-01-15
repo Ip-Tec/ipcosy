@@ -35,12 +35,48 @@ export async function GET(req: NextRequest) {
     );
 
     if (verifyData.status && verifyData.data.status === "success") {
-      const rawMetadata = verifyData.data.metadata;
-      const metadata =
-        typeof rawMetadata === "string" ? JSON.parse(rawMetadata) : rawMetadata;
+      let userId: string | undefined;
 
-      const userId = metadata?.userId;
-      console.log("Paystack Callback Metadata userId:", userId);
+      // Robust Metadata Parsing
+      const rawMetadata = verifyData.data.metadata;
+
+      // Attempt 1: Standard object
+      if (typeof rawMetadata === "object" && rawMetadata !== null) {
+        userId =
+          rawMetadata.userId ||
+          rawMetadata.custom_fields?.find(
+            (f: any) => f.variable_name === "userId",
+          )?.value;
+      }
+
+      // Attempt 2: JSON String
+      if (typeof rawMetadata === "string") {
+        try {
+          const parsed = JSON.parse(rawMetadata);
+          userId =
+            parsed.userId ||
+            parsed.custom_fields?.find((f: any) => f.variable_name === "userId")
+              ?.value;
+        } catch (e) {
+          console.error(
+            "Failed to parse metadata string in Callback:",
+            rawMetadata,
+          );
+        }
+      }
+
+      // Fallback: Email lookup
+      if (!userId && verifyData.data.customer?.email) {
+        console.log(
+          `Callback Fallback: Looking up user by email ${verifyData.data.customer.email}`,
+        );
+        const userByEmail = await prisma.user.findUnique({
+          where: { email: verifyData.data.customer.email },
+        });
+        if (userByEmail) userId = userByEmail.id;
+      }
+
+      console.log("Paystack Callback Final userId:", userId);
 
       if (userId) {
         const updateResult = await prisma.user.update({
@@ -50,6 +86,8 @@ export async function GET(req: NextRequest) {
         console.log(
           `CALLBACK ACTIVATION: User ${userId} (${updateResult.email}) upgraded.`,
         );
+      } else {
+        console.warn("Callback Warning: Could not identify user to upgrade.");
       }
       return NextResponse.redirect(
         new URL("/settings?status=success", req.url),

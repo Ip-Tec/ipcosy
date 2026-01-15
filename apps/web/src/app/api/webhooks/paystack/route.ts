@@ -27,21 +27,56 @@ export async function POST(req: NextRequest) {
     }
 
     const event = JSON.parse(body);
-    console.log("Paystack Event Type:", event.event);
+    console.log(
+      `PAYSTACK EVENT: ${event.event}`,
+      JSON.stringify(event, null, 2),
+    );
 
     if (event.event === "charge.success") {
-      // Paystack sometimes sends metadata as a string
+      let userId: string | undefined;
+
+      // Robust Metadata Parsing
       const rawMetadata = event.data.metadata;
-      const metadata =
-        typeof rawMetadata === "string" ? JSON.parse(rawMetadata) : rawMetadata;
 
-      const userId = metadata?.userId;
-      const amount = event.data.amount;
-      const status = event.data.status;
+      // Attempt 1: Standard object
+      if (typeof rawMetadata === "object" && rawMetadata !== null) {
+        userId =
+          rawMetadata.userId ||
+          rawMetadata.custom_fields?.find(
+            (f: any) => f.variable_name === "userId",
+          )?.value;
+      }
 
-      console.log(
-        `Processing Success: User=${userId}, Amount=${amount}, Status=${status}`,
-      );
+      // Attempt 2: JSON String
+      if (typeof rawMetadata === "string") {
+        try {
+          const parsed = JSON.parse(rawMetadata);
+          userId =
+            parsed.userId ||
+            parsed.custom_fields?.find((f: any) => f.variable_name === "userId")
+              ?.value;
+        } catch (e) {
+          console.error("Failed to parse metadata string:", rawMetadata);
+        }
+      }
+
+      console.log(`EXTRACTED USER ID: ${userId}`);
+
+      if (!userId) {
+        console.error(
+          "CRITICAL: Payment succeeded but NO USER ID found in metadata.",
+        );
+        // Fallback: Try finding user by email if strict ID match fails?
+        // Risky but maybe necessary if metadata is dropped.
+        const email = event.data.customer.email;
+        if (email) {
+          console.log(`Fallback: Attempting to find user by email ${email}`);
+          const userByEmail = await prisma.user.findUnique({
+            where: { email },
+          });
+          if (userByEmail) userId = userByEmail.id;
+        }
+      }
 
       if (userId) {
         const updateResult = await prisma.user.update({
@@ -52,7 +87,7 @@ export async function POST(req: NextRequest) {
           `DATABASE UPDATED: User ${userId} (${updateResult.email}) set to isPremium: true`,
         );
       } else {
-        console.error("Paystack Webhook Error: userId missing in metadata.");
+        console.error("FINAL FAILURE: Could not identify user for payment.");
       }
     }
 
