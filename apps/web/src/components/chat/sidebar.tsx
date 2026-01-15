@@ -230,7 +230,7 @@ export function Sidebar({
           >
             <Users className="w-4 h-4" />
             <span>Groups</span>
-            {groupChats.length > 0 && (
+            {groupChats.reduce((acc, c) => acc + (c.unread || 0), 0) > 0 && (
               <span
                 className={`px-1.5 py-0.5 rounded-full text-xs font-bold ${
                   activeTab === "groups"
@@ -238,7 +238,7 @@ export function Sidebar({
                     : "bg-primary/10 text-primary"
                 }`}
               >
-                {groupChats.length}
+                {groupChats.reduce((acc, c) => acc + (c.unread || 0), 0)}
               </span>
             )}
           </button>
@@ -252,7 +252,7 @@ export function Sidebar({
           >
             <MessageCircle className="w-4 h-4" />
             <span>Direct</span>
-            {dmChats.length > 0 && (
+            {dmChats.reduce((acc, c) => acc + (c.unread || 0), 0) > 0 && (
               <span
                 className={`px-1.5 py-0.5 rounded-full text-xs font-bold ${
                   activeTab === "dms"
@@ -260,7 +260,7 @@ export function Sidebar({
                     : "bg-primary/10 text-primary"
                 }`}
               >
-                {dmChats.length}
+                {dmChats.reduce((acc, c) => acc + (c.unread || 0), 0)}
               </span>
             )}
           </button>

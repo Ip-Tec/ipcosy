@@ -50,7 +50,11 @@ export default function UpgradeButton({
     <button
       onClick={() => {
         if (!config.publicKey) {
-          toast.error("Paystack Public Key is missing!");
+          toast.error("Payment Error: Public Key missing");
+          return;
+        }
+        if (!config.email || config.email.includes("example.com")) {
+          toast.error("Payment Error: User email invalid");
           return;
         }
         initializePayment({ onSuccess, onClose });

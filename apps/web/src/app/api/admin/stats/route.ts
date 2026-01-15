@@ -26,7 +26,7 @@ export async function GET(req: NextRequest) {
       totalMessages,
       last24hMessages,
     ] = await Promise.all([
-      prisma.user.count(),
+      prisma.user.count({ where: { email: { not: null } } }),
       prisma.user.count({ where: { isPremium: true } }),
       prisma.chat.count(),
       prisma.chat.count({ where: { isGroup: true } }),
