@@ -3,16 +3,17 @@ import { InviteCard } from "@/components/chat/invite-card";
 import { Metadata } from "next";
 
 interface InvitePageProps {
-  params: {
+  params: Promise<{
     code: string;
-  };
+  }>;
 }
 
 export async function generateMetadata({
   params,
 }: InvitePageProps): Promise<Metadata> {
+  const { code } = await params;
   const chat = await prisma.chat.findUnique({
-    where: { joinCode: params.code },
+    where: { joinCode: code },
     select: { name: true },
   });
 
@@ -23,8 +24,9 @@ export async function generateMetadata({
 }
 
 export default async function InvitePage({ params }: InvitePageProps) {
+  const { code } = await params;
   const chat = await prisma.chat.findUnique({
-    where: { joinCode: params.code },
+    where: { joinCode: code },
     include: {
       participants: {
         take: 5,
@@ -64,5 +66,5 @@ export default async function InvitePage({ params }: InvitePageProps) {
     isExpired,
   };
 
-  return <InviteCard code={params.code} groupInfo={groupInfo} />;
+  return <InviteCard code={code} groupInfo={groupInfo} />;
 }

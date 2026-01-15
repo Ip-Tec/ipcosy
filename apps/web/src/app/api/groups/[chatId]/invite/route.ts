@@ -6,7 +6,7 @@ import { nanoid } from "nanoid";
 
 export async function POST(
   req: NextRequest,
-  { params }: { params: { chatId: string } },
+  { params }: { params: Promise<{ chatId: string }> },
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -14,7 +14,7 @@ export async function POST(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { chatId } = params;
+    const { chatId } = await params;
     const userId = (session.user as any).id;
 
     // Verify user is OWNER of the group

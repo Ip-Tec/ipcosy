@@ -3,10 +3,10 @@ import { prisma } from "@ipcosy/db";
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { code: string } },
+  { params }: { params: Promise<{ code: string }> },
 ) {
   try {
-    const { code } = params;
+    const { code } = await params;
 
     if (!code) {
       return NextResponse.json({ error: "Invalid code" }, { status: 400 });
