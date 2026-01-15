@@ -15,13 +15,14 @@ import {
   PenBox,
   Users,
   Zap,
-  ArrowLeft,
   Link as LinkIcon,
+  ChevronLeft,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 
 import { LoginPrompt } from "@/components/login-prompt";
 import nextDynamic from "next/dynamic";
+
 const UpgradeButton = nextDynamic(() => import("@/components/upgrade-button"), {
   ssr: false,
   loading: () => (
@@ -83,7 +84,7 @@ export default function ProfilePage() {
           href="/"
           className="text-primary hover:opacity-80 transition-opacity flex items-center gap-1"
         >
-          <ArrowLeft className="w-4 h-4" /> Back to Chat
+          <ChevronLeft className="w-4 h-4" /> Back to Chat
         </Link>
         <h1 className="text-xl font-bold">Your Profile</h1>
       </div>

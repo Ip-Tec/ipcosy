@@ -11,7 +11,14 @@ import { toast } from "sonner";
 import { LoginPrompt } from "@/components/login-prompt";
 import { APP_VERSION } from "@/lib/constants";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Loader2, Bell, BellOff, Shield, User as UserIcon } from "lucide-react";
+import {
+  ChevronLeft,
+  Loader2,
+  Bell,
+  BellOff,
+  Shield,
+  User as UserIcon,
+} from "lucide-react";
 
 const UpgradeButton = nextDynamic(() => import("@/components/upgrade-button"), {
   ssr: false,
@@ -120,7 +127,8 @@ export default function SettingsPage() {
           href="/"
           className="text-primary hover:opacity-80 transition-opacity"
         >
-          ← Back to Chat
+          <ChevronLeft />
+          Back to Chat
         </Link>
         <h1 className="text-xl font-bold">Settings</h1>
       </div>

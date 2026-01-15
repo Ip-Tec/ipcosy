@@ -18,7 +18,7 @@ export default function UpgradeButton({
 }) {
   const config = {
     reference: new Date().getTime().toString(),
-    email: user?.email || "customer@example.com",
+    email: user?.email,
     amount: premiumPrice * 100,
     publicKey: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY || "",
     // Fallback URL for safety, though this component should only mount on client
@@ -68,7 +68,7 @@ export default function UpgradeButton({
         "cursor-pointer w-full bg-primary text-white py-4 rounded-2xl font-black text-sm hover:opacity-90 shadow-lg transition-all active:scale-95"
       }
     >
-      {children || "Upgrade Now with Paystack"}
+      {children || "Upgrade Now"}
     </button>
   );
 }

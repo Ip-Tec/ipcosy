@@ -60,6 +60,7 @@ export async function GET(req: NextRequest) {
       isGroup: chat.isGroup,
       isJoinCodePrivate: (chat as any).isJoinCodePrivate,
       joinCode: canSeeCode ? chat.joinCode : null,
+      joinCodeExpiresAt: canSeeCode ? (chat as any).joinCodeExpiresAt : null,
       myRole: participant.role,
       participants: chat.participants.map((p) => ({
         id: p.user.id,
