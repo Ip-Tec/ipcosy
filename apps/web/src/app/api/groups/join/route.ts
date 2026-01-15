@@ -30,16 +30,21 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Group not found" }, { status: 404 });
     }
 
-    // 2. Check if already a member
-    const isMember = chat.participants.some((p) => p.userId === userId);
-    if (isMember) {
+    // 3. Check if user is blocked
+    const block = await (prisma.chatBlock as any).findUnique({
+      where: {
+        chatId_userId: { chatId: chat.id, userId },
+      },
+    });
+
+    if (block) {
       return NextResponse.json(
-        { error: "You are already a member of this group" },
-        { status: 400 },
+        { error: "You are blocked from this group." },
+        { status: 403 },
       );
     }
 
-    // 3. Check Member Limits based on Group Owner's Plan
+    // 4. Check Member Limits based on Group Owner's Plan
     const ownerParticipant = chat.participants.find((p) => p.role === "OWNER");
     if (!ownerParticipant) {
       // Should theoretically not happen if data integrity is good

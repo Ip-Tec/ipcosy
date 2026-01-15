@@ -28,10 +28,24 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Check for blocks
+    const block = await (prisma.chatBlock as any).findUnique({
+      where: {
+        chatId_userId: { chatId: chat.id, userId },
+      },
+    });
+
+    if (block) {
+      return NextResponse.json(
+        { error: "You are blocked from this group" },
+        { status: 403 },
+      );
+    }
+
     // Check expiration
     if (
-      chat.joinCodeExpiresAt &&
-      new Date() > new Date(chat.joinCodeExpiresAt)
+      (chat as any).joinCodeExpiresAt &&
+      new Date() > new Date((chat as any).joinCodeExpiresAt)
     ) {
       return NextResponse.json(
         { error: "Invite link expired" },

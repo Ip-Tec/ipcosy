@@ -255,6 +255,16 @@ class ChatServer extends IpServer {
 
       // 5. Broadcast to participants only
       const echoPayload = { ...payload, chatId };
+
+      // Sanitization: If anonymous, strip identifying fields from the broadcast payload
+      if (isAnonymous) {
+        delete echoPayload.visitorId;
+        echoPayload.username = "Anonymous";
+        echoPayload.image = null;
+        if ((echoPayload as any).alias)
+          (echoPayload as any).alias = "Anonymous";
+      }
+
       this.broadcastToChat(chatId, { type: "echo", data: echoPayload }, ws);
     }
   }

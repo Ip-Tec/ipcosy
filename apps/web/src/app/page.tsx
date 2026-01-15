@@ -260,7 +260,7 @@ function HomeContent() {
       text: inputText,
       fileUrl: fileUrl,
       visitorId: visitorId,
-      alias: alias,
+      alias: isAnonymous ? "Anonymous" : alias,
       isAnonymous: isAnonymous,
       time: new Date().toLocaleTimeString([], {
         hour: "2-digit",
@@ -524,6 +524,7 @@ function HomeContent() {
         handleToggleJoinCodePrivacy={handleToggleJoinCodePrivacy}
         handleDeleteGroup={handleDeleteGroup}
         handlePromoteAdmin={handlePromoteAdmin}
+        myUserId={visitorId || ""}
       />
 
       <DeleteConfirmationModal

@@ -7,6 +7,9 @@ import {
   Copy,
   Link as LinkIcon,
   Check,
+  UserMinus,
+  Ban,
+  MoreVertical,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useState } from "react";
@@ -18,6 +21,7 @@ interface GroupSettingsModalProps {
   handleToggleJoinCodePrivacy: () => void;
   handleDeleteGroup: () => void;
   handlePromoteAdmin: (userId: string) => void;
+  myUserId: string;
 }
 
 export function GroupSettingsModal({
@@ -27,6 +31,7 @@ export function GroupSettingsModal({
   handleToggleJoinCodePrivacy,
   handleDeleteGroup,
   handlePromoteAdmin,
+  myUserId,
 }: GroupSettingsModalProps) {
   const [isRegenerating, setIsRegenerating] = useState(false);
   const [isUpdatingExpiration, setIsUpdatingExpiration] = useState(false);
@@ -280,37 +285,134 @@ export function GroupSettingsModal({
           <p className="text-xs font-bold text-muted uppercase tracking-wider">
             Members ({selectedChatInfo.participants.length})
           </p>
-          <div className="space-y-3 max-h-48 overflow-y-auto pr-2">
+          <div className="space-y-3 max-h-64 overflow-y-auto pr-2 custom-scrollbar">
             {selectedChatInfo.participants.map((p: any) => (
               <div
                 key={p.id}
-                className="flex items-center justify-between group"
+                className="flex items-center justify-between p-3 rounded-2xl border border-transparent hover:border-border hover:bg-black/5 dark:hover:bg-white/5 transition-all group"
               >
                 <div className="flex items-center gap-3">
-                  <div className="h-8 w-8 rounded-full bg-background border border-border flex items-center justify-center text-[10px] font-bold overflow-hidden">
+                  <div className="h-10 w-10 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center text-xs font-black text-primary overflow-hidden shadow-inner">
                     {p.image ? (
                       <img
                         src={p.image}
-                        alt={p.username}
+                        alt={p.username || p.name}
                         className="w-full h-full object-cover"
                       />
                     ) : (
-                      p.username.substring(0, 1).toUpperCase()
+                      (p.username || p.name || "??")
+                        .substring(0, 1)
+                        .toUpperCase()
                     )}
                   </div>
                   <div className="flex flex-col">
-                    <span className="text-sm font-bold">{p.username}</span>
-                    <span className="text-[10px] text-muted">{p.role}</span>
+                    <span className="text-sm font-bold truncate max-w-[120px]">
+                      {p.username || p.name || "Unknown"}
+                    </span>
+                    <span
+                      className={`text-[10px] font-black uppercase tracking-tighter ${
+                        p.role === "OWNER"
+                          ? "text-primary"
+                          : p.role === "ADMIN"
+                            ? "text-purple-500"
+                            : "text-muted"
+                      }`}
+                    >
+                      {p.role}
+                    </span>
                   </div>
                 </div>
-                {selectedChatInfo.myRole === "OWNER" && p.role === "MEMBER" && (
-                  <button
-                    onClick={() => handlePromoteAdmin(p.id)}
-                    className="cursor-pointer text-[10px] bg-sidebar border border-border px-2 py-1 rounded-md hover:bg-primary hover:text-white transition-all opacity-0 group-hover:opacity-100"
-                  >
-                    Make Admin
-                  </button>
-                )}
+
+                <div className="flex items-center gap-1">
+                  {selectedChatInfo.myRole === "OWNER" &&
+                    p.role === "MEMBER" && (
+                      <button
+                        onClick={() => handlePromoteAdmin(p.userId)}
+                        className="cursor-pointer text-[10px] font-bold bg-primary/10 text-primary px-3 py-1.5 rounded-xl hover:bg-primary hover:text-white transition-all opacity-0 group-hover:opacity-100"
+                      >
+                        Make Admin
+                      </button>
+                    )}
+
+                  {(selectedChatInfo.myRole === "OWNER" ||
+                    (selectedChatInfo.myRole === "ADMIN" &&
+                      p.role === "MEMBER")) &&
+                    p.userId !== selectedChatInfo.myUserId && (
+                      <div className="relative group/menu flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button
+                          onClick={async () => {
+                            if (
+                              !confirm(
+                                `Remove ${p.username || p.name || "this user"} from the group?`,
+                              )
+                            )
+                              return;
+                            try {
+                              const res = await fetch(
+                                "/api/groups/members/remove",
+                                {
+                                  method: "POST",
+                                  headers: {
+                                    "Content-Type": "application/json",
+                                  },
+                                  body: JSON.stringify({
+                                    chatId: selectedChatInfo.id,
+                                    targetUserId: p.userId,
+                                  }),
+                                },
+                              );
+                              if (res.ok) {
+                                toast.success("Member removed");
+                                // Trigger a refetch in parent or update local state if we had it
+                                window.location.reload();
+                              }
+                            } catch (err) {
+                              toast.error("Failed to remove member");
+                            }
+                          }}
+                          className="p-2 hover:bg-red-500/10 text-red-500 rounded-xl transition-colors"
+                          title="Remove member"
+                        >
+                          <UserMinus className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={async () => {
+                            if (
+                              !confirm(
+                                `Block ${p.username || p.name || "this user"}? They will be removed and unable to re-join.`,
+                              )
+                            )
+                              return;
+                            try {
+                              const res = await fetch(
+                                "/api/groups/members/block",
+                                {
+                                  method: "POST",
+                                  headers: {
+                                    "Content-Type": "application/json",
+                                  },
+                                  body: JSON.stringify({
+                                    chatId: selectedChatInfo.id,
+                                    targetUserId: p.userId,
+                                  }),
+                                },
+                              );
+                              if (res.ok) {
+                                toast.success("Member blocked");
+                                window.location.reload();
+                              }
+                            } catch (err) {
+                              toast.error("Failed to block member");
+                            }
+                          }}
+                          className="p-2 hover:bg-red-500/20 bg-red-500/10 text-red-500 rounded-xl transition-colors"
+                          title="Block member"
+                        >
+                          <Ban className="w-4 h-4" />
+                        </button>
+                      </div>
+                    )}
+                </div>
               </div>
             ))}
           </div>

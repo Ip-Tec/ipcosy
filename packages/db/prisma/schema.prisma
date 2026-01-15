@@ -52,6 +52,7 @@ model User {
   
   reportsMade     Report[]        @relation("ReportedBy")
   reportsReceived Report[]        @relation("ReportedUser")
+  blocks          ChatBlock[]
 }
 
 model Account {
@@ -125,6 +126,7 @@ model Chat {
   participants ChatParticipant[]
   messages     Message[]
   notifications Notification[]
+  blocks       ChatBlock[]
 }
 
 model ChatParticipant {
@@ -145,6 +147,19 @@ model ChatParticipant {
   lastSeenAt DateTime @default(now())
 
   @@unique([userId, chatId])
+}
+
+model ChatBlock {
+  id        String   @id @default(uuid())
+  chatId    String
+  userId    String
+  reason    String?
+  createdAt DateTime @default(now())
+
+  chat      Chat     @relation(fields: [chatId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@unique([chatId, userId])
 }
 
 model GlobalConfig {

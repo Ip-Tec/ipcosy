@@ -71,13 +71,22 @@ export async function GET(req: NextRequest) {
         alias = "Anonymous";
       }
 
+      // Mask identity for anonymous messages if not the sender
+      let maskedVisitorId = msg.userId;
+      let finalAlias = alias;
+
+      if (msg.isAnonymous && !isMe) {
+        maskedVisitorId = "anonymous";
+        finalAlias = "Anonymous";
+      }
+
       return {
         id: msg.id,
         text: msg.content,
         fileUrl: msg.fileUrl,
         sender: isMe ? "me" : "them",
-        alias: alias,
-        visitorId: msg.userId,
+        alias: finalAlias,
+        visitorId: maskedVisitorId,
         time: new Date(msg.createdAt).toLocaleTimeString([], {
           hour: "2-digit",
           minute: "2-digit",

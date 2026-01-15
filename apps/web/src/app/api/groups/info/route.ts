@@ -64,8 +64,10 @@ export async function GET(req: NextRequest) {
       joinCodeExpiresAt: canSeeCode ? (chat as any).joinCodeExpiresAt : null,
       myRole: participant.role,
       participants: chat.participants.map((p) => ({
-        id: p.user.id,
-        username: p.user.username || p.user.name,
+        id: p.id,
+        userId: p.userId,
+        username: p.user.username,
+        name: p.user.name,
         role: p.role,
         image: p.user.image,
       })),
