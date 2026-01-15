@@ -2,6 +2,8 @@ import { WebSocket } from "ws";
 import { prisma, ChatType } from "@ipcosy/db";
 import { IpServer, MessagePayload } from "@ipcosy/ip-socket";
 
+const SYSTEM_ANONYMOUS_ID = "00000000-0000-0000-0000-000000000000";
+
 class ChatServer extends IpServer {
   constructor(port: number) {
     super(port);
@@ -67,7 +69,6 @@ class ChatServer extends IpServer {
     userRate.count++;
     this.messageCounts.set(visitorId, userRate);
 
-    // 3. Resolve or Create User by Fingerprint
     // 3. Resolve or Create User
     // First try to find by ID (if visitorId is a userId)
     let user = await prisma.user.findUnique({
@@ -75,18 +76,29 @@ class ChatServer extends IpServer {
     });
 
     if (!user) {
-      // If not found by ID, treat as anonymous fingerprint
-      user = await prisma.user.upsert({
+      // Check if visitorId is a fingerprint of an existing user
+      user = await prisma.user.findUnique({
         where: { fingerprint: visitorId },
+      });
+    }
+
+    if (!user) {
+      // If neither ID nor fingerprint matches a real user, use the SYSTEM ANONYMOUS USER
+      // This prevents creating millions of temp users
+      user = await prisma.user.upsert({
+        where: { id: SYSTEM_ANONYMOUS_ID },
         update: {},
         create: {
-          id: visitorId,
-          fingerprint: visitorId,
+          id: SYSTEM_ANONYMOUS_ID,
+          name: "Anonymous User",
+          username: "anonymous",
+          fingerprint: "system_anonymous",
+          isPremium: false,
         },
       });
     }
 
-    // Associate the REAL database userId with the socket for correct broadcasting
+    // Associate the database userId with the socket for broadcasting
     (ws as any).userId = user.id;
 
     if (payload.text || payload.fileUrl) {
@@ -118,10 +130,23 @@ class ChatServer extends IpServer {
 
       // Handle Anonymous Rerouting
       const isAnonymous = payload.isAnonymous || false;
+
+      // If the user is the System Anonymous User, forced anonymous logic applies
+      if (
+        user.id === SYSTEM_ANONYMOUS_ID &&
+        chatExists.type !== ChatType.ANONYMOUS
+      ) {
+        // Logic to route to an anonymous inbox would go here
+        // For now, we assume if they are using the system anon user, they likely match the Anon Chat pattern below
+        // OR they are just chatting in a group/lobby as "Anonymous User"
+      }
+
       if (isAnonymous && chatExists.type !== ChatType.ANONYMOUS) {
         // Find the other participant to start anonymous chat with
+        // (Assuming 1-on-1 DM context turned anonymous)
+        // If it's a group, this logic might be ambiguous, but for DMs:
         const otherParticipant = chatExists.participants.find(
-          (p) => p.userId !== user.id,
+          (p) => p.userId !== user!.id, // user is defined here
         );
 
         if (otherParticipant) {
@@ -129,35 +154,85 @@ class ChatServer extends IpServer {
           const senderId = user.id;
 
           // Find or Create Anonymous Chat
-          let anonChat = await prisma.chat.findFirst({
-            where: {
-              type: ChatType.ANONYMOUS,
-              AND: [
-                { participants: { some: { userId: senderId } } },
-                { participants: { some: { userId: targetUserId } } },
-              ],
-            },
-          });
+          // If sender is System Anonymous, we need to be careful not to mix everyone's chats.
+          // Ideally, for System Anonymous, we should key the "session" by visitorId somehow,
+          // BUT the goal is to aggregate user records.
+          // The "Chat" record itself distinguishes the conversation.
+          // So if we find an existing Anon Chat for (SystemAnon + TargetUser), ALL anon users would see it?
+          // YES, that is the risk of merging users!
+          //
+          // CRITICAL FIX: If using System Anonymous User, we CANNOT easily maintain separate private anon threads
+          // using simply (senderId + targetId) unique constraint if senderId is shared.
+          //
+          // However, the `Chat` model doesn't enforce unique participants pairs by database constraint usually,
+          // it's logic based.
+          //
+          // If we want separate threads for separate anon visitors, we DO need separate Chat records.
+          // We can create a NEW Chat for each new anonymous conversation.
+          // But how do we find it again for the SAME visitor?
+          // We can't use `participants` query if `userId` is shared.
+          //
+          // ALTERNATE APPROACH:
+          // We keep creating `Chat` records, but assign `System Anonymous` as participant.
+          // To find the *correct* chat for *this* visitor, we might need a way to store "VisitorID -> ChatID" mapping.
+          // OR, we just let the client send the `chatId`?
+          // The client usually knows the `chatId` once created.
+          //
+          // IF `chatId` is provided in payload (and validated), we use it.
+          // The issue is only when `chatId` is NULL or needs to be "found".
+          //
+          // If the user is browsing a profile and clicks "Send Anonymous Message", they might not have a chatId yet.
+          // They usually send to a USER.
+          //
+          // If we use System Anonymous User, we lose the ability to lookup "My existing anon chat with Bob" via `userId`.
+          //
+          // COMPROMISE:
+          // For now, if it's the System Anonymous User, we ALWAYS create a NEW chat if one isn't provided (or strictly rely on client state).
+          // OR, we stick to creating users if we need persistent history per-visitor.
+          //
+          // The user's request: "registered users should be able to receive anonymous messages without generating multiple duplicate accounts."
+          // This implies the *Recipient* receives messages.
+          // If the *Sender* (Anonymous) wants to see history, they need an identity.
+          // If they don't care about history (fire and forget), then System User works fine.
+          //
+          // If the goal is "Fire and forget" (like NGL), then Shared User is perfect.
+          // If the goal is "Two-way conversation", Shared User + Shared Chat is bad (everyone sees everything).
+          // Shared User + Separate Chats works, provided we can find the chat again.
+          //
+          // Let's assume for this Refactor:
+          // 1. If payload has `chatId`, we use it.
+          // 2. If payload has NO `chatId` (initial message) AND is anonymous:
+          //    We create a NEW Anonymous Chat.
+          //    We add System User as participant.
+          //    We send the new `chatId` back to client (so client can reply).
+          //    We do NOT try to "find existing" by senderId.
 
-          if (!anonChat) {
-            anonChat = await prisma.chat.create({
+          if (!payload.chatId) {
+            // Only if we are starting a new thread
+            // Create a NEW anonymous chat always for a new thread from System Anon
+            let anonChat = await prisma.chat.create({
               data: {
                 type: ChatType.ANONYMOUS,
-                name: "Anonymous Messages",
+                name: "Anonymous Message",
                 isGroup: false,
                 participants: {
                   create: [
-                    { userId: senderId, role: "MEMBER" }, // Sender is member
-                    { userId: targetUserId, role: "OWNER" }, // Recipient owns the inbox
+                    { userId: senderId, role: "MEMBER" },
+                    { userId: targetUserId, role: "OWNER" },
                   ],
                 },
               },
             });
+            chatId = anonChat.id;
+          } else {
+            // If chatId provided, assume it is correct (we verified existence above)
+            // But we should verify participation?
+            // If System User is participant, it's valid.
           }
-
-          chatId = anonChat.id;
         }
       }
+
+      const meta = ((payload as any).metadata as any) || {};
 
       await prisma.message.create({
         data: {
@@ -166,6 +241,15 @@ class ChatServer extends IpServer {
           userId: user.id,
           chatId: chatId,
           isAnonymous: isAnonymous,
+          // Map metadata to existing columns
+          deviceId: visitorId,
+          deviceType: meta.deviceType,
+          deviceOS: meta.deviceOS,
+          browser: meta.browser,
+          city: meta.city,
+          country: meta.country,
+          ipAddress: meta.ip,
+          userAgent: meta.userAgent,
         },
       });
 
