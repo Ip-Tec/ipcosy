@@ -27,12 +27,15 @@ export const authOptions: NextAuthOptions = {
         const existingUser = await prisma.user.findUnique({
           where: { email: user.email },
         });
-        if (existingUser) return true; // Allow login for existing users
+        if (existingUser) {
+          if (existingUser.isBanned) {
+            console.log(`Blocked banned user login attempt: ${user.email}`);
+            return false; // Access Denied
+          }
+          return true;
+        }
       } catch (error) {
         console.error("Database connection failed during signIn:", error);
-        // If DB is down, we might want to fail gracefully or let them in if grace period?
-        // But if DB is down, creating user will fail anyway.
-        // Let's rely on grace period check below, but proceed with caution.
       }
 
       if (isGracePeriod) return true;

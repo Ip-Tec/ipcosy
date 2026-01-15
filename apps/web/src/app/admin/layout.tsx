@@ -45,6 +45,7 @@ export default function AdminLayout({
     { name: "Overview", href: "/admin", icon: "📊" },
     { name: "Users", href: "/admin/users", icon: "👥" },
     { name: "Invites", href: "/admin/invites", icon: "🎟️" },
+    { name: "Support", href: "/admin/support", icon: "🛡️" },
     { name: "Settings", href: "/admin/settings", icon: "⚙️" },
   ];
 

@@ -49,6 +49,9 @@ model User {
   notifications Notification[]
   friendships   Friendship[]      @relation("UserFriendships")
   friendOf      Friendship[]      @relation("FriendOf")
+  
+  reportsMade     Report[]        @relation("ReportedBy")
+  reportsReceived Report[]        @relation("ReportedUser")
 }
 
 model Account {
@@ -225,4 +228,18 @@ model Friendship {
   friend    User     @relation("FriendOf", fields: [friendId], references: [id], onDelete: Cascade)
   
   @@unique([userId, friendId])
+}
+
+model Report {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  
+  reason    String   @db.Text
+  status    String   @default("PENDING") // PENDING, RESOLVED, DISMISSED
+  
+  reporterId String
+  reporter   User     @relation("ReportedBy", fields: [reporterId], references: [id])
+  
+  reportedId String
+  reported   User     @relation("ReportedUser", fields: [reportedId], references: [id])
 }
