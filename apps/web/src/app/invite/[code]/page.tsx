@@ -14,12 +14,14 @@ export async function generateMetadata({
   const { code } = await params;
   const chat = await prisma.chat.findUnique({
     where: { joinCode: code },
-    select: { name: true },
+    select: { name: true, description: true },
   });
 
   return {
     title: chat ? `Join ${chat.name} on IPCosy` : "Join Group",
-    description: "You've been invited to join a group chat on IPCosy.",
+    description:
+      chat?.description ||
+      "You've been invited to join a group chat on IPCosy.",
   };
 }
 
@@ -61,6 +63,7 @@ export default async function InvitePage({ params }: InvitePageProps) {
   const groupInfo = {
     id: chat.id,
     name: chat.name || "Unknown Group",
+    description: (chat as any).description,
     membersCount: chat._count.participants,
     previewMembers: chat.participants.map((p) => p.user),
     isExpired,

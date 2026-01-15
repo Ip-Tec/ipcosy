@@ -121,27 +121,72 @@ export function GroupSettingsModal({
         </div>
 
         {selectedChatInfo.myRole === "OWNER" && (
-          <div className="flex items-center justify-between p-4 bg-primary/5 border border-primary/10 rounded-2xl">
-            <div>
-              <p className="text-sm font-bold">Private Join Code</p>
-              <p className="text-[10px] text-muted-foreground">
-                Only you can see the join code.
-              </p>
-            </div>
-            <button
-              onClick={handleToggleJoinCodePrivacy}
-              className={`w-12 h-6 rounded-full transition-all relative ${
-                selectedChatInfo.isJoinCodePrivate
-                  ? "bg-primary"
-                  : "bg-muted-foreground/30"
-              }`}
-            >
-              <div
-                className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all shadow-sm ${
-                  selectedChatInfo.isJoinCodePrivate ? "right-1" : "left-1"
+          <div className="space-y-4">
+            <div className="flex items-center justify-between p-4 bg-primary/5 border border-primary/10 rounded-2xl">
+              <div>
+                <p className="text-sm font-bold">Private Join Code</p>
+                <p className="text-[10px] text-muted-foreground">
+                  Only you can see the join code.
+                </p>
+              </div>
+              <button
+                onClick={handleToggleJoinCodePrivacy}
+                className={`w-12 h-6 rounded-full transition-all relative ${
+                  selectedChatInfo.isJoinCodePrivate
+                    ? "bg-primary"
+                    : "bg-muted-foreground/30"
                 }`}
-              />
-            </button>
+              >
+                <div
+                  className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all shadow-sm ${
+                    selectedChatInfo.isJoinCodePrivate ? "right-1" : "left-1"
+                  }`}
+                />
+              </button>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-bold ml-1">
+                Group Description
+              </label>
+              <div className="relative">
+                <textarea
+                  defaultValue={selectedChatInfo.description || ""}
+                  placeholder="Add a description to your group..."
+                  className="w-full bg-background border border-border rounded-2xl p-4 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 min-h-[100px] resize-none"
+                  onBlur={async (e) => {
+                    const newDescription = e.target.value;
+                    if (newDescription === selectedChatInfo.description) return;
+
+                    try {
+                      const res = await fetch(
+                        `/api/groups/${selectedChatInfo.id}/settings`,
+                        {
+                          method: "POST",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({
+                            chatId: selectedChatInfo.id,
+                            description: newDescription,
+                          }),
+                        },
+                      );
+                      if (res.ok) {
+                        toast.success("Description updated");
+                        selectedChatInfo.description = newDescription;
+                      } else {
+                        toast.error("Failed to update description");
+                      }
+                    } catch (err) {
+                      console.error(err);
+                      toast.error("Error updating description");
+                    }
+                  }}
+                />
+                <div className="absolute bottom-3 right-3 text-[10px] text-muted-foreground pointer-events-none">
+                  Click outside to save
+                </div>
+              </div>
+            </div>
           </div>
         )}
 

@@ -11,6 +11,7 @@ interface InviteCardProps {
   groupInfo: {
     id: string;
     name: string;
+    description?: string;
     membersCount: number;
     previewMembers: {
       name: string | null;
@@ -100,6 +101,11 @@ export function InviteCard({ code, groupInfo }: InviteCardProps) {
               <Users className="w-4 h-4" />
               <span>{groupInfo.membersCount} members</span>
             </div>
+            {groupInfo.description && (
+              <p className="text-sm text-muted-foreground max-w-sm mx-auto line-clamp-3">
+                {groupInfo.description}
+              </p>
+            )}
           </div>
 
           {/* Member Preview */}

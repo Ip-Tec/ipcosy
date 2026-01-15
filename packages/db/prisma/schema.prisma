@@ -117,6 +117,7 @@ model Chat {
   type      ChatType @default(DM)
   isGroup   Boolean  @default(false)
   name      String?  // For groups
+  description String? @db.Text // Group description
   joinCode  String?  @unique // For joining groups
   joinCodeExpiresAt DateTime? // Optional expiration for join code
   isJoinCodePrivate Boolean @default(true) // OWNER can toggle if members see join code

@@ -57,6 +57,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({
       id: chat.id,
       name: chat.name,
+      description: (chat as any).description,
       isGroup: chat.isGroup,
       isJoinCodePrivate: (chat as any).isJoinCodePrivate,
       joinCode: canSeeCode ? chat.joinCode : null,
