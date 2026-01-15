@@ -57,6 +57,10 @@ export default function UpgradeButton({
           toast.error("Payment Error: User email invalid");
           return;
         }
+        if (!config.metadata.userId) {
+          toast.error("Payment Error: User ID missing. Try refreshing.");
+          return;
+        }
         initializePayment({ onSuccess, onClose });
       }}
       className={
