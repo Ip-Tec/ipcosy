@@ -102,12 +102,22 @@ export default function AdminPage() {
         body: JSON.stringify({ userId: targetUserId, [field]: !currentValue }),
       });
       if (res.ok) {
-        toast.success("User updated!");
-        setUsers((prev) =>
-          prev.map((u) =>
-            u.id === targetUserId ? { ...u, [field]: !currentValue } : u,
-          ),
-        );
+        const data = await res.json();
+        toast.success(`User updated: ${field} is now ${!currentValue}`);
+
+        // Update local state with the ACTUAL data from the server (confirms DB write)
+        if (data.user) {
+          setUsers((prev) =>
+            prev.map((u) => (u.id === targetUserId ? data.user : u)),
+          );
+        } else {
+          // Fallback if no user returned (shouldn't happen with new API)
+          setUsers((prev) =>
+            prev.map((u) =>
+              u.id === targetUserId ? { ...u, [field]: !currentValue } : u,
+            ),
+          );
+        }
       } else {
         const data = await res.json();
         toast.error(data.error || "Failed to update user");

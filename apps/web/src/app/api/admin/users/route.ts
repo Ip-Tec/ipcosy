@@ -83,12 +83,22 @@ export async function POST(req: NextRequest) {
     // Prevent removing own admin status for safety?
     // Or just let it be. Usually, we want at least one admin.
 
-    await prisma.user.update({
+    console.log(
+      `ADMIN ACTION: User ${user.email} modifying target ${userId}. Data:`,
+      JSON.stringify(data),
+    );
+
+    const result = await prisma.user.update({
       where: { id: userId },
       data,
     });
 
-    return NextResponse.json({ success: true });
+    console.log(
+      `ADMIN ACTION SUCCESS: Updated user ${result.email} (${result.id}). New State:`,
+      JSON.stringify(result),
+    );
+
+    return NextResponse.json({ success: true, user: result });
   } catch (error) {
     console.error("Admin toggle error:", error);
     return NextResponse.json(
