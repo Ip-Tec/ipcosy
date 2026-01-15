@@ -86,7 +86,7 @@ export function AnonymousMessageCard({
             <ShieldIcon className="w-5 h-5 text-primary opacity-50" />
           </div>
 
-          <p className="text-lg font-bold leading-relaxed text-foreground italic relative z-10 py-4">
+          <p className="text-lg font-bold leading-relaxed text-foreground italic relative z-10 py-4 word-break">
             "{content}"
           </p>
 
