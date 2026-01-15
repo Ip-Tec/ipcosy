@@ -16,6 +16,8 @@ export default function AdminPage() {
 
   // System Stats State
   const [stats, setStats] = useState<any>(null);
+  const [viewMode, setViewMode] = useState<"overview" | "insights">("overview");
+  const [loadingInsights, setLoadingInsights] = useState(false);
 
   // User Management State
   const [searchQuery, setSearchQuery] = useState("");
@@ -50,6 +52,23 @@ export default function AdminPage() {
         if (Array.isArray(data)) setInvites(data);
       });
   }, [isAdmin]);
+
+  const loadDeepInsights = async () => {
+    setViewMode("insights");
+    // Only load if crucial data is missing (simple cache check)
+    if (stats?.growthChart) return;
+
+    setLoadingInsights(true);
+    try {
+      const res = await fetch("/api/admin/stats?analytics=true");
+      const data = await res.json();
+      setStats(data); // Merge extended stats
+    } catch (e) {
+      toast.error("Failed to load deep insights");
+    } finally {
+      setLoadingInsights(false);
+    }
+  };
 
   const handleSavePrice = async () => {
     setIsSaving(true);
@@ -201,7 +220,25 @@ export default function AdminPage() {
       </div>
 
       {/* System Stats Section */}
-      <section className="grid grid-cols-2 md:grid-cols-3 gap-4">
+      {/* Stats Toggle Tabs */}
+      <div className="flex gap-4 border-b border-border pb-4">
+        <button
+          onClick={() => setViewMode("overview")}
+          className={`px-4 py-2 font-bold transition-all ${viewMode === "overview" ? "border-b-2 border-primary text-primary" : "text-muted hover:text-foreground"}`}
+        >
+          Overview
+        </button>
+        <button
+          onClick={loadDeepInsights}
+          className={`px-4 py-2 font-bold transition-all flex items-center gap-2 ${viewMode === "insights" ? "border-b-2 border-primary text-primary" : "text-muted hover:text-foreground"}`}
+        >
+          Deep Insights ✨
+          {loadingInsights && <span className="animate-spin text-xs">⏳</span>}
+        </button>
+      </div>
+
+      {/* System Stats Section */}
+      <section className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {[
           { label: "Total Users", value: stats?.totalUsers, icon: "👥" },
           { label: "Premium", value: stats?.premiumUsers, icon: "👑" },
@@ -213,29 +250,123 @@ export default function AdminPage() {
             value: stats?.last24hMessages,
             icon: "⚡",
           },
-        ].map((item, idx) => (
-          <div
-            key={idx}
-            className="bg-sidebar border border-border p-5 rounded-3xl shadow-sm hover:border-primary/20 transition-all group"
-          >
-            <div className="flex justify-between items-start">
-              <span className="text-sm font-bold text-muted uppercase tracking-tighter">
-                {item.label}
-              </span>
-              <span className="text-xl group-hover:scale-110 transition-transform">
-                {item.icon}
-              </span>
+          // New Analytics Cards (if loaded)
+          {
+            label: "Active (24h)",
+            value: stats?.activeUsers24h,
+            icon: "🔥",
+            hidden: !stats?.activeUsers24h,
+          },
+          {
+            label: "New Users (24h)",
+            value: stats?.newUsers24h,
+            icon: "👶",
+            hidden: !stats?.newUsers24h,
+          },
+        ]
+          .filter((i) => !i.hidden)
+          .map((item, idx) => (
+            <div
+              key={idx}
+              className="bg-sidebar border border-border p-5 rounded-3xl shadow-sm hover:border-primary/20 transition-all group"
+            >
+              <div className="flex justify-between items-start">
+                <span className="text-sm font-bold text-muted uppercase tracking-tighter">
+                  {item.label}
+                </span>
+                <span className="text-xl group-hover:scale-110 transition-transform">
+                  {item.icon}
+                </span>
+              </div>
+              {stats ? (
+                <p className="text-2xl font-black mt-2">
+                  {item.value?.toLocaleString() || "0"}
+                </p>
+              ) : (
+                <Skeleton className="h-8 w-16 mt-2" />
+              )}
             </div>
-            {stats ? (
-              <p className="text-2xl font-black mt-2">
-                {item.value?.toLocaleString() || "0"}
-              </p>
-            ) : (
-              <Skeleton className="h-8 w-16 mt-2" />
-            )}
-          </div>
-        ))}
+          ))}
       </section>
+
+      {/* Deep Analytics Visuals */}
+      {stats?.growthChart && (
+        <section className="grid md:grid-cols-2 gap-8">
+          <div className="bg-sidebar p-6 rounded-[2rem] border border-border shadow-lg">
+            <h3 className="font-bold mb-4">User Growth (Last 7 Days)</h3>
+            <div className="flex items-end justify-between h-32 gap-2">
+              {stats.growthChart.map((d: any, i: number) => (
+                <div
+                  key={i}
+                  className="flex flex-col items-center gap-2 flex-1"
+                >
+                  <div
+                    className="w-full bg-primary/20 rounded-t-lg hover:bg-primary/40 transition-all relative group"
+                    style={{
+                      height: `${(d.users / 50) * 100}%`,
+                      minHeight: "10%",
+                    }}
+                  >
+                    <span className="absolute -top-6 left-1/2 -translate-x-1/2 text-xs font-bold opacity-0 group-hover:opacity-100 transition-opacity">
+                      {d.users}
+                    </span>
+                  </div>
+                  <span className="text-[10px] uppercase font-bold text-muted">
+                    {d.day}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="bg-sidebar p-6 rounded-[2rem] border border-border shadow-lg space-y-4">
+            <h3 className="font-bold mb-2">Message Distribution</h3>
+            <div className="space-y-4">
+              <div className="space-y-1">
+                <div className="flex justify-between text-xs font-bold">
+                  <span>Anonymous</span>
+                  <span>{stats.anonymousMessages || 0}</span>
+                </div>
+                <div className="h-2 bg-muted/20 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-purple-500"
+                    style={{
+                      width: `${(stats.anonymousMessages / (stats.totalMessages || 1)) * 100}%`,
+                    }}
+                  />
+                </div>
+              </div>
+              <div className="space-y-1">
+                <div className="flex justify-between text-xs font-bold">
+                  <span>Public / Identified</span>
+                  <span>{stats.publicMessages || 0}</span>
+                </div>
+                <div className="h-2 bg-muted/20 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-blue-500"
+                    style={{
+                      width: `${(stats.publicMessages / (stats.totalMessages || 1)) * 100}%`,
+                    }}
+                  />
+                </div>
+              </div>
+              <div className="pt-4 border-t border-border mt-4">
+                <div className="flex items-center gap-4">
+                  <div className="h-10 w-10 flex items-center justify-center bg-green-500/10 text-green-500 rounded-full text-xl font-black">
+                    {stats.activeGroups24h || 0}
+                  </div>
+                  <div>
+                    <p className="font-bold text-sm">Active Groups (24h)</p>
+                    <p className="text-xs text-muted">
+                      Communities with recent messages
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
 
       <div className="grid md:grid-cols-2 gap-8">
         {/* User Management Search */}
