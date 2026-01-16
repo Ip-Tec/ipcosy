@@ -5,6 +5,7 @@ import { prisma } from "@ipcosy/db";
 
 export async function GET(req: NextRequest) {
   try {
+    const session = await getServerSession(authOptions);
     const { searchParams } = new URL(req.url);
     const chatId = searchParams.get("chatId");
     const joinCode = searchParams.get("joinCode");
