@@ -44,6 +44,7 @@ export async function GET(req: NextRequest) {
         return {
           id: p.chat.id,
           name: p.chat.name || "Chat",
+          type: p.chat.type,
           isGroup: p.chat.isGroup,
           message: lastMsg ? lastMsg.content : "No messages yet",
           time: lastMsg

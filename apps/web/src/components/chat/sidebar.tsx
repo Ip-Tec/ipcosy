@@ -3,7 +3,15 @@
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { CopyIcon, Users, MessageCircle, LogOut } from "lucide-react";
+import {
+  CopyIcon,
+  Users,
+  MessageCircle,
+  LogOut,
+  ChevronDown,
+  ChevronRight,
+  Ghost,
+} from "lucide-react";
 import { toast } from "sonner";
 import { signOut } from "next-auth/react";
 import { APP_VERSION, SUPER_ADMIN_EMAILS } from "@/lib/constants";
@@ -38,10 +46,20 @@ export function Sidebar({
   isPremium,
 }: SidebarProps) {
   const [activeTab, setActiveTab] = useState<"groups" | "chats">("groups");
+  const [isAnonExpanded, setIsAnonExpanded] = useState(false);
 
   const groupChats = chats.filter((c) => c.isGroup);
   const dmChats = chats.filter((c) => !c.isGroup);
-  const displayChats = activeTab === "groups" ? groupChats : dmChats;
+
+  const regularDms = dmChats.filter((c) => (c as any).type !== "ANONYMOUS");
+  const anonymousDms = dmChats.filter((c) => (c as any).type === "ANONYMOUS");
+
+  // On Mobile, we might want to keep activeTab simple, but for logic:
+  const displayChats = activeTab === "groups" ? groupChats : regularDms;
+  const totalAnonUnread = anonymousDms.reduce(
+    (acc, c) => acc + (c.unread || 0),
+    0,
+  );
 
   return (
     <>
@@ -268,6 +286,84 @@ export function Sidebar({
 
         {/* List */}
         <div className="flex-1 overflow-y-auto space-y-1 p-2 order-2 md:order-3">
+          {/* Anonymous Messages Grouping */}
+          {activeTab === "chats" && anonymousDms.length > 0 && (
+            <div className="mx-2 space-y-1">
+              <button
+                onClick={() => setIsAnonExpanded(!isAnonExpanded)}
+                className={`w-full flex items-center justify-between p-3 rounded-2xl transition-all border border-transparent ${
+                  isAnonExpanded
+                    ? "bg-primary/5 border-primary/10"
+                    : "hover:bg-black/5 dark:hover:bg-white/5"
+                }`}
+              >
+                <div className="flex items-center gap-4">
+                  <div className="h-12 w-12 rounded-full bg-gradient-to-br from-gray-400 to-gray-600 flex items-center justify-center text-white shadow-sm">
+                    <Ghost className="w-6 h-6" />
+                  </div>
+                  <div className="text-left">
+                    <h3 className="font-bold text-sm">Anonymous Messages</h3>
+                    <p className="text-[10px] text-muted-foreground">
+                      {anonymousDms.length} conversations
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  {totalAnonUnread > 0 && (
+                    <span className="bg-primary text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center shadow-sm">
+                      {totalAnonUnread}
+                    </span>
+                  )}
+                  {isAnonExpanded ? (
+                    <ChevronDown className="w-4 h-4 text-muted" />
+                  ) : (
+                    <ChevronRight className="w-4 h-4 text-muted" />
+                  )}
+                </div>
+              </button>
+
+              {isAnonExpanded && (
+                <div className="ml-4 pl-4 border-l-2 border-primary/10 space-y-1 animate-in slide-in-from-left-2 duration-200">
+                  {anonymousDms.map((chat) => (
+                    <div
+                      key={chat.id}
+                      onClick={() => setSelectedChat(chat.id)}
+                      className={`flex cursor-pointer items-center gap-3 p-2.5 rounded-xl transition-all ${
+                        selectedChat === chat.id
+                          ? "bg-primary text-white shadow-md scale-[1.02]"
+                          : "hover:bg-black/5 dark:hover:bg-white/5"
+                      }`}
+                    >
+                      <div
+                        className={`h-8 w-8 rounded-full flex items-center justify-center text-[10px] font-black ${selectedChat === chat.id ? "bg-white/20" : "bg-primary/10 text-primary"}`}
+                      >
+                        AN
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex justify-between items-baseline">
+                          <p className="text-xs font-bold truncate">Stranger</p>
+                          <span
+                            className={`text-[8px] ${selectedChat === chat.id ? "text-white/70" : "text-muted"}`}
+                          >
+                            {chat.time}
+                          </span>
+                        </div>
+                        <p
+                          className={`truncate text-[10px] ${selectedChat === chat.id ? "text-white/80" : "text-muted"}`}
+                        >
+                          {chat.message}
+                        </p>
+                      </div>
+                      {chat.unread > 0 && selectedChat !== chat.id && (
+                        <div className="w-1.5 h-1.5 bg-primary rounded-full shadow-[0_0_5px_#f97316]" />
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Display chats based on active tab */}
           {displayChats.map((chat) => (
             <div
@@ -316,25 +412,27 @@ export function Sidebar({
           ))}
 
           {/* Empty state */}
-          {!isLoadingChats && displayChats.length === 0 && (
-            <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
-              <div className="w-16 h-16 rounded-full bg-muted/20 flex items-center justify-center mb-4">
-                {activeTab === "groups" ? (
-                  <Users className="w-8 h-8 text-muted-foreground" />
-                ) : (
-                  <MessageCircle className="w-8 h-8 text-muted-foreground" />
-                )}
+          {!isLoadingChats &&
+            displayChats.length === 0 &&
+            (activeTab === "groups" || anonymousDms.length === 0) && (
+              <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
+                <div className="w-16 h-16 rounded-full bg-muted/20 flex items-center justify-center mb-4">
+                  {activeTab === "groups" ? (
+                    <Users className="w-8 h-8 text-muted-foreground" />
+                  ) : (
+                    <MessageCircle className="w-8 h-8 text-muted-foreground" />
+                  )}
+                </div>
+                <h3 className="font-bold text-sm mb-1">
+                  No {activeTab === "groups" ? "Groups" : "Chats"}
+                </h3>
+                <p className="text-xs text-muted-foreground">
+                  {activeTab === "groups"
+                    ? "Create or join a group to get started"
+                    : "Start a conversation to see it here"}
+                </p>
               </div>
-              <h3 className="font-bold text-sm mb-1">
-                No {activeTab === "groups" ? "Groups" : "Chats"}
-              </h3>
-              <p className="text-xs text-muted-foreground">
-                {activeTab === "groups"
-                  ? "Create or join a group to get started"
-                  : "Start a conversation to see it here"}
-              </p>
-            </div>
-          )}
+            )}
 
           {isLoadingChats && (
             <div className="space-y-4 p-2">
