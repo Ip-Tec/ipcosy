@@ -10,6 +10,7 @@ import { AnonymousMessageCard } from "./anonymous-message-card";
 import { EmptyState } from "@/components/empty-state";
 import { DeleteMessageModal } from "./modals/delete-message-modal";
 import { MessageCardModal } from "./modals/message-card-modal";
+import { signIn } from "next-auth/react";
 
 interface ChatViewProps {
   selectedChat: string | null;

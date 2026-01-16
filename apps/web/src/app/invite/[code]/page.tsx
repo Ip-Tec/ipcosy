@@ -68,7 +68,7 @@ export default async function InvitePage({ params }: InvitePageProps) {
     name: chat.name || "Unknown Group",
     description: (chat as any).description || "",
     membersCount: chat._count.participants,
-    previewMembers: chat.participants.map((p) => ({
+    previewMembers: chat.participants.map((p: any) => ({
       name: maskName(p.userId),
       username: maskName(p.userId),
       image: null,

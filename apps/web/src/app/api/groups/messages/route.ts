@@ -51,8 +51,8 @@ export async function GET(req: NextRequest) {
     }
 
     // Check expiration if non-member
-    if (!participation && chat.joinCodeExpiresAt) {
-      if (new Date() > new Date(chat.joinCodeExpiresAt)) {
+    if (!participation && (chat as any).joinCodeExpiresAt) {
+      if (new Date() > new Date((chat as any).joinCodeExpiresAt)) {
         return NextResponse.json({ error: "Invite expired" }, { status: 410 });
       }
     }
