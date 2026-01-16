@@ -104,6 +104,7 @@ export default function AdminOverviewPage() {
       <section className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
           { label: "Total Users", value: stats?.totalUsers, icon: "👥" },
+          { label: "Guest Users", value: stats?.guestUsers, icon: "👻" },
           { label: "Premium", value: stats?.premiumUsers, icon: "👑" },
           { label: "Total Chats", value: stats?.totalChats, icon: "💬" },
           { label: "Group Chats", value: stats?.groupChats, icon: "👨‍👩‍👧‍👦" },
@@ -125,6 +126,12 @@ export default function AdminOverviewPage() {
             value: stats?.newUsers24h,
             icon: "👶",
             hidden: !stats?.newUsers24h,
+          },
+          {
+            label: "New Guests (24h)",
+            value: stats?.newGuests24h,
+            icon: "👻",
+            hidden: !stats?.newGuests24h,
           },
         ]
           .filter((i) => !i.hidden)

@@ -127,8 +127,12 @@ function HomeContent() {
         .finally(() => setIsLoadingChats(false));
     };
 
-    if (status === "authenticated") {
+    if (status === "authenticated" || visitorId) {
       fetchChats();
+    }
+
+    if (visitorId) {
+      document.cookie = `ipcosy-fingerprint=${visitorId}; path=/; max-age=31536000`;
     }
 
     let wsUrl = process.env.NEXT_PUBLIC_WS_URL;

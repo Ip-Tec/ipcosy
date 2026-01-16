@@ -6,11 +6,41 @@ import { prisma } from "@ipcosy/db";
 export async function GET(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session || !session.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    let userId: string;
 
-    const userId = (session.user as any).id;
+    if (session?.user) {
+      userId = (session.user as any).id;
+    } else {
+      // Fallback to fingerprint for guests
+      const cookieHeader = req.headers.get("cookie");
+      let fingerprint = null;
+
+      if (cookieHeader) {
+        const cookies = cookieHeader.split(";").map((c) => c.trim());
+        const fpCookie = cookies.find((c) =>
+          c.startsWith("ipcosy-fingerprint="),
+        );
+        if (fpCookie) {
+          fingerprint = fpCookie.split("=")[1];
+        }
+      }
+
+      if (!fingerprint) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      }
+
+      // Find the guest user by fingerprint
+      const guestUser = await prisma.user.findUnique({
+        where: { fingerprint: fingerprint },
+        select: { id: true },
+      });
+
+      if (!guestUser) {
+        return NextResponse.json([]); // No chats for new guest
+      }
+
+      userId = guestUser.id;
+    }
 
     const participations = await prisma.chatParticipant.findMany({
       where: { userId },

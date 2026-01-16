@@ -21,6 +21,7 @@ export async function GET(req: NextRequest) {
     // Base Stats (Fast)
     const [
       totalUsers,
+      guestUsers,
       premiumUsers,
       totalChats,
       groupChats,
@@ -28,6 +29,7 @@ export async function GET(req: NextRequest) {
       last24hMessages,
     ] = await Promise.all([
       prisma.user.count({ where: { email: { not: null } } }),
+      prisma.user.count({ where: { email: null, fingerprint: { not: null } } }),
       prisma.user.count({ where: { isPremium: true } }),
       prisma.chat.count(),
       prisma.chat.count({ where: { isGroup: true } }),
@@ -51,6 +53,7 @@ export async function GET(req: NextRequest) {
 
       const [
         activeUsers24h,
+        newGuests24h,
         newUsers24h,
         newUsers7d,
         activeGroups,
@@ -60,7 +63,17 @@ export async function GET(req: NextRequest) {
           where: { lastLogin: { gt: oneDayAgo } },
         }),
         prisma.user.count({
-          where: { createdAt: { gt: oneDayAgo } },
+          where: {
+            email: null,
+            fingerprint: { not: null },
+            createdAt: { gt: oneDayAgo },
+          },
+        }),
+        prisma.user.count({
+          where: {
+            email: { not: null },
+            createdAt: { gt: oneDayAgo },
+          },
         }),
         prisma.user.groupBy({
           by: ["createdAt"],
@@ -86,11 +99,14 @@ export async function GET(req: NextRequest) {
       extendedStats = {
         activeUsers24h,
         newUsers24h,
+        newGuests24h,
         activeGroups24h: activeGroups,
         anonymousMessages:
-          messagesByType.find((g) => g.isAnonymous)?._count.id || 0,
+          ((messagesByType as any[]) || []).find((g) => g.isAnonymous)?._count
+            .id || 0,
         publicMessages:
-          messagesByType.find((g) => !g.isAnonymous)?._count.id || 0,
+          ((messagesByType as any[]) || []).find((g) => !g.isAnonymous)?._count
+            .id || 0,
 
         // Mocking chart data for UI demo until time-series support is robust
         growthChart: [
@@ -107,6 +123,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({
       totalUsers,
+      guestUsers,
       premiumUsers,
       totalChats,
       groupChats,
