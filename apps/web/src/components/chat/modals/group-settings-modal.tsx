@@ -164,17 +164,14 @@ export function GroupSettingsModal({
                     if (newDescription === selectedChatInfo.description) return;
 
                     try {
-                      const res = await fetch(
-                        `/api/groups/${selectedChatInfo.id}/settings`,
-                        {
-                          method: "POST",
-                          headers: { "Content-Type": "application/json" },
-                          body: JSON.stringify({
-                            chatId: selectedChatInfo.id,
-                            description: newDescription,
-                          }),
-                        },
-                      );
+                      const res = await fetch(`/api/groups/settings`, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                          chatId: selectedChatInfo.id,
+                          description: newDescription,
+                        }),
+                      });
                       if (res.ok) {
                         toast.success("Description updated");
                         selectedChatInfo.description = newDescription;
