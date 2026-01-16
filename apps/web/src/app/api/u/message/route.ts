@@ -80,17 +80,14 @@ export async function POST(req: Request) {
         );
       }
 
-      const SYSTEM_ANONYMOUS_ID = "00000000-0000-0000-0000-000000000000";
-
-      // Use shared system anonymous user instead of creating new ones
+      // Use unique guest users based on fingerprint instead of shared SYSTEM_ANONYMOUS_ID
       const anonUser = await prisma.user.upsert({
-        where: { id: SYSTEM_ANONYMOUS_ID },
+        where: { fingerprint: fingerprint },
         update: {},
         create: {
-          id: SYSTEM_ANONYMOUS_ID,
-          name: "Anonymous User",
-          username: "anonymous",
-          fingerprint: "system_anonymous",
+          name: "Guest " + fingerprint.substring(0, 4),
+          username: `guest_${fingerprint.substring(0, 8)}`,
+          fingerprint: fingerprint,
           isPremium: false,
         },
       });
