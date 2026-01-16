@@ -5,23 +5,21 @@ import { prisma } from "@ipcosy/db";
 
 export async function GET(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session || !session.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
     const { searchParams } = new URL(req.url);
     const chatId = searchParams.get("chatId");
+    const joinCode = searchParams.get("joinCode");
 
-    if (!chatId) {
-      return NextResponse.json({ error: "Missing chatId" }, { status: 400 });
+    if (!chatId && !joinCode) {
+      return NextResponse.json(
+        { error: "Missing chatId or joinCode" },
+        { status: 400 },
+      );
     }
 
-    const userId = (session.user as any).id;
+    const userId = session?.user ? (session.user as any).id : null;
 
-    // Verify user is a participant
-    const chat = await prisma.chat.findUnique({
-      where: { id: chatId },
+    const chat = await prisma.chat.findFirst({
+      where: joinCode ? { joinCode } : { id: chatId! },
       include: {
         participants: {
           include: {
@@ -42,17 +40,33 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "Chat not found" }, { status: 404 });
     }
 
-    const participant = chat.participants.find((p) => p.userId === userId);
-    if (!participant) {
-      return NextResponse.json({ error: "Not a member" }, { status: 403 });
+    const participant = userId
+      ? chat.participants.find((p) => p.userId === userId)
+      : null;
+
+    // Check if unauthenticated/non-member view is allowed
+    // Only groups with valid join codes can be viewed
+    if (!participant && !chat.joinCode) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const isExpired =
+      (chat as any).joinCodeExpiresAt &&
+      new Date() > new Date((chat as any).joinCodeExpiresAt);
+
+    if (!participant && isExpired) {
+      return NextResponse.json({ error: "Invite expired" }, { status: 410 });
     }
 
     // Join Code Visibility logic:
-    // 1. If not private, everyone in group sees it.
-    // 2. If private, only OWNER and ADMIN see it (or just OWNER per new requirement "only the group owner can view or change").
-    // Let's stick to OWNER for view/change per user comment.
     const canSeeCode =
-      !(chat as any).isJoinCodePrivate || participant.role === "OWNER";
+      participant?.role === "OWNER" || !(chat as any).isJoinCodePrivate;
+
+    // Helper to mask identity
+    const maskName = (id: string) => {
+      // Short 5-character string as requested
+      return id.substring(0, 5).toUpperCase();
+    };
 
     return NextResponse.json({
       id: chat.id,
@@ -62,14 +76,14 @@ export async function GET(req: NextRequest) {
       isJoinCodePrivate: (chat as any).isJoinCodePrivate,
       joinCode: canSeeCode ? chat.joinCode : null,
       joinCodeExpiresAt: canSeeCode ? (chat as any).joinCodeExpiresAt : null,
-      myRole: participant.role,
+      myRole: participant?.role || null,
       participants: chat.participants.map((p) => ({
         id: p.id,
         userId: p.userId,
-        username: p.user.username,
-        name: p.user.name,
+        username: maskName(p.userId),
+        name: maskName(p.userId),
         role: p.role,
-        image: p.user.image,
+        image: null, // Hide images for anonymity in settings
       })),
     });
   } catch (error) {

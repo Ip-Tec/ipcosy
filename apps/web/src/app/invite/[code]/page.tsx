@@ -12,10 +12,10 @@ export async function generateMetadata({
   params,
 }: InvitePageProps): Promise<Metadata> {
   const { code } = await params;
-  const chat = await prisma.chat.findUnique({
+  const chat = (await prisma.chat.findUnique({
     where: { joinCode: code },
     select: { name: true, description: true },
-  });
+  } as any)) as any;
 
   return {
     title: chat ? `Join ${chat.name} on IPCosy` : "Join Group",
@@ -27,12 +27,13 @@ export async function generateMetadata({
 
 export default async function InvitePage({ params }: InvitePageProps) {
   const { code } = await params;
-  const chat = await prisma.chat.findUnique({
+  const chat = (await prisma.chat.findUnique({
     where: { joinCode: code },
     include: {
       participants: {
         take: 5,
         select: {
+          userId: true,
           user: {
             select: {
               name: true,
@@ -46,7 +47,7 @@ export default async function InvitePage({ params }: InvitePageProps) {
         select: { participants: true },
       },
     },
-  });
+  } as any)) as any;
 
   if (!chat) {
     return (
@@ -56,18 +57,24 @@ export default async function InvitePage({ params }: InvitePageProps) {
     );
   }
 
-  const isExpired = chat.joinCodeExpiresAt
-    ? new Date() > new Date(chat.joinCodeExpiresAt)
+  const isExpired = (chat as any).joinCodeExpiresAt
+    ? new Date() > new Date((chat as any).joinCodeExpiresAt)
     : false;
+
+  const maskName = (id: string) => id.substring(0, 5).toUpperCase();
 
   const groupInfo = {
     id: chat.id,
     name: chat.name || "Unknown Group",
-    description: (chat as any).description,
+    description: (chat as any).description || "",
     membersCount: chat._count.participants,
-    previewMembers: chat.participants.map((p) => p.user),
+    previewMembers: chat.participants.map((p) => ({
+      name: maskName(p.userId),
+      username: maskName(p.userId),
+      image: null,
+    })),
     isExpired,
   };
 
-  return <InviteCard code={code} groupInfo={groupInfo} />;
+  return <InviteCard code={code} groupInfo={groupInfo as any} />;
 }

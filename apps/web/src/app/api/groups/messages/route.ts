@@ -5,45 +5,72 @@ import { prisma } from "@ipcosy/db";
 
 export async function GET(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session || !session.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
     const { searchParams } = new URL(req.url);
     const chatId = searchParams.get("chatId");
-    const cursor = searchParams.get("cursor"); // For pagination later if needed
+    const joinCode = searchParams.get("joinCode");
 
-    if (!chatId) {
-      return NextResponse.json({ error: "Missing chatId" }, { status: 400 });
+    if (!chatId && !joinCode) {
+      return NextResponse.json(
+        { error: "Missing chatId or joinCode" },
+        { status: 400 },
+      );
     }
 
-    const userId = (session.user as any).id;
+    const userId = session?.user ? (session.user as any).id : null;
 
-    // Verify user is a participant
-    const participation = await prisma.chatParticipant.findUnique({
-      where: {
-        userId_chatId: {
-          userId,
-          chatId,
-        },
-      },
-    });
+    // Verify chat and participation
+    let chat;
+    if (joinCode) {
+      chat = await prisma.chat.findUnique({
+        where: { joinCode },
+      });
+    } else {
+      chat = await prisma.chat.findUnique({
+        where: { id: chatId! },
+      });
+    }
 
-    if (!participation) {
+    if (!chat) {
+      return NextResponse.json({ error: "Chat not found" }, { status: 404 });
+    }
+
+    const participation = userId
+      ? await prisma.chatParticipant.findUnique({
+          where: {
+            userId_chatId: {
+              userId,
+              chatId: chat.id,
+            },
+          },
+        })
+      : null;
+
+    if (!participation && !chat.joinCode) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    // Check if requester is premium
-    const userStatus = await prisma.user.findUnique({
-      where: { id: userId },
-      select: { isPremium: true },
-    });
-    const isPremium = !!userStatus?.isPremium;
+    // Check expiration if non-member
+    if (!participation && chat.joinCodeExpiresAt) {
+      if (new Date() > new Date(chat.joinCodeExpiresAt)) {
+        return NextResponse.json({ error: "Invite expired" }, { status: 410 });
+      }
+    }
+
+    const isPremium = userId
+      ? !!(
+          await prisma.user.findUnique({
+            where: { id: userId },
+            select: { isPremium: true },
+          })
+        )?.isPremium
+      : false;
+
+    // Actual chatId to fetch
+    const targetChatId = chat.id;
 
     // Fetch messages
     const messages = await prisma.message.findMany({
-      where: { chatId },
+      where: { chatId: targetChatId },
       orderBy: { createdAt: "asc" }, // Oldest first for chat UI
       take: 50, // Limit to 50 for now
       include: {
@@ -62,7 +89,7 @@ export async function GET(req: NextRequest) {
     // Format for UI
     const formattedMessages = messages.map((msg) => {
       // Determine if sender is me
-      const isMe = msg.userId === userId;
+      const isMe = userId ? msg.userId === userId : false;
 
       // Determine alias
       // If user has a fingerprint but no email, they're anonymous

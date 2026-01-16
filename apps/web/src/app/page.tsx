@@ -211,33 +211,49 @@ function HomeContent() {
   }, [inputText, visitorId]);
 
   useEffect(() => {
-    if (
-      selectedChat &&
-      selectedChat !== "mvp-lobby" &&
-      status === "authenticated"
-    ) {
-      fetch(`/api/groups/info?chatId=${selectedChat}`)
+    const jc = searchParams.get("join");
+    const queryChatId = selectedChat;
+
+    if ((queryChatId && queryChatId !== "mvp-lobby") || jc) {
+      const infoUrl = jc
+        ? `/api/groups/info?joinCode=${jc}`
+        : `/api/groups/info?chatId=${queryChatId}`;
+
+      fetch(infoUrl)
         .then((res) => res.json())
         .then((data) => {
-          if (!data.error) setSelectedChatInfo(data);
+          if (!data.error) {
+            setSelectedChatInfo(data);
+            if (jc && !selectedChat) setSelectedChat(data.id);
+          }
         });
 
-      // Mark as seen
-      fetch("/api/groups/seen", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ chatId: selectedChat }),
-      }).then(() => {
-        // Refresh chat list to clear unread counts
-        fetch("/api/groups/list")
-          .then((res) => res.json())
-          .then((data) => {
-            if (Array.isArray(data)) setChats(data);
-          });
-      });
+      if (
+        status === "authenticated" &&
+        queryChatId &&
+        queryChatId !== "mvp-lobby"
+      ) {
+        // Mark as seen
+        fetch("/api/groups/seen", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ chatId: queryChatId }),
+        }).then(() => {
+          // Refresh chat list to clear unread counts
+          fetch("/api/groups/list")
+            .then((res) => res.json())
+            .then((data) => {
+              if (Array.isArray(data)) setChats(data);
+            });
+        });
+      }
 
       setIsLoadingMessages(true);
-      fetch(`/api/groups/messages?chatId=${selectedChat}`)
+      const msgUrl = jc
+        ? `/api/groups/messages?joinCode=${jc}`
+        : `/api/groups/messages?chatId=${queryChatId}`;
+
+      fetch(msgUrl)
         .then((res) => res.json())
         .then((data) => {
           if (Array.isArray(data)) {
@@ -249,7 +265,7 @@ function HomeContent() {
       setSelectedChatInfo(null);
       if (selectedChat !== "mvp-lobby") setMessages([]);
     }
-  }, [selectedChat, status]);
+  }, [selectedChat, status, searchParams]);
 
   const handleSend = (fileUrl?: string) => {
     if (!visitorId) return;
@@ -409,7 +425,12 @@ function HomeContent() {
   if (!hasMounted || status === "loading")
     return <div className="h-screen bg-background" />;
 
-  if (status === "unauthenticated") {
+  const isViewingOnly =
+    searchParams.get("view") === "true" || status === "unauthenticated";
+  const joinCodeParam = searchParams.get("join");
+
+  // Only show splash if NOT viewing a group via link
+  if (status === "unauthenticated" && !joinCodeParam) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen bg-background p-6">
         <div className="w-full max-w-sm bg-background border border-border rounded-[2.5rem] p-10 shadow-2xl space-y-10 text-center animate-in fade-in zoom-in duration-500">
@@ -456,6 +477,9 @@ function HomeContent() {
       </div>
     );
   }
+
+  // If viewing via link, we might need a special effect to load the group even if not in 'chats'
+  // But for now, we'll let ChatView handle the 'selectedChat' if it's passed or derived.
 
   return (
     <div className="flex h-screen overflow-hidden bg-background text-foreground font-sans">

@@ -101,6 +101,30 @@ export function ChatView({
     }
   };
 
+  const handleJoin = async () => {
+    const code = selectedChatInfo?.joinCode;
+    if (!code) return;
+
+    try {
+      const res = await fetch("/api/groups/join-via-link", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code }),
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        toast.success("Joined group!");
+        // Refresh EVERYTHING
+        window.location.reload(); // Simplest way to refresh all states
+      } else {
+        toast.error(data.error || "Failed to join");
+      }
+    } catch (err) {
+      toast.error("Error joining group");
+    }
+  };
+
   return (
     <div
       className={`flex-1 flex-col bg-background relative h-full ${
@@ -124,15 +148,15 @@ export function ChatView({
             <div className="h-10 w-10 flex items-center justify-center rounded-full bg-primary text-white font-bold">
               {selectedChat === "mvp-lobby"
                 ? "L"
-                : currentChat?.name.substring(0, 1).toUpperCase()}
+                : (selectedChatInfo?.name || "C").substring(0, 1).toUpperCase()}
             </div>
             <div className="flex-1">
               <h2 className="font-bold leading-tight">
-                {currentChat?.name || "Chat"}
+                {selectedChatInfo?.name || "Chat"}
               </h2>
               <p className="text-[10px] text-green-500 font-medium">Online</p>
             </div>
-            {selectedChat !== "mvp-lobby" && status === "authenticated" && (
+            {selectedChat !== "mvp-lobby" && selectedChatInfo?.myRole && (
               <button
                 onClick={() => setShowGroupSettings(true)}
                 className="cursor-pointer p-2 hover:bg-black/5 dark:hover:bg-white/5 rounded-full text-muted transition-colors"
@@ -211,10 +235,11 @@ export function ChatView({
                     (selectedChatInfo?.name === "Anonymous Messages" ||
                       msg.alias === "Anonymous"));
 
+                const lastSeenAt = currentChat?.lastSeenAt;
                 const isUnread =
                   msg.sender === "them" &&
-                  currentChat?.lastSeenAt &&
-                  new Date(msg.createdAt) > new Date(currentChat.lastSeenAt);
+                  lastSeenAt &&
+                  new Date(msg.createdAt) > new Date(lastSeenAt);
 
                 // Show "Unread Messages" bar before the first unread message
                 const showUnreadBar =
@@ -222,7 +247,7 @@ export function ChatView({
                   (idx === 0 ||
                     !(
                       new Date(messages[idx - 1].createdAt) >
-                      new Date(currentChat.lastSeenAt)
+                      new Date(lastSeenAt)
                     ));
 
                 return (
@@ -343,86 +368,109 @@ export function ChatView({
             </div>
           </div>
 
-          {/* Input Area */}
-          <div className="p-3 bg-sidebar flex items-center gap-2 max-w-4xl mx-auto w-full">
-            <div className="relative group p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors overflow-hidden">
-              <span className="text-2xl text-muted grayscale group-hover:grayscale-0 transition-all">
-                📎
-              </span>
-              <div className="absolute inset-0 opacity-0 cursor-pointer">
-                <UploadButton
-                  endpoint="imageUploader"
-                  onClientUploadComplete={(res) => {
-                    handleSend(res?.[0]?.url);
-                  }}
-                  onUploadError={(error) =>
-                    console.error(`Upload Failed: ${error.message}`)
+          {/* Input Area or Join CTA */}
+          {selectedChatInfo?.myRole ? (
+            <div className="p-3 bg-sidebar flex items-center gap-2 max-w-4xl mx-auto w-full">
+              <div className="relative group p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors overflow-hidden">
+                <span className="text-2xl text-muted grayscale group-hover:grayscale-0 transition-all">
+                  📎
+                </span>
+                <div className="absolute inset-0 opacity-0 cursor-pointer">
+                  <UploadButton
+                    endpoint="imageUploader"
+                    onClientUploadComplete={(res) => {
+                      handleSend(res?.[0]?.url);
+                    }}
+                    onUploadError={(error) =>
+                      console.error(`Upload Failed: ${error.message}`)
+                    }
+                    appearance={{
+                      button: { width: "100%", height: "100%" },
+                      allowedContent: { display: "none" },
+                    }}
+                  />
+                </div>
+              </div>
+
+              {/* Anonymous Toggle */}
+              <button
+                onClick={() => setIsAnonymous(!isAnonymous)}
+                className={`p-2 rounded-full transition-all ${
+                  isAnonymous
+                    ? "bg-purple-500/10 text-purple-600"
+                    : "hover:bg-black/5 dark:hover:bg-white/5 text-muted"
+                }`}
+                title="Toggle Anonymous Mode"
+              >
+                <Shield
+                  className={`w-6 h-6 ${isAnonymous ? "fill-purple-600" : ""}`}
+                />
+              </button>
+
+              <div className="flex-1 relative flex items-center">
+                <input
+                  type="text"
+                  value={inputText}
+                  onChange={(e) => setInputText(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && handleSend()}
+                  placeholder={
+                    isAnonymous ? "Send anonymously..." : "Your message..."
                   }
-                  appearance={{
-                    button: { width: "100%", height: "100%" },
-                    allowedContent: { display: "none" },
-                  }}
+                  className={`w-full bg-background/50 border rounded-full px-5 py-3 text-sm focus:outline-none focus:ring-2 transition-all placeholder:text-muted ${
+                    isAnonymous
+                      ? "border-purple-500/30 focus:ring-purple-500/20"
+                      : "border-border focus:ring-primary/20"
+                  }`}
                 />
               </div>
-            </div>
 
-            {/* Anonymous Toggle */}
-            <button
-              onClick={() => setIsAnonymous(!isAnonymous)}
-              className={`p-2 rounded-full transition-all ${
-                isAnonymous
-                  ? "bg-purple-500/10 text-purple-600"
-                  : "hover:bg-black/5 dark:hover:bg-white/5 text-muted"
-              }`}
-              title="Toggle Anonymous Mode"
-            >
-              <Shield
-                className={`w-6 h-6 ${isAnonymous ? "fill-purple-600" : ""}`}
-              />
-            </button>
-
-            <div className="flex-1 relative flex items-center">
-              <input
-                type="text"
-                value={inputText}
-                onChange={(e) => setInputText(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleSend()}
-                placeholder={
-                  isAnonymous ? "Send anonymously..." : "Your message..."
-                }
-                className={`w-full bg-background/50 border rounded-full px-5 py-3 text-sm focus:outline-none focus:ring-2 transition-all placeholder:text-muted ${
-                  isAnonymous
-                    ? "border-purple-500/30 focus:ring-purple-500/20"
-                    : "border-border focus:ring-primary/20"
+              <button
+                onClick={() => handleSend()}
+                disabled={!inputText.trim()}
+                className={`p-3 rounded-full transition-all flex items-center justify-center ${
+                  inputText.trim()
+                    ? "cursor-pointer bg-primary text-white shadow-lg scale-100 hover:opacity-90 active:scale-95"
+                    : "bg-transparent text-muted scale-90 opacity-40 cursor-default"
                 }`}
-              />
-            </div>
-
-            <button
-              onClick={() => handleSend()}
-              disabled={!inputText.trim()}
-              className={`p-3 rounded-full transition-all flex items-center justify-center ${
-                inputText.trim()
-                  ? "cursor-pointer bg-primary text-white shadow-lg scale-100 hover:opacity-90 active:scale-95"
-                  : "bg-transparent text-muted scale-90 opacity-40 cursor-default"
-              }`}
-            >
-              <svg
-                width="22"
-                height="22"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="rotate-45 -mt-0.5 ml-0.5"
               >
-                <line x1="22" y1="2" x2="11" y2="13"></line>
-                <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
-              </svg>
-            </button>
-          </div>
+                <svg
+                  width="22"
+                  height="22"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="rotate-45 -mt-0.5 ml-0.5"
+                >
+                  <line x1="22" y1="2" x2="11" y2="13"></line>
+                  <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                </svg>
+              </button>
+            </div>
+          ) : (
+            <div className="p-4 bg-sidebar/80 backdrop-blur-md border-t border-border flex flex-col items-center gap-3">
+              <p className="text-sm font-medium text-muted-foreground">
+                Only members can send messages in this group.
+              </p>
+              {status === "unauthenticated" ? (
+                <button
+                  onClick={() => signIn("google")}
+                  className="bg-foreground text-background font-bold px-8 py-3 rounded-2xl hover:opacity-90 transition-all shadow-lg text-sm"
+                >
+                  Sign in to Join Conversation
+                </button>
+              ) : (
+                <button
+                  onClick={handleJoin}
+                  className="bg-primary text-white font-bold px-8 py-3 rounded-2xl hover:opacity-90 transition-all shadow-lg text-sm"
+                >
+                  Join Group
+                </button>
+              )}
+            </div>
+          )}
         </>
       ) : isLoadingMessages || isLoadingChats ? (
         <div className="flex h-full items-center justify-center">

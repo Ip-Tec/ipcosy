@@ -139,7 +139,7 @@ export function InviteCard({ code, groupInfo }: InviteCardProps) {
             </div>
           )}
 
-          <div className="w-full pt-4">
+          <div className="w-full pt-4 space-y-3">
             <button
               onClick={handleJoin}
               disabled={joining}
@@ -153,6 +153,13 @@ export function InviteCard({ code, groupInfo }: InviteCardProps) {
                   Join Group
                 </>
               )}
+            </button>
+
+            <button
+              onClick={() => router.push(`/?join=${code}&view=true`)}
+              className="w-full py-3 rounded-2xl bg-secondary text-secondary-foreground font-bold hover:bg-secondary/80 transition-all flex items-center justify-center gap-2"
+            >
+              View Messages
             </button>
           </div>
         </div>
