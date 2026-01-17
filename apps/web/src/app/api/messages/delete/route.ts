@@ -6,8 +6,40 @@ import { prisma } from "@ipcosy/db";
 export async function POST(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session || !session.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    let userId: string;
+
+    if (session?.user) {
+      userId = (session.user as any).id;
+    } else {
+      // Fallback to fingerprint for guests
+      const cookieHeader = req.headers.get("cookie");
+      let fingerprint = null;
+
+      if (cookieHeader) {
+        const cookies = cookieHeader.split(";").map((c) => c.trim());
+        const fpCookie = cookies.find((c) =>
+          c.startsWith("ipcosy-fingerprint="),
+        );
+        if (fpCookie) {
+          fingerprint = fpCookie.split("=")[1];
+        }
+      }
+
+      if (!fingerprint) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      }
+
+      // Find the guest user by fingerprint
+      const guestUser = await prisma.user.findUnique({
+        where: { fingerprint: fingerprint },
+        select: { id: true },
+      });
+
+      if (!guestUser) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      }
+
+      userId = guestUser.id;
     }
 
     const { messageId } = await req.json();
@@ -15,8 +47,6 @@ export async function POST(req: NextRequest) {
     if (!messageId) {
       return NextResponse.json({ error: "Missing messageId" }, { status: 400 });
     }
-
-    const userId = (session.user as any).id;
 
     // Find the message
     const message = await prisma.message.findUnique({

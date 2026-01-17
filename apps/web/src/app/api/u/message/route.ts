@@ -19,6 +19,26 @@ export async function POST(req: Request) {
     // Capture metadata from request
     const metadata = await captureMessageMetadata();
 
+    // Basic Rate Limiting: Check last 1 minute messages for this IP/Fingerprint
+    const oneMinuteAgo = new Date(Date.now() - 60 * 1000);
+    const recentMessagesCount = await prisma.message.count({
+      where: {
+        OR: [
+          { ipAddress: metadata.ipAddress },
+          { deviceId: metadata.deviceId },
+        ],
+        createdAt: { gt: oneMinuteAgo },
+      },
+    });
+
+    if (recentMessagesCount >= 10) {
+      // Allow 10 messages per minute
+      return NextResponse.json(
+        { error: "Too many messages. Please wait a minute." },
+        { status: 429 },
+      );
+    }
+
     let chatId: string | null = null;
     let senderId: string;
     const isAnonymous = true; // All messages via this route are anonymous

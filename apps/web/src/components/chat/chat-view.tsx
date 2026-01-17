@@ -5,7 +5,7 @@ import Image from "next/image";
 import { Share2, Trash2, Shield } from "lucide-react";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
-import { UploadButton } from "../../utils/uploadthing";
+import { useUploadThing } from "../../utils/uploadthing";
 import { AnonymousMessageCard } from "./anonymous-message-card";
 import { EmptyState } from "@/components/empty-state";
 import { DeleteMessageModal } from "./modals/delete-message-modal";
@@ -58,6 +58,26 @@ export function ChatView({
   isAnonymous,
   setIsAnonymous,
 }: ChatViewProps) {
+  const { startUpload, isUploading } = useUploadThing("imageUploader", {
+    onClientUploadComplete: (res) => {
+      handleSend(res?.[0]?.url);
+      toast.success("Image uploaded!");
+    },
+    onUploadError: (error) => {
+      console.error(`Upload Failed: ${error.message}`);
+      toast.error(`Upload failed: ${error.message}`);
+    },
+  });
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    await startUpload([file]);
+    // Reset input
+    e.target.value = "";
+  };
+
   const currentChat = chats.find((c) => c.id === selectedChat);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [messageToDelete, setMessageToDelete] = useState<string | null>(null);
@@ -372,25 +392,21 @@ export function ChatView({
           {/* Input Area or Join CTA */}
           {selectedChatInfo?.myRole ? (
             <div className="p-3 bg-sidebar flex items-center gap-2 max-w-4xl mx-auto w-full">
-              <div className="relative group p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors overflow-hidden">
-                <span className="text-2xl text-muted grayscale group-hover:grayscale-0 transition-all">
-                  📎
-                </span>
-                <div className="absolute inset-0 opacity-0 cursor-pointer">
-                  <UploadButton
-                    endpoint="imageUploader"
-                    onClientUploadComplete={(res) => {
-                      handleSend(res?.[0]?.url);
-                    }}
-                    onUploadError={(error) =>
-                      console.error(`Upload Failed: ${error.message}`)
-                    }
-                    appearance={{
-                      button: { width: "100%", height: "100%" },
-                      allowedContent: { display: "none" },
-                    }}
+              <div className="relative group p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer">
+                <label className="cursor-pointer">
+                  <span
+                    className={`text-2xl transition-all ${isUploading ? "animate-pulse opacity-50" : "text-muted grayscale group-hover:grayscale-0"}`}
+                  >
+                    {isUploading ? "⏳" : "📎"}
+                  </span>
+                  <input
+                    type="file"
+                    className="hidden"
+                    accept="image/*"
+                    onChange={handleFileChange}
+                    disabled={isUploading}
                   />
-                </div>
+                </label>
               </div>
 
               {/* Anonymous Toggle */}

@@ -17,7 +17,28 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    const userId = session?.user ? (session.user as any).id : null;
+    let userId = session?.user ? (session.user as any).id : null;
+
+    if (!userId) {
+      // Fallback to fingerprint for guests
+      const cookieHeader = req.headers.get("cookie");
+      if (cookieHeader) {
+        const cookies = cookieHeader.split(";").map((c) => c.trim());
+        const fpCookie = cookies.find((c) =>
+          c.startsWith("ipcosy-fingerprint="),
+        );
+        if (fpCookie) {
+          const fingerprint = fpCookie.split("=")[1];
+          const guestUser = await prisma.user.findUnique({
+            where: { fingerprint: fingerprint },
+            select: { id: true },
+          });
+          if (guestUser) {
+            userId = guestUser.id;
+          }
+        }
+      }
+    }
 
     const chat = await prisma.chat.findFirst({
       where: joinCode ? { joinCode } : { id: chatId! },
