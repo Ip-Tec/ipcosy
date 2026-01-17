@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
 import { Share2, Trash2, Shield } from "lucide-react";
 import { toast } from "sonner";
@@ -76,6 +76,28 @@ export function ChatView({
     await startUpload([file]);
     // Reset input
     e.target.value = "";
+  };
+
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    if (inputText === "" && textareaRef.current) {
+      textareaRef.current.style.height = "auto";
+    }
+  }, [inputText]);
+
+  const handleInputResize = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const target = e.target;
+    target.style.height = "auto";
+    target.style.height = `${Math.min(target.scrollHeight, 150)}px`;
+    setInputText(target.value);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
+    }
   };
 
   const currentChat = chats.find((c) => c.id === selectedChat);
@@ -425,15 +447,16 @@ export function ChatView({
               </button>
 
               <div className="flex-1 relative flex items-center">
-                <input
-                  type="text"
+                <textarea
+                  ref={textareaRef}
                   value={inputText}
-                  onChange={(e) => setInputText(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && handleSend()}
+                  onChange={handleInputResize}
+                  onKeyDown={handleKeyDown}
                   placeholder={
                     isAnonymous ? "Send anonymously..." : "Your message..."
                   }
-                  className={`w-full bg-background/50 border rounded-full px-5 py-3 text-sm focus:outline-none focus:ring-2 transition-all placeholder:text-muted ${
+                  rows={1}
+                  className={`w-full bg-background/50 border rounded-2xl px-5 py-3 text-sm focus:outline-none focus:ring-2 transition-all placeholder:text-muted resize-none max-h-[150px] overflow-y-auto ${
                     isAnonymous
                       ? "border-purple-500/30 focus:ring-purple-500/20"
                       : "border-border focus:ring-primary/20"
