@@ -58,6 +58,8 @@ export function ChatView({
   isAnonymous,
   setIsAnonymous,
 }: ChatViewProps) {
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
   const { startUpload, isUploading } = useUploadThing("imageUploader", {
     onClientUploadComplete: (res) => {
       handleSend(res?.[0]?.url);
@@ -78,7 +80,37 @@ export function ChatView({
     e.target.value = "";
   };
 
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  // Helper to get display name for chat header
+  const getChatDisplayName = () => {
+    if (selectedChat === "mvp-lobby") return "Public Lobby";
+    if (!selectedChatInfo) return "Chat";
+
+    // For group chats, show group name
+    if (selectedChatInfo.isGroup) {
+      return selectedChatInfo.name || "Group Chat";
+    }
+
+    // For DMs and anonymous chats, show the other participant's name
+    if (
+      selectedChatInfo.participants &&
+      selectedChatInfo.participants.length > 0
+    ) {
+      const otherParticipant = selectedChatInfo.participants.find(
+        (p: any) => p.userId !== user?.id,
+      );
+      if (otherParticipant) {
+        return (
+          otherParticipant.username || otherParticipant.name || "Anonymous"
+        );
+      }
+    }
+
+    return selectedChatInfo.name || "Chat";
+  };
+
+  const chatDisplayName = getChatDisplayName();
+
+  const currentChat = chats.find((c) => c.id === selectedChat);
 
   useEffect(() => {
     if (inputText === "" && textareaRef.current) {
@@ -100,7 +132,6 @@ export function ChatView({
     }
   };
 
-  const currentChat = chats.find((c) => c.id === selectedChat);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [messageToDelete, setMessageToDelete] = useState<string | null>(null);
 
@@ -191,12 +222,10 @@ export function ChatView({
             <div className="h-10 w-10 flex items-center justify-center rounded-full bg-primary text-white font-bold">
               {selectedChat === "mvp-lobby"
                 ? "L"
-                : (selectedChatInfo?.name || "C").substring(0, 1).toUpperCase()}
+                : (chatDisplayName || "C").substring(0, 1).toUpperCase()}
             </div>
             <div className="flex-1">
-              <h2 className="font-bold leading-tight">
-                {selectedChatInfo?.name || "Chat"}
-              </h2>
+              <h2 className="font-bold leading-tight">{chatDisplayName}</h2>
               <p className="text-[10px] text-green-500 font-medium">Online</p>
             </div>
             {selectedChat !== "mvp-lobby" && selectedChatInfo?.myRole && (

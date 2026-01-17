@@ -102,10 +102,15 @@ export async function GET(req: NextRequest) {
       participants: chat.participants.map((p) => ({
         id: p.id,
         userId: p.userId,
-        username: maskName(p.userId),
-        name: maskName(p.userId),
+        // For DMs, show actual usernames; for groups, mask for privacy
+        username: chat.isGroup
+          ? maskName(p.userId)
+          : p.user.username || p.user.name || "Anonymous",
+        name: chat.isGroup
+          ? maskName(p.userId)
+          : p.user.name || p.user.username || "Anonymous",
         role: p.role,
-        image: null, // Hide images for anonymity in settings
+        image: chat.isGroup ? null : p.user.image, // Show images for DMs, hide for groups
       })),
     });
   } catch (error) {

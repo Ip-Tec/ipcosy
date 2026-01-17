@@ -60,6 +60,7 @@ export function OnboardingModal({
     }
   };
 
+  // Don't allow closing if user has no username (first-time onboarding)
   if (!isOpen) return null;
 
   return (

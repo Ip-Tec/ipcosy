@@ -287,6 +287,7 @@ function HomeContent() {
         minute: "2-digit",
         hour12: false,
       }),
+      createdAt: new Date().toISOString(),
       chatId: selectedChat || undefined,
     };
 
@@ -562,6 +563,14 @@ function HomeContent() {
         confirmDeleteGroup={confirmDeleteGroup}
         isDeleting={isCreatingGroup}
       />
+
+      {/* Onboarding Modal - Auto-show for new users */}
+      {status === "authenticated" && user && (
+        <OnboardingModal
+          user={user}
+          forceOpen={(session?.user as any)?.needsOnboarding || false}
+        />
+      )}
     </div>
   );
 }
