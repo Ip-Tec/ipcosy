@@ -226,7 +226,7 @@ export function ChatView({
           {/* Messages Area */}
           <div
             ref={scrollRef}
-            className="h-[calc(100vh-100px)] flex-1 overflow-y-auto p-4 space-y-4 bg-background relative"
+            className="h-[calc(100vh-100px)] flex-1 overflow-y-auto p-4 space-y-4 bg-background relative no-scrollbar"
           >
             {/* Fixed Background Layer */}
             <div
@@ -456,7 +456,7 @@ export function ChatView({
                     isAnonymous ? "Send anonymously..." : "Your message..."
                   }
                   rows={1}
-                  className={`w-full bg-background/50 border rounded-2xl px-5 py-3 text-sm focus:outline-none focus:ring-2 transition-all placeholder:text-muted resize-none max-h-[150px] overflow-y-auto ${
+                  className={`w-full bg-background/50 border rounded-2xl px-5 py-3 text-sm focus:outline-none focus:ring-2 transition-all placeholder:text-muted resize-none max-h-[150px] overflow-y-auto no-scrollbar ${
                     isAnonymous
                       ? "border-purple-500/30 focus:ring-purple-500/20"
                       : "border-border focus:ring-primary/20"
