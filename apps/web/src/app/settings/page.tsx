@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { LoginPrompt } from "@/components/login-prompt";
 import { APP_VERSION } from "@/lib/constants";
 import { Skeleton } from "@/components/ui/skeleton";
+import { SupportModal } from "@/components/support-modal";
 import {
   ChevronLeft,
   Loader2,
@@ -18,6 +19,9 @@ import {
   BellOff,
   Shield,
   User as UserIcon,
+  HelpCircle,
+  AlertTriangle,
+  Trash2,
 } from "lucide-react";
 
 const UpgradeButton = nextDynamic(() => import("@/components/upgrade-button"), {
@@ -38,6 +42,12 @@ export default function SettingsPage() {
   const [dbUser, setDbUser] = useState<any>(null);
   const [notifPermission, setNotifPermission] =
     useState<NotificationPermission>("default");
+  const [supportModalOpen, setSupportModalOpen] = useState(false);
+  const [openTicketsCount, setOpenTicketsCount] = useState(0);
+  const [isDeletionPending, setIsDeletionPending] = useState(false);
+  const [deletionDate, setDeletionDate] = useState<Date | null>(null);
+  const [isRequestingDeletion, setIsRequestingDeletion] = useState(false);
+  const [isCancellingDeletion, setIsCancellingDeletion] = useState(false);
 
   useEffect(() => {
     if ("Notification" in window) {
@@ -67,6 +77,14 @@ export default function SettingsPage() {
         if (!data.error) {
           setDbUser(data);
           setAlias(data.username || data.name || "");
+          setIsDeletionPending(!!data.deletionRequestedAt);
+          if (data.deletionRequestedAt) {
+            const requestedAt = new Date(data.deletionRequestedAt);
+            const deletionDate = new Date(
+              requestedAt.getTime() + 35 * 24 * 60 * 60 * 1000
+            );
+            setDeletionDate(deletionDate);
+          }
         }
       });
 
@@ -74,6 +92,18 @@ export default function SettingsPage() {
       .then((res) => res.json())
       .then((data) => {
         if (data.premiumPrice) setPremiumPrice(data.premiumPrice);
+      });
+
+    // Fetch open tickets count
+    fetch("/api/support")
+      .then((res) => res.json())
+      .then((data) => {
+        if (Array.isArray(data)) {
+          const openTickets = data.filter(
+            (ticket: any) => ticket.status === "OPEN" || ticket.status === "IN_PROGRESS"
+          );
+          setOpenTicketsCount(openTickets.length);
+        }
       });
   }, [session]);
 
@@ -102,6 +132,53 @@ export default function SettingsPage() {
     }
   };
 
+  const handleRequestDeletion = async () => {
+    setIsRequestingDeletion(true);
+    try {
+      const res = await fetch("/api/user/delete-account", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        setDeletionDate(new Date(data.deletionDate));
+        setIsDeletionPending(true);
+        toast.success("Account deletion scheduled for 35 days from now");
+      } else {
+        const text = await res.text();
+        toast.error(text || "Failed to request account deletion");
+      }
+    } catch (e) {
+      toast.error("Error requesting account deletion");
+    } finally {
+      setIsRequestingDeletion(false);
+    }
+  };
+
+  const handleCancelDeletion = async () => {
+    setIsCancellingDeletion(true);
+    try {
+      const res = await fetch("/api/user/delete-account", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+      });
+
+      if (res.ok) {
+        setIsDeletionPending(false);
+        setDeletionDate(null);
+        toast.success("Account deletion request cancelled");
+      } else {
+        const text = await res.text();
+        toast.error(text || "Failed to cancel account deletion");
+      }
+    } catch (e) {
+      toast.error("Error cancelling account deletion");
+    } finally {
+      setIsCancellingDeletion(false);
+    }
+  };
+
   const user = dbUser || (session?.user as any);
   const isPremium = user?.isPremium;
 
@@ -127,7 +204,7 @@ export default function SettingsPage() {
           href="/"
           className="text-primary hover:opacity-80 transition-opacity"
         >
-          <ChevronLeft />
+          <ChevronLeft className="w-4 h-4" />
           Back to Chat
         </Link>
         <h1 className="text-xl font-bold">Settings</h1>
@@ -278,6 +355,49 @@ export default function SettingsPage() {
           </div>
         </section>
 
+        {/* Support & Help Section */}
+        <section className="space-y-4">
+          <h2 className="text-xs font-bold text-muted-foreground/60 uppercase tracking-[0.2em] flex items-center gap-2">
+            <HelpCircle className="w-3 h-3" />
+            Support & Help
+          </h2>
+          <div className="bg-sidebar rounded-2xl border border-border p-6 shadow-sm space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="space-y-1">
+                <p className="font-semibold">Contact Support</p>
+                <p className="text-xs text-muted-foreground">
+                  Have a question or issue? Get help from our support team.
+                </p>
+              </div>
+              <button
+                onClick={() => setSupportModalOpen(true)}
+                className="cursor-pointer bg-primary text-white px-4 py-2 rounded-lg hover:opacity-90 font-semibold text-sm transition-all"
+              >
+                New Ticket
+              </button>
+            </div>
+
+            <div className="border-t border-border pt-4">
+              <Link
+                href="/support"
+                className="flex items-center justify-between p-3 rounded-lg hover:bg-background/50 transition-colors"
+              >
+                <div>
+                  <p className="font-semibold text-sm">View My Tickets</p>
+                  {openTicketsCount > 0 && (
+                    <p className="text-xs text-muted-foreground">
+                      {openTicketsCount} {openTicketsCount === 1 ? "ticket" : "tickets"} awaiting response
+                    </p>
+                  )}
+                </div>
+                <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full font-semibold">
+                  {openTicketsCount || 0}
+                </span>
+              </Link>
+            </div>
+          </div>
+        </section>
+
         {/* Appearance Section */}
         <section className="space-y-4">
           <h2 className="text-sm font-semibold text-muted uppercase tracking-wider">
@@ -360,34 +480,172 @@ export default function SettingsPage() {
           </section>
         )}
 
+        {/* Account Management Section */}
+        <section className="space-y-4">
+          <h2 className="text-xs font-bold text-red-600/80 uppercase tracking-[0.2em] flex items-center gap-2">
+            <AlertTriangle className="w-3 h-3" />
+            Account Management
+          </h2>
+          <div className="bg-red-500/5 rounded-2xl border border-red-200 dark:border-red-900/30 p-6 shadow-sm space-y-4">
+            {!isDeletionPending ? (
+              <>
+                <div className="space-y-3">
+                  <div className="flex items-start gap-3">
+                    <Trash2 className="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" />
+                    <div className="space-y-1">
+                      <p className="font-semibold text-red-600">Delete Account</p>
+                      <p className="text-xs text-muted-foreground">
+                        Request permanent deletion of your account. You have 35 days to cancel this request.
+                      </p>
+                    </div>
+                  </div>
+                  <p className="text-xs text-muted-foreground bg-red-50 dark:bg-red-900/20 p-3 rounded-lg border border-red-200 dark:border-red-900/30">
+                    <span className="font-semibold">⚠️ Warning:</span> This action cannot be undone. All your account data will be permanently deleted. However, your messages in chats will be preserved to maintain conversation history.
+                  </p>
+                </div>
+
+                <button
+                  onClick={handleRequestDeletion}
+                  disabled={isRequestingDeletion}
+                  className="w-full cursor-pointer bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 disabled:opacity-50 font-semibold text-sm transition-all"
+                >
+                  {isRequestingDeletion ? "Processing..." : "Request Account Deletion"}
+                </button>
+              </>
+            ) : (
+              <>
+                <div className="space-y-3">
+                  <div className="flex items-start gap-3">
+                    <AlertTriangle className="w-5 h-5 text-orange-600 mt-0.5 flex-shrink-0" />
+                    <div className="space-y-1">
+                      <p className="font-semibold text-orange-600">Deletion Scheduled</p>
+                      <p className="text-xs text-muted-foreground">
+                        Your account will be permanently deleted on:
+                      </p>
+                      <p className="text-sm font-bold text-orange-600">
+                        {deletionDate?.toLocaleDateString("en-US", {
+                          year: "numeric",
+                          month: "long",
+                          day: "numeric",
+                        })}
+                      </p>
+                    </div>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    You can cancel this deletion request at any time during the next 35 days.
+                  </p>
+                </div>
+
+                <button
+                  onClick={handleCancelDeletion}
+                  disabled={isCancellingDeletion}
+                  className="w-full cursor-pointer bg-sidebar border-2 border-orange-600/30 text-orange-600 px-4 py-2 rounded-lg hover:bg-orange-50 dark:hover:bg-orange-900/20 disabled:opacity-50 font-semibold text-sm transition-all"
+                >
+                  {isCancellingDeletion ? "Processing..." : "Cancel Deletion"}
+                </button>
+              </>
+            )}
+          </div>
+        </section>
+
         {/* System & Legal Section */}
         <section className="space-y-4">
           <h2 className="text-sm font-semibold text-muted uppercase tracking-wider">
             System & Privacy
           </h2>
           <div className="bg-sidebar rounded-2xl border border-border overflow-hidden shadow-sm">
-            <div className="p-5 border-b border-border space-y-2">
+            <div className="p-5 border-b border-border space-y-3">
               <div className="flex justify-between items-center">
                 <span className="font-medium">Privacy & Security</span>
                 <span className="text-[10px] bg-green-500/10 text-green-600 px-2 py-0.5 rounded-full font-bold">
                   Secure
                 </span>
               </div>
-              <p className="text-xs text-muted leading-relaxed">
-                IPCosy uses end-to-end anonymity.
-              </p>
+              <div className="space-y-3 text-xs text-muted leading-relaxed">
+                <p>
+                  <span className="font-semibold text-foreground">
+                    🔒 End-to-End Anonymity:
+                  </span>{" "}
+                  IPCosy is built with privacy at its core. Your messages are
+                  transmitted with full anonymity protection, ensuring your
+                  identity remains private.
+                </p>
+                <p>
+                  <span className="font-semibold text-foreground">
+                    🛡️ Secure Authentication:
+                  </span>{" "}
+                  We use industry-standard OAuth 2.0 with Google Sign-In,
+                  ensuring your credentials are never stored on our servers.
+                  Your account is protected by Google&apos;s enterprise-grade
+                  security.
+                </p>
+                <p>
+                  <span className="font-semibold text-foreground">
+                    ⏱️ Auto-Delete Policy:
+                  </span>{" "}
+                  All messages are automatically deleted from our servers after
+                  72 hours. This ensures your conversations remain ephemeral and
+                  reduces data exposure risks.
+                </p>
+                <p>
+                  <span className="font-semibold text-foreground">
+                    🔐 Data Encryption:
+                  </span>{" "}
+                  All data transmitted between your device and our servers is
+                  encrypted using TLS 1.3, protecting your messages from
+                  interception.
+                </p>
+                <p>
+                  <span className="font-semibold text-foreground">
+                    👤 Anonymous Messaging:
+                  </span>{" "}
+                  Send messages without revealing your identity. Our anonymous
+                  mode masks your profile information, allowing truly private
+                  communication.
+                </p>
+              </div>
             </div>
 
-            <div className="p-5 border-b border-border space-y-2">
+            <div className="p-5 border-b border-border space-y-3">
               <div className="flex justify-between items-center">
                 <span className="font-medium">Data Usage</span>
                 <span className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full font-bold">
-                  Local First
+                  Minimal Storage
                 </span>
               </div>
-              <p className="text-xs text-muted leading-relaxed">
-                Messages are temporarily stored.
-              </p>
+              <div className="space-y-3 text-xs text-muted leading-relaxed">
+                <p>
+                  <span className="font-semibold text-foreground">
+                    💾 Temporary Storage:
+                  </span>{" "}
+                  Messages are stored temporarily on our secure servers only for
+                  delivery purposes. After 72 hours, all message content is
+                  permanently deleted.
+                </p>
+                <p>
+                  <span className="font-semibold text-foreground">
+                    📊 Minimal Data Collection:
+                  </span>{" "}
+                  We only collect essential information needed for
+                  authentication (via Google) and basic app functionality. We
+                  never sell or share your personal data with third parties.
+                </p>
+                <p>
+                  <span className="font-semibold text-foreground">
+                    🗑️ Right to Deletion:
+                  </span>{" "}
+                  You can delete your messages at any time. Once deleted,
+                  messages are immediately removed from our servers and cannot
+                  be recovered.
+                </p>
+                <p>
+                  <span className="font-semibold text-foreground">
+                    🌐 No Tracking:
+                  </span>{" "}
+                  We don&apos;t use invasive analytics or tracking cookies. Your
+                  browsing behavior within IPCosy remains private.
+                </p>
+              </div>
             </div>
 
             <div className="p-5 space-y-2">
@@ -409,6 +667,24 @@ export default function SettingsPage() {
             Your data is handled according to our privacy policy.
           </p>
         </div>
+
+        <SupportModal
+          isOpen={supportModalOpen}
+          onClose={() => setSupportModalOpen(false)}
+          onSuccess={() => {
+            // Refresh tickets count
+            fetch("/api/support")
+              .then((res) => res.json())
+              .then((data) => {
+                if (Array.isArray(data)) {
+                  const openTickets = data.filter(
+                    (ticket: any) => ticket.status === "OPEN" || ticket.status === "IN_PROGRESS"
+                  );
+                  setOpenTicketsCount(openTickets.length);
+                }
+              });
+          }}
+        />
       </div>
     </div>
   );
