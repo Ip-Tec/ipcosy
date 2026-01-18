@@ -13,7 +13,6 @@ import {
   MessageSquare,
   Filter,
 } from "lucide-react";
-import Link from "next/link";
 
 interface SupportTicket {
   id: string;
@@ -158,13 +157,8 @@ export default function AdminSupportTicketsPage() {
     <div className="flex h-screen flex-col bg-background text-foreground">
       {/* Header */}
       <div className="flex items-center gap-4 border-b border-border bg-sidebar p-4 shadow-sm">
-        <Link
-          href="/admin"
-          className="text-primary hover:opacity-80 transition-opacity"
-        >
           <ChevronLeft className="w-3 h-3" />
           Admin Panel
-        </Link>
         <h1 className="text-xl font-bold">Support Tickets</h1>
       </div>
 

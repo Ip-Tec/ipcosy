@@ -15,10 +15,10 @@ export async function generateMetadata(
 
   const user = await prisma.user.findUnique({
     where: { username: username },
-    select: { name: true, image: true },
+    select: { name: true, image: true, username: true },
   });
 
-  const displayName = username || user?.name;
+  const displayName = username || user?.username;
   const title = `Send an anonymous message to ${displayName}`;
   const description =
     "Start an anonymous conversation. They won't know it's you unless you tell them!";
@@ -51,6 +51,8 @@ export default async function Page({ params }: Props) {
       name: true,
       username: true,
       image: true,
+      isAdmin: true,
+      isBanned: true,
       isPremium: true,
     },
   });
