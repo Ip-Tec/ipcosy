@@ -1,9 +1,8 @@
 "use client";
 
-import { useState, useEffect, use } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { useSession, signIn } from "next-auth/react";
-import { useRouter, notFound } from "next/navigation";
 import {
   Heart,
   MessageSquare,
@@ -13,12 +12,11 @@ import {
   TrendingUp,
   Send,
   ShieldCheck,
-  Loader2,
   Dices,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import FingerprintJS from "@fingerprintjs/fingerprintjs";
-
+import Image from "next/image";
 interface SuggestionCategory {
   id: string;
   label: string;
@@ -194,7 +192,7 @@ export default function ClientPage({
           <div className="absolute top-0 left-0 w-full h-2 bg-primary"></div>
           <div className="h-24 w-24 rounded-full bg-gradient-to-br from-primary to-purple-600 mx-auto flex items-center justify-center text-white text-4xl font-bold shadow-lg overflow-hidden ring-4 ring-white dark:ring-[#17212b]">
             {userInfo.image ? (
-              <img
+              <Image
                 src={userInfo.image}
                 alt={userInfo.name || "User"}
                 className="w-full h-full object-cover"
@@ -274,7 +272,7 @@ export default function ClientPage({
               </div>
               <div className="space-y-2">
                 <h2 className="text-2xl font-black italic">
-                  Wait! Don't leave yet
+                  Wait! Don&apos;t leave yet
                 </h2>
                 <p className="text-sm text-muted-foreground leading-relaxed h-12">
                   Register now so you can see when {userInfo.name} replies to
@@ -288,7 +286,7 @@ export default function ClientPage({
                 className="cursor-pointer w-full flex items-center justify-center gap-4 bg-foreground text-background font-bold py-5 rounded-[1.5rem] hover:opacity-90 active:scale-[0.98] transition-all shadow-xl group"
               >
                 <div className="bg-white p-1 rounded-full">
-                  <img
+                  <Image
                     src="https://www.google.com/favicon.ico"
                     className="w-4 h-4"
                     alt="Google"
