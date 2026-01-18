@@ -3,8 +3,17 @@
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
+import { useState } from "react";
 import { SUPER_ADMIN_EMAILS } from "@/lib/constants";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Menu, X, LogOut } from "lucide-react";
+
+interface AdminUser {
+  email?: string;
+  name?: string;
+  image?: string;
+  id?: string;
+}
 
 export default function AdminLayout({
   children,
@@ -13,8 +22,9 @@ export default function AdminLayout({
 }) {
   const pathname = usePathname();
   const { data: session, status } = useSession();
-  const user = session?.user as any;
+  const user = (session?.user as AdminUser) || {};
   const isAdmin = user?.email && SUPER_ADMIN_EMAILS.includes(user.email);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   if (status === "loading") {
     return (
@@ -45,68 +55,117 @@ export default function AdminLayout({
     { name: "Overview", href: "/admin", icon: "📊" },
     { name: "Users", href: "/admin/users", icon: "👥" },
     { name: "Invites", href: "/admin/invites", icon: "🎟️" },
-    { name: "Support", href: "/admin/support", icon: "🛡️" },
+    { name: "Reports", href: "/admin/reports", icon: "🚨" },
+    { name: "Support Tickets", href: "/admin/support-tickets", icon: "🎫" },
     { name: "Settings", href: "/admin/settings", icon: "⚙️" },
   ];
 
+  const isActive = (href: string) => pathname === href || pathname.startsWith(href + "/");
+
   return (
     <div className="flex min-h-screen bg-background text-foreground">
-      {/* Sidebar */}
-      <aside className="fixed left-0 top-0 h-full w-64 border-r border-border bg-sidebar p-6 hidden md:flex flex-col z-20">
-        <div className="mb-8">
+      {/* Desktop Sidebar */}
+      <aside className="hidden lg:flex fixed left-0 top-0 h-full w-72 border-r border-border bg-sidebar flex-col z-40">
+        <div className="p-6 border-b border-border">
           <h1 className="text-2xl font-black tracking-tighter">
             Admin<span className="text-primary">.</span>
           </h1>
-          <p className="text-[10px] text-muted uppercase tracking-widest font-bold">
+          <p className="text-[10px] text-muted uppercase tracking-widest font-bold mt-1">
             Control Center
           </p>
         </div>
 
-        <nav className="space-y-2 flex-1">
+        <nav className="flex-1 p-6 space-y-1 overflow-y-auto">
           {navItems.map((item) => {
-            const isActive = pathname === item.href;
+            const active = isActive(item.href);
             return (
               <Link
                 key={item.href}
                 href={item.href}
-                className={`flex items-center gap-3 p-3 rounded-xl transition-all font-bold text-sm ${
-                  isActive
+                className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all font-semibold text-sm ${
+                  active
                     ? "bg-primary text-white shadow-lg scale-105"
-                    : "hover:bg-primary/10 text-muted hover:text-foreground"
+                    : "text-muted-foreground hover:bg-primary/10 hover:text-foreground"
                 }`}
               >
-                <span className="text-lg">{item.icon}</span>
+                <span className="text-lg w-6 text-center">{item.icon}</span>
                 <span>{item.name}</span>
+                {active && <span className="ml-auto text-lg">→</span>}
               </Link>
             );
           })}
         </nav>
 
-        <div className="mt-8 pt-8 border-t border-border">
+        <div className="p-6 border-t border-border">
           <Link
             href="/"
-            className="text-xs text-muted hover:text-primary flex items-center gap-2 font-medium transition-colors"
+            className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-semibold text-muted-foreground hover:bg-red-500/10 hover:text-red-500 transition-all"
           >
-            <span>←</span> Exit Dashboard
+            <LogOut className="w-4 h-4" />
+            Exit Dashboard
           </Link>
         </div>
       </aside>
 
-      {/* Mobile Nav Placeholder (Simple top bar for mobile) */}
-      <div className="md:hidden fixed top-0 left-0 w-full h-16 bg-sidebar border-b border-border z-20 flex items-center justify-between px-4">
-        <span className="font-black">Admin.</span>
-        <div className="flex gap-4">
-          {navItems.map((item) => (
-            <Link key={item.href} href={item.href} className="text-xl">
-              {item.icon}
-            </Link>
-          ))}
-        </div>
+      {/* Mobile Header */}
+      <div className="lg:hidden fixed top-0 left-0 right-0 h-16 bg-sidebar border-b border-border z-40 flex items-center justify-between px-4">
+        <Link href="/admin" className="font-black text-lg">
+          Admin<span className="text-primary">.</span>
+        </Link>
+        
+        <button
+          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          className="p-2 hover:bg-primary/10 rounded-lg transition-colors lg:hidden"
+        >
+          {mobileMenuOpen ? (
+            <X className="w-6 h-6" />
+          ) : (
+            <Menu className="w-6 h-6" />
+          )}
+        </button>
       </div>
 
+      {/* Mobile Menu Drawer */}
+      {mobileMenuOpen && (
+        <div className="lg:hidden fixed inset-0 top-16 bg-sidebar/95 backdrop-blur-sm z-30 p-4 overflow-y-auto">
+          <nav className="space-y-2">
+            {navItems.map((item) => {
+              const active = isActive(item.href);
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all font-semibold text-sm ${
+                    active
+                      ? "bg-primary text-white shadow-lg"
+                      : "text-muted-foreground hover:bg-primary/10 hover:text-foreground"
+                  }`}
+                >
+                  <span className="text-lg">{item.icon}</span>
+                  <span className="flex-1">{item.name}</span>
+                  {active && <span className="text-lg">→</span>}
+                </Link>
+              );
+            })}
+          </nav>
+
+          <div className="mt-6 pt-6 border-t border-border">
+            <Link
+              href="/"
+              onClick={() => setMobileMenuOpen(false)}
+              className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-semibold text-red-500 hover:bg-red-500/10 transition-all"
+            >
+              <LogOut className="w-4 h-4" />
+              Exit Dashboard
+            </Link>
+          </div>
+        </div>
+      )}
+
       {/* Content Area */}
-      <main className="flex-1 md:ml-64 p-6 md:p-12 pt-20 md:pt-12 min-h-screen bg-background/50">
-        <div className="max-w-5xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500">
+      <main className="flex-1 lg:ml-72 p-4 md:p-8 pt-20 md:pt-12 lg:pt-8 min-h-screen bg-background/50">
+        <div className="max-w-6xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500">
           {children}
         </div>
       </main>

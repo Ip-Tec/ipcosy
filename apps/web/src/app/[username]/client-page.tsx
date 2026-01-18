@@ -17,6 +17,15 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import FingerprintJS from "@fingerprintjs/fingerprintjs";
 import Image from "next/image";
+
+interface UserInfo {
+  id: string;
+  name: string | null;
+  username: string | null;
+  image: string | null;
+  isPremium: boolean;
+}
+
 interface SuggestionCategory {
   id: string;
   label: string;
@@ -99,11 +108,11 @@ export default function ClientPage({
   initialUserInfo,
   username,
 }: {
-  initialUserInfo: any;
+  initialUserInfo: UserInfo;
   username: string;
 }) {
   const { data: session, status } = useSession();
-  const [userInfo, setUserInfo] = useState<any>(initialUserInfo);
+  const [userInfo, setUserInfo] = useState<UserInfo>(initialUserInfo);
   const [message, setMessage] = useState("");
   const [isSending, setIsSending] = useState(false);
   const [showRegPopup, setShowRegPopup] = useState(false);
