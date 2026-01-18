@@ -12,7 +12,8 @@
     "dev": "pnpm -r dev",
     "build": "pnpm -r build",
     "lint": "pnpm -r lint",
-    "postinstall": "pnpm -r db:generate"
+    "postinstall": "pnpm -r db:generate",
+    "cleanup:chats": "node --loader tsx scripts/cleanup_corrupted_chats.ts"
   },
   "devDependencies": {}
 }

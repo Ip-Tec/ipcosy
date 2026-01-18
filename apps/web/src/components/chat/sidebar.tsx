@@ -45,7 +45,7 @@ export function Sidebar({
   setShowCreateGroup,
   isPremium,
 }: SidebarProps) {
-  const [activeTab, setActiveTab] = useState<"groups" | "chats">("groups");
+  const [activeTab, setActiveTab] = useState<"groups" | "chats">("chats");
   const [isAnonExpanded, setIsAnonExpanded] = useState(false);
 
   const groupChats = chats.filter((c) => c.isGroup);
@@ -239,6 +239,28 @@ export function Sidebar({
         {/* Tab Switcher */}
         <div className="flex gap-2 p-2 bg-sidebar border-t border-border md:bg-background/50 md:mx-2 md:rounded-xl md:mb-2 md:border-none order-3 md:order-2">
           <button
+            onClick={() => setActiveTab("chats")}
+            className={`flex-1 py-3 md:py-2.5 px-4 rounded-xl md:rounded-lg font-bold md:font-medium text-xs md:text-sm transition-all flex items-center justify-center gap-1 md:gap-2 ${
+              activeTab === "chats"
+                ? "bg-primary text-white shadow-sm"
+                : "hover:bg-black/5 dark:hover:bg-white/5 text-muted-foreground"
+            }`}
+          >
+            <MessageCircle className="w-5 h-5 md:w-4 md:h-4" />
+            <span>Chat</span>
+            {dmChats.reduce((acc, c) => acc + (c.unread || 0), 0) > 0 && (
+              <sup
+                className={`rounded-full text-[10px] md:text-xs font-bold ${
+                  activeTab === "chats"
+                    ? "bg-white/20 text-white"
+                    : "bg-primary/10 text-primary"
+                }`}
+              >
+                {dmChats.reduce((acc, c) => acc + (c.unread || 0), 0)}
+              </sup>
+            )}
+          </button>
+          <button
             onClick={() => setActiveTab("groups")}
             className={`flex-1 py-3 md:py-2.5 px-4 rounded-xl md:rounded-lg font-bold md:font-medium text-xs md:text-sm transition-all flex flex-col md:flex-row items-center justify-center gap-1 md:gap-2 ${
               activeTab === "groups"
@@ -249,37 +271,15 @@ export function Sidebar({
             <Users className="w-5 h-5 md:w-4 md:h-4" />
             <span>Groups</span>
             {groupChats.reduce((acc, c) => acc + (c.unread || 0), 0) > 0 && (
-              <span
-                className={`px-1.5 py-0.5 rounded-full text-[10px] md:text-xs font-bold ${
+              <sup
+                className={`rounded-full text-[10px] md:text-xs font-bold ${
                   activeTab === "groups"
                     ? "bg-white/20 text-white"
                     : "bg-primary/10 text-primary"
                 }`}
               >
                 {groupChats.reduce((acc, c) => acc + (c.unread || 0), 0)}
-              </span>
-            )}
-          </button>
-          <button
-            onClick={() => setActiveTab("chats")}
-            className={`flex-1 py-3 md:py-2.5 px-4 rounded-xl md:rounded-lg font-bold md:font-medium text-xs md:text-sm transition-all flex flex-col md:flex-row items-center justify-center gap-1 md:gap-2 ${
-              activeTab === "chats"
-                ? "bg-primary text-white shadow-sm"
-                : "hover:bg-black/5 dark:hover:bg-white/5 text-muted-foreground"
-            }`}
-          >
-            <MessageCircle className="w-5 h-5 md:w-4 md:h-4" />
-            <span>Chat</span>
-            {dmChats.reduce((acc, c) => acc + (c.unread || 0), 0) > 0 && (
-              <span
-                className={`px-1.5 py-0.5 rounded-full text-[10px] md:text-xs font-bold ${
-                  activeTab === "chats"
-                    ? "bg-white/20 text-white"
-                    : "bg-primary/10 text-primary"
-                }`}
-              >
-                {dmChats.reduce((acc, c) => acc + (c.unread || 0), 0)}
-              </span>
+              </sup>
             )}
           </button>
         </div>
@@ -451,7 +451,7 @@ export function Sidebar({
 
         {/* Floating Action Button */}
         {status === "authenticated" && (
-          <div className="absolute bottom-6 right-6 md:right-auto md:left-[300px] lg:left-[350px] z-20 flex flex-col gap-3">
+          <div className="absolute bottom-10 right-6 md:right-auto md:left-[300px] lg:left-[350px] z-20 flex flex-col gap-3">
             {/* Join Group Button */}
             <button
               onClick={() => setShowJoinGroup(true)}

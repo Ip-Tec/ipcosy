@@ -3,6 +3,7 @@ import { prisma, ChatType } from "@ipcosy/db";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { captureMessageMetadata } from "@/lib/metadata";
+import { createNotification } from "@/lib/notifications";
 
 export async function POST(req: Request) {
   try {
@@ -47,21 +48,34 @@ export async function POST(req: Request) {
       // Authenticated user sending message
       senderId = (session.user as any).id;
 
-      // Check for existing ANONYMOUS DM
-      const existingChat = await prisma.chat.findFirst({
+      // Create a deterministic chat ID based on sender/receiver IDs (sorted to ensure consistency)
+      const [id1, id2] = [senderId, targetUserId].sort();
+      const chatKeyHash = `${id1}:${id2}`;
+
+      // Check for existing ANONYMOUS DM between these exact two users
+      let existingChat = await prisma.chat.findFirst({
         where: {
           isGroup: false,
           type: ChatType.ANONYMOUS,
-          AND: [
-            { participants: { some: { userId: senderId } } },
-            { participants: { some: { userId: targetUserId } } },
-          ],
+          participants: {
+            every: undefined, // Fallback check
+          },
         },
+        include: {
+          participants: { select: { userId: true } },
+        },
+        take: 1,
       });
 
+      // Validate the chat has exactly these two participants
       if (existingChat) {
-        chatId = existingChat.id;
-      } else {
+        const participantIds = new Set(existingChat.participants.map((p) => p.userId));
+        if (participantIds.size === 2 && participantIds.has(senderId) && participantIds.has(targetUserId)) {
+          chatId = existingChat.id;
+        }
+      }
+
+      if (!chatId) {
         const newChat = await prisma.chat.create({
           data: {
             isGroup: false,
@@ -114,21 +128,26 @@ export async function POST(req: Request) {
 
       senderId = anonUser.id;
 
-      // Check for existing anonymous chat
-      const existingChat = await prisma.chat.findFirst({
+      // Check for existing anonymous chat between these exact two users
+      let existingChat = await prisma.chat.findFirst({
         where: {
           isGroup: false,
           type: ChatType.ANONYMOUS,
-          AND: [
-            { participants: { some: { userId: senderId } } },
-            { participants: { some: { userId: targetUserId } } },
-          ],
+        },
+        include: {
+          participants: { select: { userId: true } },
         },
       });
 
+      // Validate the chat has exactly these two participants (guest + target user)
       if (existingChat) {
-        chatId = existingChat.id;
-      } else {
+        const participantIds = new Set(existingChat.participants.map((p) => p.userId));
+        if (participantIds.size === 2 && participantIds.has(senderId) && participantIds.has(targetUserId)) {
+          chatId = existingChat.id;
+        }
+      }
+
+      if (!chatId) {
         const newChat = await prisma.chat.create({
           data: {
             isGroup: false,
@@ -152,33 +171,42 @@ export async function POST(req: Request) {
     }
 
     // Create message with metadata and update chat timestamp
-    await prisma.$transaction([
-      prisma.message.create({
-        data: {
-          content,
-          userId: senderId,
-          chatId: chatId,
-          isAnonymous: true,
-          // Premium visible metadata
-          deviceType: metadata.deviceType,
-          deviceOS: metadata.deviceOS,
-          browser: metadata.browser,
-          city: metadata.city,
-          country: metadata.country,
-          // Admin-only metadata
-          ipAddress: metadata.ipAddress,
-          latitude: metadata.latitude,
-          longitude: metadata.longitude,
-          deviceId: metadata.deviceId,
-          browserFingerprint: metadata.browserFingerprint,
-          userAgent: metadata.userAgent,
-        },
-      }),
-      prisma.chat.update({
-        where: { id: chatId },
-        data: { updatedAt: new Date() },
-      }),
-    ]);
+    const message = await prisma.message.create({
+      data: {
+        content,
+        userId: senderId,
+        chatId: chatId,
+        isAnonymous: true,
+        // Premium visible metadata
+        deviceType: metadata.deviceType,
+        deviceOS: metadata.deviceOS,
+        browser: metadata.browser,
+        city: metadata.city,
+        country: metadata.country,
+        // Admin-only metadata
+        ipAddress: metadata.ipAddress,
+        latitude: metadata.latitude,
+        longitude: metadata.longitude,
+        deviceId: metadata.deviceId,
+        browserFingerprint: metadata.browserFingerprint,
+        userAgent: metadata.userAgent,
+      },
+    });
+
+    // Update chat timestamp
+    await prisma.chat.update({
+      where: { id: chatId },
+      data: { updatedAt: new Date() },
+    });
+
+    // Create notification for the recipient
+    await createNotification(targetUserId, {
+      type: "NEW_MESSAGE",
+      title: "New anonymous message",
+      body: (content || "").substring(0, 100),
+      messageId: message.id,
+      chatId: chatId,
+    });
 
     return NextResponse.json({ success: true });
   } catch (error) {

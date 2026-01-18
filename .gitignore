@@ -39,6 +39,7 @@ coverage/
 
 # Security & Temporary Scripts
 scripts/cleanup-*
+scripts/cleanup_corrupted_chats.ts
 scripts/verify-*
 scripts/research-*
 scripts/debug-*
