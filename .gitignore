@@ -55,3 +55,6 @@ cleanup-final.ts
 research-users.ts
 research-simple.js
 verify_db_debug.ts
+
+# Bash scripts
+*.sh
