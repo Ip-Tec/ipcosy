@@ -162,7 +162,7 @@ export default function AdminSupportTicketsPage() {
           href="/admin"
           className="text-primary hover:opacity-80 transition-opacity"
         >
-          <ChevronLeft className="w-4 h-4" />
+          <ChevronLeft className="w-3 h-3" />
           Admin Panel
         </Link>
         <h1 className="text-xl font-bold">Support Tickets</h1>
@@ -290,7 +290,7 @@ export default function AdminSupportTicketsPage() {
                   {/* Original Message */}
                   <div className="bg-background/50 rounded-lg p-4 border border-border">
                     <p className="text-xs text-muted-foreground font-semibold mb-2">
-                      User's Issue
+                      User&apos;s Issue
                     </p>
                     <p className="text-sm">{selectedTicket.message}</p>
                   </div>

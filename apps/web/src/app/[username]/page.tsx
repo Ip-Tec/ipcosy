@@ -13,23 +13,10 @@ export async function generateMetadata(
 ): Promise<Metadata> {
   const { username } = await params;
 
-  // Priority: username first, then name (case-insensitive)
-  let user = await prisma.user.findFirst({
-    where: {
-      username: username,
-    },
+  const user = await prisma.user.findUnique({
+    where: { username: username },
     select: { name: true, image: true },
   });
-
-  // Fallback to name search only if username not found
-  if (!user) {
-    user = await prisma.user.findFirst({
-      where: {
-        name: username,
-      },
-      select: { name: true, image: true },
-    });
-  }
 
   const displayName = username || user?.name;
   const title = `Send an anonymous message to ${displayName}`;
@@ -57,11 +44,8 @@ export async function generateMetadata(
 export default async function Page({ params }: Props) {
   const { username } = await params;
 
-  // Priority: username first, then name (case-insensitive)
-  let user = await prisma.user.findFirst({
-    where: {
-      username: username,
-    },
+  const user = await prisma.user.findUnique({
+    where: { username: username },
     select: {
       id: true,
       name: true,
@@ -70,22 +54,6 @@ export default async function Page({ params }: Props) {
       isPremium: true,
     },
   });
-
-  // Fallback to name search only if username not found
-  if (!user) {
-    user = await prisma.user.findFirst({
-      where: {
-        name: username,
-      },
-      select: {
-        id: true,
-        name: true,
-        username: true,
-        image: true,
-        isPremium: true,
-      },
-    });
-  }
 
   if (!user) {
     return notFound();
