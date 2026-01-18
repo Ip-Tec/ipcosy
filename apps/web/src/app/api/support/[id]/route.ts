@@ -5,9 +5,10 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
+    const { id } = await params;
     const session = await getServerSession(authOptions);
     if (!session?.user?.email) {
       return new NextResponse("Unauthorized", { status: 401 });
@@ -22,7 +23,7 @@ export async function GET(
     }
 
     const ticket = await prisma.supportTicket.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         responses: {
           orderBy: {
@@ -50,9 +51,10 @@ export async function GET(
 
 export async function POST(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
+    const { id } = await params;
     const session = await getServerSession(authOptions);
     if (!session?.user?.email) {
       return new NextResponse("Unauthorized", { status: 401 });
@@ -67,7 +69,7 @@ export async function POST(
     }
 
     const ticket = await prisma.supportTicket.findUnique({
-      where: { id: params.id },
+      where: { id },
     });
 
     if (!ticket) {
@@ -85,7 +87,7 @@ export async function POST(
     if (!message) {
       return NextResponse.json(
         { error: "Message is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -93,14 +95,14 @@ export async function POST(
       data: {
         message,
         userId: user.id,
-        ticketId: params.id,
+        ticketId: id,
       },
     });
 
     // Update ticket status to IN_PROGRESS if it was OPEN
     if (ticket.status === "OPEN") {
       await prisma.supportTicket.update({
-        where: { id: params.id },
+        where: { id },
         data: { status: "IN_PROGRESS" },
       });
     }

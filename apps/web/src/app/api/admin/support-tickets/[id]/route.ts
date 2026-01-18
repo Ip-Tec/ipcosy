@@ -5,9 +5,10 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const session = await getServerSession(authOptions);
     if (!session?.user?.email) {
       return new NextResponse("Unauthorized", { status: 401 });
@@ -22,7 +23,7 @@ export async function GET(
     }
 
     const ticket = await prisma.supportTicket.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         user: {
           select: {
@@ -63,9 +64,10 @@ export async function GET(
 
 export async function POST(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const session = await getServerSession(authOptions);
     if (!session?.user?.email) {
       return new NextResponse("Unauthorized", { status: 401 });
@@ -80,7 +82,7 @@ export async function POST(
     }
 
     const ticket = await prisma.supportTicket.findUnique({
-      where: { id: params.id },
+      where: { id },
     });
 
     if (!ticket) {
@@ -101,7 +103,7 @@ export async function POST(
       data: {
         message,
         userId: user.id,
-        ticketId: params.id,
+        ticketId: id,
         isAdmin: true,
       },
     });
@@ -109,7 +111,7 @@ export async function POST(
     // Update ticket status if provided
     if (newStatus) {
       await prisma.supportTicket.update({
-        where: { id: params.id },
+        where: { id },
         data: { status: newStatus },
       });
     }
