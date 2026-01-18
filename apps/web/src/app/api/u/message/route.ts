@@ -8,11 +8,11 @@ import { createNotification } from "@/lib/notifications";
 export async function POST(req: Request) {
   try {
     const session = await getServerSession(authOptions);
-    const { targetUserId, content } = await req.json();
+    const { targetUserId, content, fileUrl } = await req.json();
 
-    if (!targetUserId || !content) {
+    if (!targetUserId || (!content && !fileUrl)) {
       return NextResponse.json(
-        { error: "Missing required fields" },
+        { error: "Missing required fields (content or fileUrl)" },
         { status: 400 },
       );
     }
@@ -48,23 +48,15 @@ export async function POST(req: Request) {
       // Authenticated user sending message
       senderId = (session.user as any).id;
 
-      // Create a deterministic chat ID based on sender/receiver IDs (sorted to ensure consistency)
-      const [id1, id2] = [senderId, targetUserId].sort();
-      const chatKeyHash = `${id1}:${id2}`;
-
       // Check for existing ANONYMOUS DM between these exact two users
-      let existingChat = await prisma.chat.findFirst({
+      const existingChat = await prisma.chat.findFirst({
         where: {
           isGroup: false,
           type: ChatType.ANONYMOUS,
-          participants: {
-            every: undefined, // Fallback check
-          },
         },
         include: {
           participants: { select: { userId: true } },
         },
-        take: 1,
       });
 
       // Validate the chat has exactly these two participants
@@ -129,7 +121,7 @@ export async function POST(req: Request) {
       senderId = anonUser.id;
 
       // Check for existing anonymous chat between these exact two users
-      let existingChat = await prisma.chat.findFirst({
+      const existingChat = await prisma.chat.findFirst({
         where: {
           isGroup: false,
           type: ChatType.ANONYMOUS,
@@ -174,6 +166,7 @@ export async function POST(req: Request) {
     const message = await prisma.message.create({
       data: {
         content,
+        fileUrl,
         userId: senderId,
         chatId: chatId,
         isAnonymous: true,

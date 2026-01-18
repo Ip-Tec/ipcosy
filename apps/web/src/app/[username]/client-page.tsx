@@ -13,10 +13,14 @@ import {
   Send,
   ShieldCheck,
   Dices,
+  Image as ImageIcon,
+  X,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import FingerprintJS from "@fingerprintjs/fingerprintjs";
 import Image from "next/image";
+import { UploadButton } from "@uploadthing/react";
+import type { OurFileRouter } from "@/app/api/uploadthing/core";
 
 interface UserInfo {
   id: string;
@@ -178,6 +182,7 @@ export default function ClientPage({
   const { data: session, status } = useSession();
   const [userInfo, setUserInfo] = useState<UserInfo>(initialUserInfo);
   const [message, setMessage] = useState("");
+  const [fileUrl, setFileUrl] = useState<string | null>(null);
   const [isSending, setIsSending] = useState(false);
   const [showRegPopup, setShowRegPopup] = useState(false);
   const [visitorId, setVisitorId] = useState<string | null>(null);
@@ -209,7 +214,7 @@ export default function ClientPage({
   }, [initialUserInfo]);
 
   const handleSend = async () => {
-    if (!message.trim()) return;
+    if (!message.trim() && !fileUrl) return;
     setIsSending(true);
 
     try {
@@ -219,6 +224,7 @@ export default function ClientPage({
         body: JSON.stringify({
           targetUserId: userInfo.id,
           content: message,
+          fileUrl: fileUrl,
           isAnonymous: true,
         }),
       });
@@ -226,6 +232,7 @@ export default function ClientPage({
       if (res.ok) {
         toast.success("Message sent anonymously!");
         setMessage("");
+        setFileUrl(null);
         if (status !== "authenticated") {
           setShowRegPopup(true);
         }
@@ -307,9 +314,57 @@ export default function ClientPage({
             </div>
           </div>
 
+          {/* Image Preview */}
+          {fileUrl && (
+            <div className="relative w-full bg-sidebar rounded-[1.5rem] p-4 border border-primary/30">
+              <div className="relative w-full h-40 rounded-lg overflow-hidden">
+                <Image
+                  src={fileUrl}
+                  alt="Uploaded image"
+                  fill
+                  className="object-cover"
+                />
+              </div>
+              <button
+                onClick={() => setFileUrl(null)}
+                className="absolute -top-2 -right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          )}
+
+          {/* Upload Section */}
+          <div className="w-full">
+            <UploadButton<OurFileRouter, "imageUploader">
+              endpoint="imageUploader"
+              onClientUploadComplete={(res) => {
+                if (res?.[0]) {
+                  setFileUrl(res[0].url);
+                  toast.success("Image uploaded!");
+                }
+              }}
+              onUploadError={(error: Error) => {
+                toast.error(`Upload failed: ${error.message}`);
+              }}
+              content={{
+                button({ ready, isUploading }) {
+                  if (isUploading) return "Uploading...";
+                  if (ready) return <div className="flex items-center gap-2"><ImageIcon className="w-4 h-4" /> Add Image</div>;
+                  return "Getting ready...";
+                },
+              }}
+              appearance={{
+                container: "w-full",
+                button: "w-full ut-button:bg-primary/20 ut-button:text-primary ut-button:font-bold ut-button:py-3 ut-button:rounded-[1.5rem] ut-button:border-0 ut-button:transition-all hover:ut-button:bg-primary/30",
+                allowedContent: "hidden",
+              }}
+            />
+          </div>
+
           <button
             onClick={handleSend}
-            disabled={!message.trim() || isSending}
+            disabled={(!message.trim() && !fileUrl) || isSending}
             className="cursor-pointer w-full bg-primary text-white py-5 rounded-[1.5rem] font-black text-sm shadow-xl hover:opacity-90 active:scale-[0.98] transition-all disabled:opacity-50 flex items-center justify-center gap-3"
           >
             {isSending ? (
