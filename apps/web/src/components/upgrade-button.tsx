@@ -16,53 +16,43 @@ export default function UpgradeButton({
   children?: ReactNode;
   className?: string;
 }) {
-  const config = {
-    reference: new Date().getTime().toString(),
-    email: user?.email,
-    amount: premiumPrice * 100,
-    publicKey: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY || "",
-    // Fallback URL for safety, though this component should only mount on client
-    callback_url: `${typeof window !== "undefined" ? window.location.origin : ""}/api/callback/paystack`,
-    metadata: {
-      userId: user?.id,
-      custom_fields: [
-        {
-          display_name: "Upgrade",
-          variable_name: "upgrade",
-          value: "premium",
-        },
-      ],
-    },
-  };
+  const handleUpgrade = async () => {
+    if (!user?.email) {
+      toast.error("User email is missing");
+      return;
+    }
 
-  const initializePayment = usePaystackPayment(config);
+    const toastId = toast.loading("Initializing payment...");
 
-  const onSuccess = () => {
-    toast.success("Payment Successful! Upgrading or refreshing...");
-    window.location.reload();
-  };
+    try {
+      const res = await fetch("/api/payment/init", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          amount: premiumPrice * 100, // Price in kobo
+          email: user.email,
+          callbackUrl: `${window.location.origin}/dashboard` // Or wherever we want them back
+        }),
+      });
 
-  const onClose = () => {
-    console.log("Payment closed");
+      const data = await res.json();
+
+      if (!res.ok || !data.authorization_url) {
+        throw new Error(data.error || "Payment initialization failed");
+      }
+
+      // Redirect to Paystack via IpBok
+      window.location.href = data.authorization_url;
+      
+    } catch (error: any) {
+      console.error(error);
+      toast.error(error.message || "Failed to start payment", { id: toastId });
+    }
   };
 
   return (
     <button
-      onClick={() => {
-        if (!config.publicKey) {
-          toast.error("Payment Error: Public Key missing");
-          return;
-        }
-        if (!config.email || config.email.includes("example.com")) {
-          toast.error("Payment Error: User email invalid");
-          return;
-        }
-        if (!config.metadata.userId) {
-          toast.error("Payment Error: User ID missing. Try refreshing.");
-          return;
-        }
-        initializePayment({ onSuccess, onClose });
-      }}
+      onClick={handleUpgrade}
       className={
         className ||
         "cursor-pointer w-full bg-primary text-white py-4 rounded-2xl font-black text-sm hover:opacity-90 shadow-lg transition-all active:scale-95"
