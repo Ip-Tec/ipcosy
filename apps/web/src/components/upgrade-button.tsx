@@ -1,6 +1,6 @@
 "use client";
 
-import { usePaystackPayment } from "react-paystack";
+// import { usePaystackPayment } from "react-paystack";
 import { toast } from "sonner";
 
 import { ReactNode } from "react";
@@ -31,7 +31,7 @@ export default function UpgradeButton({
         body: JSON.stringify({
           amount: premiumPrice * 100, // Price in kobo
           email: user.email,
-          callbackUrl: `${window.location.origin}/dashboard` // Or wherever we want them back
+          callbackUrl: `${window.location.origin}/profile` // Or wherever we want them back
         }),
       });
 
