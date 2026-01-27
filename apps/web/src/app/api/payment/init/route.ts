@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth'; // Adjust path as needed based on structure
-import { IpBokGateway } from '@/lib/ipbok-gateway';
+import { authOptions } from '@/lib/auth';
 import { z } from 'zod';
 
 const initSchema = z.object({
@@ -26,12 +25,40 @@ export async function POST(req: NextRequest) {
 
     const { amount, email, callbackUrl } = parse.data;
 
-    // Optional: Validate email matches session email if strict security needed, 
-    // but user might pay with different email.
+    const CREDO_SECRET_KEY = process.env.CREDO_SECRET_KEY;
+    if (!CREDO_SECRET_KEY) {
+      throw new Error('CREDO_SECRET_KEY is not configured');
+    }
 
-    const result = await IpBokGateway.initializePayment(email, amount, session.user.id, callbackUrl);
-    
-    return NextResponse.json(result);
+    // Direct Credo Initialization
+    const res = await fetch('https://api.credocentral.com/transaction/initialize', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': CREDO_SECRET_KEY,
+      },
+      body: JSON.stringify({
+        amount, // Credo expects amount in kobo
+        email,
+        callbackUrl: callbackUrl || `${process.env.NEXT_PUBLIC_BASE_URL}/profile`,
+        metadata: {
+          userId: session.user.id,
+          product: 'ipcosy'
+        }
+      }),
+    });
+
+    const result = await res.json();
+
+    if (!res.ok) {
+      throw new Error(result.message || `Credo init failed: ${res.status}`);
+    }
+
+    // Adapt to expecting authorization_url and reference for the frontend
+    return NextResponse.json({
+      authorization_url: result.data.authorizationUrl,
+      reference: result.data.reference
+    });
   } catch (error: any) {
     console.error('Payment Init Error:', error);
     return NextResponse.json({ error: error.message || 'Payment initialization failed' }, { status: 500 });

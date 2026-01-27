@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { IpBokGateway } from '@/lib/ipbok-gateway';
+import { prisma } from '@ipcosy/db';
 
 export async function GET(req: NextRequest) {
   try {
@@ -10,34 +10,48 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Reference required' }, { status: 400 });
     }
 
-    const result = await IpBokGateway.verifyPayment(reference);
-    
-    // Here we should also update our local DB if paid: true
-    // But per instructions: "IP-Cosy should store its own internal record... only after successful verification"
-    // Ideally we do it here.
+    const CREDO_SECRET_KEY = process.env.CREDO_SECRET_KEY;
+    if (!CREDO_SECRET_KEY) {
+      throw new Error('CREDO_SECRET_KEY is not configured');
+    }
 
-    if (result.paid) {
-        if (result.metadata?.userId) {
+    // Direct Credo Verification
+    const res = await fetch(`https://api.credocentral.com/transaction/verify/${reference}`, {
+      method: 'GET',
+      headers: {
+        'Authorization': CREDO_SECRET_KEY,
+      },
+    });
+
+    const result = await res.json();
+
+    if (!res.ok) {
+      throw new Error(result.message || `Credo verify failed: ${res.status}`);
+    }
+
+    const data = result.data;
+    const isPaid = data.status === 0 || data.status === '0'; // Credo status 0 is success
+
+    if (isPaid) {
+        const userId = data.metadata?.userId;
+        if (userId) {
             try {
-                // Determine source for prisma import. In the monorepo it seems to be @ipcosy/db
-                // We need to dynamic import or assume the project structure. 
-                // Based on package.json, `@ipcosy/db` is a dependency.
-                const { prisma } = await import('@ipcosy/db');
-                
                 await prisma.user.update({
-                    where: { id: result.metadata.userId },
+                    where: { id: userId },
                     data: { isPremium: true }
                 });
             } catch (dbErr) {
                 console.error('Failed to upgrade user premium status', dbErr);
-                // Return success=true still because payment IS successful, but maybe log for support
             }
-        } else {
-             console.error('Payment verified but no userId in metadata', result);
         }
     }
 
-    return NextResponse.json(result);
+    return NextResponse.json({
+        paid: isPaid,
+        reference: data.reference,
+        amount: data.amount,
+        metadata: data.metadata
+    });
   } catch (error: any) {
     console.error('Payment Verify Error:', error);
     return NextResponse.json({ error: error.message || 'Verification failed' }, { status: 500 });
