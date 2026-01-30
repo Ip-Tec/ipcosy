@@ -75,7 +75,18 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 4. Join the Group
+    // 4. Check if already a member
+    const existingMember = chat.participants.find((p) => p.userId === userId);
+    if (existingMember) {
+      return NextResponse.json({
+        success: true,
+        chatId: chat.id,
+        chatName: chat.name,
+        message: "Already a member",
+      });
+    }
+
+    // 5. Join the Group
     await prisma.chatParticipant.create({
       data: {
         userId: userId,

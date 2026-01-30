@@ -127,6 +127,7 @@ model Chat {
   joinCode  String?  @unique // For joining groups
   joinCodeExpiresAt DateTime? // Optional expiration for join code
   isJoinCodePrivate Boolean @default(true) // OWNER can toggle if members see join code
+  isPublic          Boolean @default(false) // Toggle for unauthenticated message viewing
 
   participants ChatParticipant[]
   messages     Message[]

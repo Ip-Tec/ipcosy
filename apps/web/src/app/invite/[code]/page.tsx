@@ -74,6 +74,7 @@ export default async function InvitePage({ params }: InvitePageProps) {
       image: null,
     })),
     isExpired,
+    isPublic: !!chat.isPublic,
   };
 
   return <InviteCard code={code} groupInfo={groupInfo as any} />;

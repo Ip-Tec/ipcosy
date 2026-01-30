@@ -97,7 +97,8 @@ function HomeContent() {
     }
 
     const jc = searchParams.get("join");
-    if (jc) {
+    const isViewOnly = searchParams.get("view") === "true";
+    if (jc && !isViewOnly) {
       setJoinCodeInput(jc.toUpperCase());
       setShowJoinGroup(true);
     }

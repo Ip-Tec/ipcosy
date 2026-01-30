@@ -10,7 +10,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { chatId, isJoinCodePrivate, description } = await req.json();
+    const { chatId, isJoinCodePrivate, description, isPublic } = await req.json();
     const userId = (session.user as any).id;
 
     if (!chatId) {
@@ -36,6 +36,7 @@ export async function POST(req: NextRequest) {
     if (isJoinCodePrivate !== undefined)
       updateData.isJoinCodePrivate = isJoinCodePrivate;
     if (description !== undefined) updateData.description = description;
+    if (isPublic !== undefined) updateData.isPublic = isPublic;
 
     await prisma.chat.update({
       where: { id: chatId },

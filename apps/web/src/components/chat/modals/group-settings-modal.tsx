@@ -150,6 +150,50 @@ export function GroupSettingsModal({
               </button>
             </div>
 
+            <div className="flex items-center justify-between p-4 bg-primary/5 border border-primary/10 rounded-2xl">
+              <div>
+                <p className="text-sm font-bold">Public Group</p>
+                <p className="text-[10px] text-muted-foreground">
+                  Anyone with the link can view messages.
+                </p>
+              </div>
+              <button
+                onClick={async () => {
+                  try {
+                    const newVal = !selectedChatInfo.isPublic;
+                    const res = await fetch("/api/groups/settings", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({
+                        chatId: selectedChatInfo.id,
+                        isPublic: newVal,
+                      }),
+                    });
+                    if (res.ok) {
+                      toast.success(`Group is now ${newVal ? "Public" : "Private"}`);
+                      selectedChatInfo.isPublic = newVal;
+                      // Force a re-render if possible, or assume user re-opens
+                      // Actually, this is mutating the object.
+                      window.location.reload();
+                    }
+                  } catch (err) {
+                    toast.error("Failed to update privacy");
+                  }
+                }}
+                className={`w-12 h-6 rounded-full transition-all relative ${
+                  selectedChatInfo.isPublic
+                    ? "bg-primary"
+                    : "bg-muted-foreground/30"
+                }`}
+              >
+                <div
+                  className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all shadow-sm ${
+                    selectedChatInfo.isPublic ? "right-1" : "left-1"
+                  }`}
+                />
+              </button>
+            </div>
+
             <div className="space-y-2">
               <label className="text-sm font-bold ml-1">
                 Group Description

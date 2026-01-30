@@ -7,22 +7,20 @@ export async function POST(req: NextRequest) {
     const body = await req.text();
     console.log("Credo Webhook Received. Body length:", body.length);
 
-    const secretKey = process.env.CREDO_SECRET_KEY;
-    if (!secretKey) {
-      console.error("CRITICAL: CREDO_SECRET_KEY is missing in environment variables!");
-      // We still return 200 to Credo to stop retries if it's a config issue on our side, 
-      // but log it heavily.
+    const webhookToken = process.env.CREDO_WEBHOOK_TOKEN;
+    if (!webhookToken) {
+      console.error("CRITICAL: CREDO_WEBHOOK_TOKEN is missing in environment variables!");
     }
 
-    const signature = req.headers.get("x-credo-signature");
+    const signature = req.headers.get("x-signature") || req.headers.get("X-Signature");
     if (!signature) {
-      console.error("Credo Webhook: Missing x-credo-signature header.");
+      console.error("Credo Webhook: Missing x-signature header.");
       return NextResponse.json({ error: "Missing signature" }, { status: 401 });
     }
 
-    // Credo signature verification (HMAC-SHA512)
+    // Credo signature verification (HMAC-SHA512 using the Webhook Token)
     const expectedSignature = crypto
-      .createHmac("sha512", secretKey || "")
+      .createHmac("sha512", webhookToken || "")
       .update(body)
       .digest("hex");
 
@@ -34,8 +32,8 @@ export async function POST(req: NextRequest) {
     const payload = JSON.parse(body);
     console.log(`CREDO EVENT: ${payload.event}`, JSON.stringify(payload, null, 2));
 
-    // Handle transaction success
-    if (payload.event === "transaction.success" || payload.event === "charge.success") {
+    // Handle transaction success (Standardizing on payload.event === "transaction.successful")
+    if (payload.event === "transaction.successful" || payload.event === "charge.success") {
       const data = payload.data;
       let userId = data.metadata?.userId;
 

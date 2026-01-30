@@ -19,6 +19,7 @@ interface InviteCardProps {
       image: string | null;
     }[];
     isExpired: boolean;
+    isPublic: boolean;
   };
 }
 
@@ -156,10 +157,16 @@ export function InviteCard({ code, groupInfo }: InviteCardProps) {
             </button>
 
             <button
-              onClick={() => router.push(`/?join=${code}&view=true`)}
+              onClick={() => {
+                if (groupInfo.isPublic) {
+                    router.push(`/?join=${code}&view=true`);
+                } else {
+                    router.push(`/?join=${code}&view=true`);
+                }
+              }}
               className="w-full py-3 rounded-2xl bg-secondary text-secondary-foreground font-bold hover:bg-secondary/80 transition-all flex items-center justify-center gap-2"
             >
-              View Messages
+              {groupInfo.isPublic ? "View Public Messages" : "View Messages"}
             </button>
           </div>
         </div>

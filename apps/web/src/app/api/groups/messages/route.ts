@@ -67,12 +67,12 @@ export async function GET(req: NextRequest) {
         })
       : null;
 
-    if (!participation && !chat.joinCode) {
+    if (!participation && !chat.joinCode && !(chat as any).isPublic) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    // Check expiration if non-member
-    if (!participation && (chat as any).joinCodeExpiresAt) {
+    // Check expiration if non-member and not public
+    if (!participation && !(chat as any).isPublic && (chat as any).joinCodeExpiresAt) {
       if (new Date() > new Date((chat as any).joinCodeExpiresAt)) {
         return NextResponse.json({ error: "Invite expired" }, { status: 410 });
       }
