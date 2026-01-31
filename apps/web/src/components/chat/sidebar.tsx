@@ -108,7 +108,7 @@ export function Sidebar({
             {user?.isAdmin && (
               <Link
                 href="/admin"
-                className="flex items-center gap-4 p-3 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 transition-colors group text-primary"
+                className="flex items-center gap-4 p-3 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 transition-colors group"
               >
                 <span className="text-xl group-hover:scale-110 transition-transform">
                   🛡️
@@ -198,13 +198,12 @@ export function Sidebar({
 
       {/* Main Sidebar (Chat List) */}
       <div
-        className={`w-full md:w-[350px] lg:w-[400px] flex flex-col bg-sidebar border-r border-border h-full ${
-          selectedChat
+        className={`w-full md:w-[350px] lg:w-[400px] flex flex-col bg-sidebar border-r border-border h-full ${selectedChat
+          ? "hidden md:flex"
+          : chats.length === 0 && !isLoadingChats
             ? "hidden md:flex"
-            : chats.length === 0 && !isLoadingChats
-              ? "hidden md:flex"
-              : "flex"
-        }`}
+            : "flex"
+          }`}
       >
         {/* Header */}
         <div className="flex items-center gap-4 p-4 order-1">
@@ -240,21 +239,19 @@ export function Sidebar({
         <div className="flex gap-2 p-2 bg-sidebar border-t border-border md:bg-background/50 md:mx-2 md:rounded-xl md:mb-2 md:border-none order-3 md:order-2">
           <button
             onClick={() => setActiveTab("chats")}
-            className={`flex-1 py-3 md:py-2.5 px-4 rounded-xl md:rounded-lg font-bold md:font-medium text-xs md:text-sm transition-all flex items-center justify-center gap-1 md:gap-2 ${
-              activeTab === "chats"
-                ? "bg-primary text-white shadow-sm"
-                : "hover:bg-black/5 dark:hover:bg-white/5 text-muted-foreground"
-            }`}
+            className={`flex-1 py-3 md:py-2.5 px-4 rounded-xl md:rounded-lg font-bold md:font-medium text-xs md:text-sm transition-all flex items-center justify-center gap-1 md:gap-2 ${activeTab === "chats"
+              ? "bg-primary text-white shadow-sm"
+              : "hover:bg-black/5 dark:hover:bg-white/5 text-muted-foreground"
+              }`}
           >
             <MessageCircle className="w-5 h-5 md:w-4 md:h-4" />
             <span>Chat</span>
             {dmChats.reduce((acc, c) => acc + (c.unread || 0), 0) > 0 && (
               <sup
-                className={`rounded-full text-[10px] md:text-xs font-bold ${
-                  activeTab === "chats"
-                    ? "bg-white/20 text-white"
-                    : "bg-primary/10 text-primary"
-                }`}
+                className={`rounded-full text-[10px] md:text-xs font-bold ${activeTab === "chats"
+                  ? "bg-white/20 text-white"
+                  : "bg-primary/10 text-primary"
+                  }`}
               >
                 {dmChats.reduce((acc, c) => acc + (c.unread || 0), 0)}
               </sup>
@@ -262,21 +259,19 @@ export function Sidebar({
           </button>
           <button
             onClick={() => setActiveTab("groups")}
-            className={`flex-1 py-3 md:py-2.5 px-4 rounded-xl md:rounded-lg font-bold md:font-medium text-xs md:text-sm transition-all flex flex-col md:flex-row items-center justify-center gap-1 md:gap-2 ${
-              activeTab === "groups"
-                ? "bg-primary text-white shadow-sm"
-                : "hover:bg-black/5 dark:hover:bg-white/5 text-muted-foreground"
-            }`}
+            className={`flex-1 py-3 md:py-2.5 px-4 rounded-xl md:rounded-lg font-bold md:font-medium text-xs md:text-sm transition-all flex flex-col md:flex-row items-center justify-center gap-1 md:gap-2 ${activeTab === "groups"
+              ? "bg-primary text-white shadow-sm"
+              : "hover:bg-black/5 dark:hover:bg-white/5 text-muted-foreground"
+              }`}
           >
             <Users className="w-5 h-5 md:w-4 md:h-4" />
             <span>Groups</span>
             {groupChats.reduce((acc, c) => acc + (c.unread || 0), 0) > 0 && (
               <sup
-                className={`rounded-full text-[10px] md:text-xs font-bold ${
-                  activeTab === "groups"
-                    ? "bg-white/20 text-white"
-                    : "bg-primary/10 text-primary"
-                }`}
+                className={`rounded-full text-[10px] md:text-xs font-bold ${activeTab === "groups"
+                  ? "bg-white/20 text-white"
+                  : "bg-primary/10 text-primary"
+                  }`}
               >
                 {groupChats.reduce((acc, c) => acc + (c.unread || 0), 0)}
               </sup>
@@ -291,11 +286,10 @@ export function Sidebar({
             <div className="mx-2 space-y-1">
               <button
                 onClick={() => setIsAnonExpanded(!isAnonExpanded)}
-                className={`w-full flex items-center justify-between p-3 rounded-2xl transition-all border border-transparent ${
-                  isAnonExpanded
-                    ? "bg-primary/5 border-primary/10"
-                    : "hover:bg-black/5 dark:hover:bg-white/5"
-                }`}
+                className={`w-full flex items-center justify-between p-3 rounded-2xl transition-all border border-transparent ${isAnonExpanded
+                  ? "bg-primary/5 border-primary/10"
+                  : "hover:bg-black/5 dark:hover:bg-white/5"
+                  }`}
               >
                 <div className="flex items-center gap-4">
                   <div className="h-12 w-12 rounded-full bg-gradient-to-br from-gray-400 to-gray-600 flex items-center justify-center text-white shadow-sm">
@@ -328,11 +322,10 @@ export function Sidebar({
                     <div
                       key={chat.id}
                       onClick={() => setSelectedChat(chat.id)}
-                      className={`flex cursor-pointer items-center gap-3 p-2.5 rounded-xl transition-all ${
-                        selectedChat === chat.id
-                          ? "bg-primary text-white shadow-md scale-[1.02]"
-                          : "hover:bg-black/5 dark:hover:bg-white/5"
-                      }`}
+                      className={`flex cursor-pointer items-center gap-3 p-2.5 rounded-xl transition-all ${selectedChat === chat.id
+                        ? "bg-primary text-white shadow-md scale-[1.02]"
+                        : "hover:bg-black/5 dark:hover:bg-white/5"
+                        }`}
                     >
                       <div
                         className={`h-8 w-8 rounded-full flex items-center justify-center text-[10px] font-black ${selectedChat === chat.id ? "bg-white/20" : "bg-primary/10 text-primary"}`}
@@ -369,20 +362,18 @@ export function Sidebar({
             <div
               key={chat.id}
               onClick={() => setSelectedChat(chat.id)}
-              className={`flex cursor-pointer items-center gap-4 p-3 mx-2 rounded-2xl transition-all ${
-                selectedChat === chat.id
-                  ? "bg-primary text-white shadow-lg"
-                  : "hover:bg-black/5 dark:hover:bg-white/5"
-              }`}
+              className={`flex cursor-pointer items-center gap-4 p-3 mx-2 rounded-2xl transition-all ${selectedChat === chat.id
+                ? "bg-primary text-white shadow-lg"
+                : "hover:bg-black/5 dark:hover:bg-white/5"
+                }`}
             >
               <div
-                className={`flex h-12 w-12 items-center justify-center rounded-full font-bold text-lg shadow-sm ${
-                  selectedChat === chat.id
-                    ? "bg-white/20"
-                    : chat.isGroup
-                      ? "bg-gradient-to-br from-blue-400 to-purple-500 text-white"
-                      : "bg-gradient-to-br from-green-400 to-teal-500 text-white"
-                }`}
+                className={`flex h-12 w-12 items-center justify-center rounded-full font-bold text-lg shadow-sm ${selectedChat === chat.id
+                  ? "bg-white/20"
+                  : chat.isGroup
+                    ? "bg-gradient-to-br from-blue-400 to-purple-500 text-white"
+                    : "bg-gradient-to-br from-green-400 to-teal-500 text-white"
+                  }`}
               >
                 {chat.name.substring(0, 2).toUpperCase()}
               </div>
