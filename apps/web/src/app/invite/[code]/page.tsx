@@ -13,7 +13,7 @@ export async function generateMetadata({
 }: InvitePageProps): Promise<Metadata> {
   const { code } = await params;
   const chat = (await prisma.chat.findUnique({
-    where: { joinCode: code },
+    where: { joinCode: code.toUpperCase() },
     select: { name: true, description: true },
   } as any)) as any;
 
@@ -28,7 +28,7 @@ export async function generateMetadata({
 export default async function InvitePage({ params }: InvitePageProps) {
   const { code } = await params;
   const chat = (await prisma.chat.findUnique({
-    where: { joinCode: code },
+    where: { joinCode: code.toUpperCase() },
     include: {
       participants: {
         take: 5,

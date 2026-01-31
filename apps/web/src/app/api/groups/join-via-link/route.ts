@@ -18,7 +18,7 @@ export async function POST(req: NextRequest) {
     }
 
     const chat = await prisma.chat.findUnique({
-      where: { joinCode: code },
+      where: { joinCode: code.toUpperCase() },
     });
 
     if (!chat) {

@@ -44,7 +44,7 @@ export async function GET(req: NextRequest) {
     let chat;
     if (joinCode) {
       chat = await prisma.chat.findUnique({
-        where: { joinCode },
+        where: { joinCode: joinCode.toUpperCase() },
       });
     } else {
       chat = await prisma.chat.findUnique({
@@ -67,12 +67,20 @@ export async function GET(req: NextRequest) {
         })
       : null;
 
-    if (!participation && !chat.joinCode && !(chat as any).isPublic) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    // Access control:
+    // 1. If user is a participant, allowed.
+    // 2. If chat is public, everyone is allowed.
+    // 3. Otherwise, forbidden.
+    const isPublic = (chat as any).isPublic;
+
+    if (!participation && !isPublic) {
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
     // Check expiration if non-member and not public
-    if (!participation && !(chat as any).isPublic && (chat as any).joinCodeExpiresAt) {
+    // Actually, if it's public, expiration might still apply for the *invite link*, but maybe not for the *messages*?
+    // User requested "public groups visibility", so let's allow public stay public.
+    if (!participation && !isPublic && (chat as any).joinCodeExpiresAt) {
       if (new Date() > new Date((chat as any).joinCodeExpiresAt)) {
         return NextResponse.json({ error: "Invite expired" }, { status: 410 });
       }

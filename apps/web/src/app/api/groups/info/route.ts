@@ -41,7 +41,7 @@ export async function GET(req: NextRequest) {
     }
 
     const chat = await prisma.chat.findFirst({
-      where: joinCode ? { joinCode } : { id: chatId! },
+      where: joinCode ? { joinCode: joinCode.toUpperCase() } : { id: chatId! },
       include: {
         participants: {
           include: {
