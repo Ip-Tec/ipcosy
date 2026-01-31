@@ -215,6 +215,12 @@ export default function ClientPage({
 
   const handleSend = async () => {
     if (!message.trim() && !fileUrl) return;
+
+    if (status !== "authenticated" && !visitorId && !document.cookie.includes("ipcosy-fingerprint")) {
+      toast.error("Anonymous session not initialized. Please refresh the page and ensure cookies are enabled.");
+      return;
+    }
+
     setIsSending(true);
 
     try {
@@ -229,6 +235,8 @@ export default function ClientPage({
         }),
       });
 
+      const data = await res.json();
+
       if (res.ok) {
         toast.success("Message sent anonymously!");
         setMessage("");
@@ -237,11 +245,11 @@ export default function ClientPage({
           setShowRegPopup(true);
         }
       } else {
-        toast.error("Failed to send message.");
+        toast.error(data.error || "Failed to send message.");
       }
     } catch (e) {
       console.error(e);
-      toast.error("An error occurred.");
+      toast.error("An error occurred while sending your message.");
     } finally {
       setIsSending(false);
     }

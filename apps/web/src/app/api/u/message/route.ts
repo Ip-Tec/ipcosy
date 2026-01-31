@@ -20,6 +20,13 @@ export async function POST(req: Request) {
     // Capture metadata from request
     const metadata = await captureMessageMetadata();
 
+    if (session?.user && (session.user as any).id === targetUserId) {
+      return NextResponse.json(
+        { error: "You cannot send a message to yourself." },
+        { status: 400 },
+      );
+    }
+
     // Basic Rate Limiting: Check last 1 minute messages for this IP/Fingerprint
     const oneMinuteAgo = new Date(Date.now() - 60 * 1000);
     const recentMessagesCount = await prisma.message.count({
@@ -42,7 +49,6 @@ export async function POST(req: Request) {
 
     let chatId: string | null = null;
     let senderId: string;
-    const isAnonymous = true; // All messages via this route are anonymous
 
     if (session?.user) {
       // Authenticated user sending message
@@ -53,18 +59,16 @@ export async function POST(req: Request) {
         where: {
           isGroup: false,
           type: ChatType.ANONYMOUS,
-        },
-        include: {
-          participants: { select: { userId: true } },
+          participants: {
+            every: {
+              userId: { in: [senderId, targetUserId] },
+            },
+          },
         },
       });
 
-      // Validate the chat has exactly these two participants
       if (existingChat) {
-        const participantIds = new Set(existingChat.participants.map((p) => p.userId));
-        if (participantIds.size === 2 && participantIds.has(senderId) && participantIds.has(targetUserId)) {
-          chatId = existingChat.id;
-        }
+        chatId = existingChat.id;
       }
 
       if (!chatId) {
@@ -85,7 +89,6 @@ export async function POST(req: Request) {
       }
     } else {
       // Anonymous user (visitor)
-      // Get fingerprint from cookie or generate temporary ID
       const cookieHeader = req.headers.get("cookie");
       let fingerprint = null;
 
@@ -101,18 +104,20 @@ export async function POST(req: Request) {
 
       if (!fingerprint) {
         return NextResponse.json(
-          { error: "Anonymous messaging requires browser fingerprint" },
+          { error: "Anonymous messaging requires browser fingerprint. Please enable cookies." },
           { status: 400 },
         );
       }
 
-      // Use unique guest users based on fingerprint instead of shared SYSTEM_ANONYMOUS_ID
+      // Use unique guest users based on fingerprint
       const anonUser = await prisma.user.upsert({
         where: { fingerprint: fingerprint },
-        update: {},
+        update: {
+          lastLogin: new Date(),
+        },
         create: {
           name: "Guest " + fingerprint.substring(0, 4),
-          username: `guest_${fingerprint.substring(0, 8)}`,
+          username: `guest_${fingerprint.substring(0, 8)}_${Math.random().toString(36).substring(2, 6)}`,
           fingerprint: fingerprint,
           isPremium: false,
         },
@@ -120,23 +125,28 @@ export async function POST(req: Request) {
 
       senderId = anonUser.id;
 
+      if (senderId === targetUserId) {
+        return NextResponse.json(
+          { error: "You cannot send a message to yourself." },
+          { status: 400 },
+        );
+      }
+
       // Check for existing anonymous chat between these exact two users
       const existingChat = await prisma.chat.findFirst({
         where: {
           isGroup: false,
           type: ChatType.ANONYMOUS,
-        },
-        include: {
-          participants: { select: { userId: true } },
+          participants: {
+            every: {
+              userId: { in: [senderId, targetUserId] },
+            },
+          },
         },
       });
 
-      // Validate the chat has exactly these two participants (guest + target user)
       if (existingChat) {
-        const participantIds = new Set(existingChat.participants.map((p) => p.userId));
-        if (participantIds.size === 2 && participantIds.has(senderId) && participantIds.has(targetUserId)) {
-          chatId = existingChat.id;
-        }
+        chatId = existingChat.id;
       }
 
       if (!chatId) {
@@ -158,8 +168,7 @@ export async function POST(req: Request) {
     }
 
     if (!chatId) {
-      // ... existing error handler ...
-      return NextResponse.json({ error: "Failed" }, { status: 500 });
+      return NextResponse.json({ error: "Failed to initialize chat session." }, { status: 500 });
     }
 
     // Create message with metadata and update chat timestamp

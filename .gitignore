@@ -2,6 +2,7 @@
 node_modules/
 .pnpm-store/
 jspm_packages/
+scripts/*
 
 # Next.js Build Output
 .next/
@@ -43,6 +44,7 @@ scripts/cleanup_corrupted_chats.ts
 scripts/verify-*
 scripts/research-*
 scripts/debug-*
+scripts/verify_*
 **/api/debug/
 .gemini/
 .antigravity/
