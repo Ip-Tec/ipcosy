@@ -54,24 +54,26 @@ export async function POST(req: Request) {
       // Authenticated user sending message
       senderId = (session.user as any).id;
 
+      console.log(`Checking for existing chat between ${senderId} and ${targetUserId}`);
       // Check for existing ANONYMOUS DM between these exact two users
       const existingChat = await prisma.chat.findFirst({
         where: {
           isGroup: false,
           type: ChatType.ANONYMOUS,
-          participants: {
-            every: {
-              userId: { in: [senderId, targetUserId] },
-            },
-          },
+          AND: [
+            { participants: { some: { userId: senderId } } },
+            { participants: { some: { userId: targetUserId } } },
+          ],
         },
       });
 
       if (existingChat) {
+        console.log(`Found existing chat: ${existingChat.id}`);
         chatId = existingChat.id;
       }
 
       if (!chatId) {
+        console.log("Creating new anonymous chat...");
         const newChat = await prisma.chat.create({
           data: {
             isGroup: false,
@@ -86,6 +88,7 @@ export async function POST(req: Request) {
           },
         });
         chatId = newChat.id;
+        console.log(`New chat created: ${chatId}`);
       }
     } else {
       // Anonymous user (visitor)
@@ -103,11 +106,14 @@ export async function POST(req: Request) {
       }
 
       if (!fingerprint) {
+        console.warn("Messaging attempt without fingerprint");
         return NextResponse.json(
           { error: "Anonymous messaging requires browser fingerprint. Please enable cookies." },
           { status: 400 },
         );
       }
+
+      console.log(`Processing visitor message with fingerprint: ${fingerprint}`);
 
       // Use unique guest users based on fingerprint
       const anonUser = await prisma.user.upsert({
@@ -124,6 +130,7 @@ export async function POST(req: Request) {
       });
 
       senderId = anonUser.id;
+      console.log(`Visitor mapped to user ID: ${senderId}`);
 
       if (senderId === targetUserId) {
         return NextResponse.json(
@@ -133,23 +140,25 @@ export async function POST(req: Request) {
       }
 
       // Check for existing anonymous chat between these exact two users
+      console.log(`Checking for existing visitor chat between ${senderId} and ${targetUserId}`);
       const existingChat = await prisma.chat.findFirst({
         where: {
           isGroup: false,
           type: ChatType.ANONYMOUS,
-          participants: {
-            every: {
-              userId: { in: [senderId, targetUserId] },
-            },
-          },
+          AND: [
+            { participants: { some: { userId: senderId } } },
+            { participants: { some: { userId: targetUserId } } },
+          ],
         },
       });
 
       if (existingChat) {
+        console.log(`Found existing visitor chat: ${existingChat.id}`);
         chatId = existingChat.id;
       }
 
       if (!chatId) {
+        console.log("Creating new visitor chat record...");
         const newChat = await prisma.chat.create({
           data: {
             isGroup: false,
@@ -164,6 +173,7 @@ export async function POST(req: Request) {
           },
         });
         chatId = newChat.id;
+        console.log(`New visitor chat created: ${chatId}`);
       }
     }
 

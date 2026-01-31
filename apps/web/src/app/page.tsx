@@ -312,7 +312,7 @@ function HomeContent() {
         window.location.reload();
       } else {
         const data = await res.json();
-        toast.error(data.error || "Failed to create group");
+        toast.error(data.details ? `${data.error}: ${data.details}` : (data.error || "Failed to create group"));
       }
     } catch (e) {
       console.error(e);

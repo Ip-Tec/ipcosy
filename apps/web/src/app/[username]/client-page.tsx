@@ -245,7 +245,7 @@ export default function ClientPage({
           setShowRegPopup(true);
         }
       } else {
-        toast.error(data.error || "Failed to send message.");
+        toast.error(data.details ? `${data.error}: ${data.details}` : (data.error || "Failed to send message."));
       }
     } catch (e) {
       console.error(e);

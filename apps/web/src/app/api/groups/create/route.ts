@@ -43,6 +43,8 @@ export async function POST(req: NextRequest) {
     }
 
     const { name } = await req.json();
+    console.log(`Creating group: ${name} for user: ${userId}`);
+
     if (!name || typeof name !== "string") {
       return NextResponse.json(
         { error: "Invalid group name" },
@@ -52,8 +54,11 @@ export async function POST(req: NextRequest) {
 
     // 2. Generate Unique Join Code
     let joinCode = nanoid(6).toUpperCase();
+    console.log(`Generated join code: ${joinCode}`);
     let isUnique = false;
-    while (!isUnique) {
+    let attempts = 0;
+    while (!isUnique && attempts < 10) {
+      attempts++;
       const existing = await prisma.chat.findUnique({
         where: { joinCode },
       });
@@ -61,24 +66,33 @@ export async function POST(req: NextRequest) {
         isUnique = true;
       } else {
         joinCode = nanoid(6).toUpperCase();
+        console.log(`Retrying join code: ${joinCode}`);
       }
     }
 
+    if (!isUnique) {
+        throw new Error("Failed to generate a unique join code after 10 attempts.");
+    }
+
     // 3. Create the Chat & Set Owner
+    console.log("Creating chat record in DB...");
     const chat = await prisma.chat.create({
       data: {
         isGroup: true,
         name: name,
         joinCode: joinCode,
         participants: {
-          create: {
-            userId: userId,
-            role: "OWNER",
-          },
+          create: [
+            {
+              userId: userId,
+              role: "OWNER",
+            },
+          ],
         },
       },
     });
 
+    console.log(`Group created successfully: ${chat.id}`);
     return NextResponse.json({
       success: true,
       chatId: chat.id,
@@ -87,7 +101,7 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     console.error("Group creation error:", error);
     return NextResponse.json(
-      { error: "Internal Server Error" },
+      { error: "Internal Server Error", details: (error as any).message },
       { status: 500 },
     );
   }
