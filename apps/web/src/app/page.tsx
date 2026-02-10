@@ -195,6 +195,9 @@ function HomeContent() {
         if (typingChatId === currentChatId && payload.visitorId !== visitorId) {
           setTypingUser(payload.isTyping ? "Someone" : null);
         }
+      } else if (payload.type === "error") {
+        console.error("WebSocket server error:", payload.message);
+        toast.error(payload.message || "Failed to send message");
       }
     });
 

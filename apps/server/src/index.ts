@@ -108,7 +108,14 @@ class ChatServer extends IpServer {
       const isParticipant = chatExists.participants.some(
         (p) => p.userId === user!.id,
       );
-      if (!isParticipant) {
+      
+      const isOwner = chatExists.participants.some(
+        (p) => p.userId === user!.id && p.role === "OWNER"
+      );
+
+      console.log(`Checking membership for user ${user!.id} in chat ${chatId}. isParticipant: ${isParticipant}, isOwner: ${isOwner}`);
+
+      if (!isParticipant && !isOwner) {
         ws.send(
           JSON.stringify({
             type: "error",
