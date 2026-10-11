@@ -19,8 +19,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import FingerprintJS from "@fingerprintjs/fingerprintjs";
 import Image from "next/image";
-import { UploadButton } from "@uploadthing/react";
-import type { OurFileRouter } from "@/app/api/uploadthing/core";
+import { uploadImage } from "@/utils/storage-upload";
 
 interface UserInfo {
   id: string;
