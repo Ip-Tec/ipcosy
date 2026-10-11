@@ -5,9 +5,19 @@ const secret = 'a'.repeat(64);
 const key = 'uploads/01234567-89ab-cdef-0123-456789abcdef';
 const config = { STORAGE_PROVIDER:'b2', B2_ENDPOINT:'https://s3.us-west-004.backblazeb2.com', B2_REGION:'us-west-004', B2_BUCKET:'test-private', B2_KEY_ID:'test', B2_APPLICATION_KEY:'test', STORAGE_TOKEN_SECRET:secret };
 test('limits reject oversized, empty, fractional and executable uploads', () => {
-  validateUpload('image/png',20*1024*1024);
-  validateUpload('application/pdf',100*1024*1024);
+  validateUpload('image/png',20*1024*1024,true);
+  validateUpload('application/pdf',100*1024*1024,true);
   for(const [type,size] of [['image/png',20*1024*1024+1],['application/pdf',100*1024*1024+1],['image/png',0],['image/png',0.5],['image/svg+xml',10],['text/html',10]]) assert.throws(()=>validateUpload(type,size));
+});
+test('only paid uploaders receive larger limits; guest and free limits fail closed', () => {
+  for (const premium of [undefined, false]) {
+    validateUpload('image/png',4*1024*1024,premium);
+    validateUpload('application/octet-stream',16*1024*1024,premium);
+    assert.throws(()=>validateUpload('image/png',4*1024*1024+1,premium), /4 MB/);
+    assert.throws(()=>validateUpload('application/octet-stream',16*1024*1024+1,premium), /16 MB/);
+  }
+  assert.throws(()=>validateUpload('image/png',20*1024*1024+1,true), /20 MB/);
+  assert.throws(()=>validateUpload('application/octet-stream',100*1024*1024+1,true), /100 MB/);
 });
 test('default stays on legacy storage; enabled incomplete configuration fails closed',()=>{
   assert.equal(storageEnabled({}),false);

@@ -8,8 +8,8 @@ function client() {
   return { config, s3: new S3Client({ ...config, forcePathStyle: true, requestChecksumCalculation: "WHEN_REQUIRED", responseChecksumValidation: "WHEN_REQUIRED" }) };
 }
 
-export async function prepareUpload(type: string, size: number, name?: string) {
-  validateUpload(type, size);
+export async function prepareUpload(type: string, size: number, name?: string, isPremium = false) {
+  validateUpload(type, size, isPremium);
   const { config, s3 } = client();
   const key = `uploads/${randomUUID()}`;
   const uploadUrl = await getSignedUrl(s3, new PutObjectCommand({

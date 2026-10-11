@@ -22,7 +22,7 @@ Backblaze includes the first 10 GB free across the account. Verify existing acco
 - B2_APPLICATION_KEY=<bucket-scoped key secret>
 - STORAGE_TOKEN_SECRET=<random secret of at least 32 characters; preserve this permanently for existing B2 links>
 
-No database migration is needed. Images allow 20 MB and other files allow 100 MB. The existing UploadThing uploader stays in place as the default until STORAGE_PROVIDER=b2 is set.
+No database migration is needed. Free and guest uploaders allow 4 MB images and 16 MB other files. Paid uploaders allow 20 MB images and 100 MB other files; the API checks the uploader database isPremium status even when sending anonymously. The existing UploadThing uploader stays in place as the default until STORAGE_PROVIDER=b2 is set.
 
 ## Verification
 

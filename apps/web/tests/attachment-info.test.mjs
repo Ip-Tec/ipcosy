@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {attachmentInfo, validateAttachment, IMAGE_LIMIT, FILE_LIMIT} from '../src/lib/attachment-info.ts';
+import {attachmentInfo, validateAttachment, attachmentLimitText, IMAGE_LIMIT, FILE_LIMIT} from '../src/lib/attachment-info.ts';
 test('file selection allows exact image/file boundaries and normalizes non-image content',()=>{
   assert.equal(validateAttachment({type:'image/png',size:IMAGE_LIMIT}),'image/png');
   assert.equal(validateAttachment({type:'application/pdf',size:FILE_LIMIT}),'application/pdf');
@@ -9,6 +9,16 @@ test('file selection allows exact image/file boundaries and normalizes non-image
   assert.throws(()=>validateAttachment({type:'image/png',size:IMAGE_LIMIT+1}));
   assert.throws(()=>validateAttachment({type:'application/pdf',size:FILE_LIMIT+1}));
   assert.throws(()=>validateAttachment({type:'',size:0}));
+});
+test('paid selection permits larger files while free selection rejects them',()=>{
+  assert.equal(validateAttachment({type:'image/png',size:20*1024*1024},true),'image/png');
+  assert.equal(validateAttachment({type:'application/pdf',size:100*1024*1024},true),'application/pdf');
+  assert.throws(()=>validateAttachment({type:'image/png',size:20*1024*1024}), /4 MB/);
+  assert.throws(()=>validateAttachment({type:'application/pdf',size:100*1024*1024}), /16 MB/);
+  assert.throws(()=>validateAttachment({type:'image/png',size:20*1024*1024+1},true));
+  assert.throws(()=>validateAttachment({type:'application/pdf',size:100*1024*1024+1},true));
+  assert.match(attachmentLimitText(), /4 MB/);
+  assert.match(attachmentLimitText(true), /Premium: images up to 20 MB/);
 });
 test('attachment previews preserve image detection with metadata and use safe download links',()=>{
   const image=attachmentInfo('https://ipcosy.vercel.app/api/storage/file/token.png?name=Holiday.png&size=5000');

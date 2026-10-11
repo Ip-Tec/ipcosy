@@ -3,11 +3,12 @@ import { createCipheriv, createDecipheriv, createHash, randomBytes } from "node:
 const IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/gif", "image/webp"]);
 const FILE_TYPES = new Set([...IMAGE_TYPES, "application/pdf", "application/octet-stream"]);
 
-export function validateUpload(type: string, size: number) {
+export function validateUpload(type: string, size: number, isPremium = false) {
   if (!FILE_TYPES.has(type)) throw new Error("Unsupported file type");
-  const limit = IMAGE_TYPES.has(type) ? 20 * 1024 * 1024 : 100 * 1024 * 1024;
+  const limitMB = IMAGE_TYPES.has(type) ? (isPremium ? 20 : 4) : (isPremium ? 100 : 16);
+  const limit = limitMB * 1024 * 1024;
   if (!Number.isSafeInteger(size) || size < 1 || size > limit) {
-    throw new Error(IMAGE_TYPES.has(type) ? "Images must be 20 MB or smaller" : "Files must be 100 MB or smaller");
+    throw new Error(`${IMAGE_TYPES.has(type) ? "Images" : "Files"} must be ${limitMB} MB or smaller${isPremium ? "" : ". Premium allows 20 MB images and 100 MB files"}`);
   }
 }
 

@@ -1,15 +1,17 @@
-export const IMAGE_LIMIT = 20 * 1024 * 1024;
-export const FILE_LIMIT = 100 * 1024 * 1024;
-export const ATTACHMENT_LIMIT_TEXT = "Images up to 20 MB · Other files up to 100 MB";
+export const IMAGE_LIMIT = 4 * 1024 * 1024;
+export const FILE_LIMIT = 16 * 1024 * 1024;
+export function attachmentLimitText(isPremium = false) {
+  return isPremium ? "Premium: images up to 20 MB · Other files up to 100 MB" : "Images up to 4 MB · Other files up to 16 MB · Premium: 20 MB / 100 MB";
+}
 const imageTypes = new Set(["image/jpeg", "image/png", "image/gif", "image/webp"]);
 export function uploadType(type: string) {
   return imageTypes.has(type) || type === "application/pdf" ? type : "application/octet-stream";
 }
-export function validateAttachment(file: { type: string; size: number }) {
+export function validateAttachment(file: { type: string; size: number }, isPremium = false) {
   const type = uploadType(file.type);
-  const limit = imageTypes.has(type) ? IMAGE_LIMIT : FILE_LIMIT;
+  const limit = imageTypes.has(type) ? (isPremium ? 20 * 1024 * 1024 : IMAGE_LIMIT) : (isPremium ? 100 * 1024 * 1024 : FILE_LIMIT);
   if (!Number.isSafeInteger(file.size) || file.size < 1) throw new Error("Choose a file that isn't empty");
-  if (file.size > limit) throw new Error(imageTypes.has(type) ? "Images must be 20 MB or smaller" : "Files must be 100 MB or smaller");
+  if (file.size > limit) throw new Error(`${imageTypes.has(type) ? "Images" : "Files"} must be ${limit / (1024 * 1024)} MB or smaller${isPremium ? "" : ". Upgrade to Premium for larger uploads"}`);
   return type;
 }
 export function formatFileSize(size: number) {

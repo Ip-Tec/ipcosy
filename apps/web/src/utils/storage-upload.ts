@@ -3,10 +3,10 @@ import { uploadFiles } from "./uploadthing";
 import { validateAttachment } from "@/lib/attachment-info";
 type UploadOptions = { signal?: AbortSignal; onProgress?: (progress: number) => void };
 export async function uploadAttachment(file: File, options: UploadOptions = {}): Promise<string> {
-  const type = validateAttachment(file);
   const configResponse = await fetch("/api/storage", { cache: "no-store", signal: options.signal });
   if (!configResponse.ok) throw new Error("Uploads are temporarily unavailable");
   const config = await configResponse.json();
+  const type = validateAttachment(file, config.isPremium === true);
   if (config.provider === "uploadthing") {
     if (file.size > (type.startsWith("image/") ? 4 : 16) * 1024 * 1024) throw new Error("Larger uploads are temporarily unavailable. Please try again later.");
     const uploaded = await uploadFiles(type.startsWith("image/") ? "imageUploader" : "fileUploader", { files: [file], signal: options.signal });

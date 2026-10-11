@@ -566,7 +566,7 @@ export default function SettingsPage() {
               <div className="flex justify-between items-center"><span className="font-medium">Data Usage</span><span className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full font-bold">Storage &amp; history</span></div>
               <div className="space-y-3 text-xs text-muted leading-relaxed">
                 <p><span className="font-semibold text-foreground">Chat history:</span>{" "}Messages are stored for delivery and conversation history. Shared messages may be retained when an account is deleted.</p>
-                <p><span className="font-semibold text-foreground">Stored files:</span>{" "}Removing a message does not automatically remove its stored attachment. Images can be up to 20 MB and other files up to 100 MB.</p>
+                <p><span className="font-semibold text-foreground">Stored files:</span>{" "}Removing a message does not automatically remove its stored attachment. Free accounts can upload images up to 4 MB and other files up to 16 MB. Premium accounts can upload images up to 20 MB and other files up to 100 MB.</p>
                 <p><span className="font-semibold text-foreground">Account and device information:</span>{" "}Cookies and device identifiers support sessions and anonymous messages. Some sender details may be shown through premium features.</p>
               </div>
             </div>
