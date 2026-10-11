@@ -51,3 +51,11 @@ Sources:
 - https://www.backblaze.com/docs/cloud-storage-create-and-manage-caps-and-alerts
 - https://www.backblaze.com/docs/cloud-storage-s3-compatible-api
 - https://www.backblaze.com/docs/cloud-storage-cross-origin-resource-sharing-rules
+
+## Verified account setup (2026-10-11)
+
+A private encrypted B2 bucket was created in `us-east-005`. The account dashboard showed a zero-dollar storage cap and a 10 GB allowance. The six storage configuration variables were saved as Vercel Secrets for Preview and Production; the provider flag was verified for Preview only.
+
+A live test using the application storage implementation passed: signed image PUT and GET returned 200, downloaded bytes matched, unsigned access returned 401, invalid links were rejected, and production-origin CORS preflight succeeded. Exact production and branch-preview origins were configured.
+
+Deployed application upload/message verification and production activation remain pending; the local storage test does not establish that the production deployment uses B2.
