@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { toast } from "sonner";
 import { useSession, signIn } from "next-auth/react";
 import {
@@ -184,6 +184,8 @@ export default function ClientPage({
   const [message, setMessage] = useState("");
   const [fileUrl, setFileUrl] = useState<string | null>(null);
   const [isSending, setIsSending] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [showRegPopup, setShowRegPopup] = useState(false);
   const [visitorId, setVisitorId] = useState<string | null>(null);
 
@@ -327,6 +329,7 @@ export default function ClientPage({
             <div className="relative w-full bg-sidebar rounded-[1.5rem] p-4 border border-primary/30">
               <div className="relative w-full h-40 rounded-lg overflow-hidden">
                 <Image
+                  unoptimized
                   src={fileUrl}
                   alt="Uploaded image"
                   fill
@@ -344,35 +347,28 @@ export default function ClientPage({
 
           {/* Upload Section */}
           <div className="w-full">
-            <UploadButton<OurFileRouter, "imageUploader">
-              endpoint="imageUploader"
-              onClientUploadComplete={(res) => {
-                if (res?.[0]) {
-                  setFileUrl(res[0].url);
-                  toast.success("Image uploaded!");
-                }
-              }}
-              onUploadError={(error: Error) => {
-                toast.error(`Upload failed: ${error.message}`);
-              }}
-              content={{
-                button({ ready, isUploading }) {
-                  if (isUploading) return "Uploading...";
-                  if (ready) return <div className="flex items-center gap-2"><ImageIcon className="w-4 h-4" /> Add Image</div>;
-                  return "Getting ready...";
-                },
-              }}
-              appearance={{
-                container: "w-full",
-                button: "w-full ut-button:bg-primary/20 ut-button:text-primary ut-button:font-bold ut-button:py-3 ut-button:rounded-[1.5rem] ut-button:border-0 ut-button:transition-all hover:ut-button:bg-primary/30",
-                allowedContent: "hidden",
-              }}
-            />
+<input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/gif,image/webp" className="hidden" onChange={async (event) => {
+              const file = event.target.files?.[0];
+              if (!file || isUploading) return;
+              setIsUploading(true);
+              try {
+                setFileUrl(await uploadImage(file));
+                toast.success("Image uploaded!");
+              } catch (error) {
+                toast.error(error instanceof Error ? error.message : "Upload failed");
+              } finally {
+                setIsUploading(false);
+                event.target.value = "";
+              }
+            }} />
+            <button type="button" disabled={isUploading} onClick={() => fileInputRef.current?.click()} className="w-full bg-primary/20 text-primary font-bold py-3 rounded-[1.5rem] disabled:opacity-50 flex items-center justify-center gap-2">
+              <ImageIcon className="w-4 h-4" /> {isUploading ? "Uploading..." : "Add Image"}
+            </button>
           </div>
 
           <button
             onClick={handleSend}
-            disabled={(!message.trim() && !fileUrl) || isSending}
+            disabled={(!message.trim() && !fileUrl) || isSending || isUploading}
             className="cursor-pointer w-full bg-primary text-white py-5 rounded-[1.5rem] font-black text-sm shadow-xl hover:opacity-90 active:scale-[0.98] transition-all disabled:opacity-50 flex items-center justify-center gap-3"
           >
             {isSending ? (

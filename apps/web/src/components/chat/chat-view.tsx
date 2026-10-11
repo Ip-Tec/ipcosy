@@ -5,7 +5,7 @@ import Image from "next/image";
 import { Share2, Trash2, Shield } from "lucide-react";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useUploadThing } from "../../utils/uploadthing";
+import { uploadImage } from "@/utils/storage-upload";
 import { AnonymousMessageCard } from "./anonymous-message-card";
 import { EmptyState } from "@/components/empty-state";
 import { DeleteMessageModal } from "./modals/delete-message-modal";
@@ -60,24 +60,22 @@ export function ChatView({
 }: ChatViewProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  const { startUpload, isUploading } = useUploadThing("imageUploader", {
-    onClientUploadComplete: (res) => {
-      handleSend(res?.[0]?.url);
-      toast.success("Image uploaded!");
-    },
-    onUploadError: (error) => {
-      console.error(`Upload Failed: ${error.message}`);
-      toast.error(`Upload failed: ${error.message}`);
-    },
-  });
+  const [isUploading, setIsUploading] = useState(false);
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file) return;
-
-    await startUpload([file]);
-    // Reset input
-    e.target.value = "";
+    if (!file || isUploading) return;
+    setIsUploading(true);
+    try {
+      const url = await uploadImage(file);
+      handleSend(url);
+      toast.success("Image uploaded!");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Upload failed");
+    } finally {
+      setIsUploading(false);
+      e.target.value = "";
+    }
   };
 
   // Helper to get display name for chat header
