@@ -10,7 +10,7 @@ Backblaze includes the first 10 GB free across the account. Verify existing acco
 2. Create a PRIVATE bucket for IPCosy. Do not enable public access.
 3. Create a bucket-scoped application key with readFiles and writeFiles access. Never place credentials in NEXT_PUBLIC variables or commit them.
 4. Configure CORS to allow PUT, GET, and HEAD from https://ipcosy.vercel.app, with Content-Type and Content-Length headers. Add the exact preview origin only when testing that preview; do not use a wildcard origin.
-5. Use a lifecycle rule that keeps only the current object version. Upload authorizations expire in 60 seconds, but reusing an authorization may create versions.
+5. Use a lifecycle rule that keeps only the current object version. Upload authorizations expire in 5 minutes, but reusing an authorization may create versions.
 
 ## Server environment variables
 
@@ -22,7 +22,7 @@ Backblaze includes the first 10 GB free across the account. Verify existing acco
 - B2_APPLICATION_KEY=<bucket-scoped key secret>
 - STORAGE_TOKEN_SECRET=<random secret of at least 32 characters; preserve this permanently for existing B2 links>
 
-No database migration is needed. Image size limits remain 20 MB. The existing UploadThing uploader stays in place as the default until STORAGE_PROVIDER=b2 is set.
+No database migration is needed. Images allow 20 MB and other files allow 100 MB. The existing UploadThing uploader stays in place as the default until STORAGE_PROVIDER=b2 is set.
 
 ## Verification
 
@@ -58,7 +58,7 @@ A private encrypted B2 bucket was created in `us-east-005`. The account dashboar
 
 A live test using the application storage implementation passed: signed image PUT and GET returned 200, downloaded bytes matched, unsigned access returned 401, invalid links were rejected, and production-origin CORS preflight succeeded. Exact production and branch-preview origins were configured.
 
-Deployed application upload/message verification and production activation remain pending; the local storage test does not establish that the production deployment uses B2.
+The initial storage integration was verified in production on commit 84cfb86. The larger-attachment update has separate build and full-size upload checks.
 
 ## Larger attachments
 

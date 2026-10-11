@@ -54,7 +54,10 @@ export function decodeFileKey(token: string, secret: string) {
 }
 
 export function safeFileName(value: string) {
-  return value.replace(/[\x00-\x1f\x7f/\\]/g, "").trim().slice(0, 160) || "file";
+  const cleaned = value.replace(/[\x00-\x1f\x7f/\\]/g, "").trim() || "file";
+  if (cleaned.length <= 160) return cleaned;
+  const extension = cleaned.match(/\.[a-zA-Z0-9]{1,12}$/)?.[0] || "";
+  return cleaned.slice(0, 160 - extension.length) + extension;
 }
 export function fileDisposition(name: string) {
   const safe = safeFileName(name);

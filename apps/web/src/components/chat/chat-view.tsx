@@ -476,6 +476,7 @@ export function ChatView({
                 </svg>
               </button>
             </div>
+            <p className="mx-auto w-full max-w-4xl bg-sidebar px-3 pb-2 text-[11px] text-muted-foreground">Images up to 20 MB · Other files up to 100 MB</p>
             </>
           ) : (
             <div className="p-4 bg-sidebar/80 backdrop-blur-md border-t border-border flex flex-col items-center gap-3">

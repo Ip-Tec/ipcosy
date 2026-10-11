@@ -40,3 +40,5 @@ test('download names cannot inject response headers or paths',()=>{
   assert.ok(!disposition.includes('\n'));
   assert.ok(!fileDisposition('x\r\nSet-Cookie: bad').includes('\r\n'));
 });
+
+test('long filenames keep their extension after shortening',()=>{ const name=safeFileName('x'.repeat(190)+'.pdf'); assert.equal(name.length,160); assert.ok(name.endsWith('.pdf')); });

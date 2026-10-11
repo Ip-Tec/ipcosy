@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import FingerprintJS from "@fingerprintjs/fingerprintjs";
+import Image from "next/image";
 import { AttachmentPreview } from "@/components/chat/attachment-preview";
 import { AttachmentPicker } from "@/components/chat/attachment-picker";
 
