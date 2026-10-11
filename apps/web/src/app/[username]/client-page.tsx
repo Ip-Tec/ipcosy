@@ -296,8 +296,7 @@ export default function ClientPage({
             <p className="text-xs text-muted font-medium">@{username}</p>
           </div>
           <p className="text-sm text-muted-foreground leading-relaxed px-4">
-            They will never know who sent this message unless you reveal
-            yourself later!
+            Send without displaying your account name. Check your message and files for identifying details.
           </p>
         </div>
 
@@ -360,8 +359,7 @@ export default function ClientPage({
             Powered by IP~Tec
           </p>
           <p className="text-[10px] text-muted-foreground italic flex items-center justify-center gap-1">
-            <ShieldCheck className="w-3 h-3" /> End-to-end anonymous encryption
-            enabled.
+            <ShieldCheck className="w-3 h-3" /> Anonymous mode is on. Check attachments before sending.
           </p>
         </div>
       </div>
