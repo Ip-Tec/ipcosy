@@ -5,7 +5,9 @@ import Image from "next/image";
 import { Share2, Trash2, Shield } from "lucide-react";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
-import { uploadImage } from "@/utils/storage-upload";
+import { AttachmentPicker } from "./attachment-picker";
+import { AttachmentPreview } from "./attachment-preview";
+import { X } from "lucide-react";
 import { AnonymousMessageCard } from "./anonymous-message-card";
 import { EmptyState } from "@/components/empty-state";
 import { DeleteMessageModal } from "./modals/delete-message-modal";
@@ -62,20 +64,12 @@ export function ChatView({
 
   const [isUploading, setIsUploading] = useState(false);
 
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file || isUploading) return;
-    setIsUploading(true);
-    try {
-      const url = await uploadImage(file);
-      handleSend(url);
-      toast.success("Image uploaded!");
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Upload failed");
-    } finally {
-      setIsUploading(false);
-      e.target.value = "";
-    }
+  const [pendingAttachment, setPendingAttachment] = useState<string | null>(null);
+  useEffect(() => { setPendingAttachment(null); setIsUploading(false); }, [selectedChat]);
+  const sendMessage = () => {
+    if (isUploading || (!inputText.trim() && !pendingAttachment)) return;
+    handleSend(pendingAttachment || undefined);
+    setPendingAttachment(null);
   };
 
   // Helper to get display name for chat header
@@ -126,7 +120,7 @@ export function ChatView({
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
-      handleSend();
+      sendMessage();
     }
   };
 
@@ -273,9 +267,7 @@ export function ChatView({
             <div className="relative space-y-3 max-w-3xl mx-auto">
               <div className="flex justify-center mb-6">
                 <div className="bg-black/5 dark:bg-white/5 backdrop-blur-md px-4 py-2 rounded-2xl text-[10px] text-muted border border-border/50 text-center max-w-xs">
-                  🔒 Messages are end-to-end anonymous. All data is
-                  automatically deleted from our servers after 72 hours for your
-                  safety.
+                  Anonymous mode hides your name in the chat. Files can still contain identifying details.
                 </div>
               </div>
 
@@ -355,29 +347,7 @@ export function ChatView({
                               : "bg-sidebar text-foreground rounded-tl-[4px] border border-border"
                           }`}
                         >
-                          {msg.fileUrl && (
-                            <div className="mb-2 -mx-1 -mt-1 overflow-hidden rounded-lg">
-                              {msg.fileUrl.match(
-                                /\.(jpg|jpeg|png|gif|webp)$/i,
-                              ) ? (
-                                <img
-                                  src={msg.fileUrl}
-                                  alt="shared"
-                                  className="max-h-[300px] w-full object-cover"
-                                  onClick={() => window.open(msg.fileUrl)}
-                                />
-                              ) : (
-                                <div className="flex items-center gap-3 p-3 bg-black/5 dark:bg-white/10 rounded-lg">
-                                  <div className="h-10 w-10 bg-primary/20 rounded-full flex items-center justify-center text-xl">
-                                    📄
-                                  </div>
-                                  <span className="truncate text-xs font-medium">
-                                    Document
-                                  </span>
-                                </div>
-                              )}
-                            </div>
-                          )}
+                          {msg.fileUrl && <div className="mb-2"><AttachmentPreview url={msg.fileUrl} /></div>}
 
                           {msg.text && (
                             <p className="text-[13px] leading-[1.4] whitespace-pre-wrap break-words">
@@ -440,23 +410,10 @@ export function ChatView({
 
           {/* Input Area or Join CTA */}
           {selectedChatInfo?.myRole ? (
+            <>
+            {pendingAttachment && <div className="mx-auto w-full max-w-4xl border-t border-border bg-sidebar px-3 pt-3"><div className="relative max-w-sm"><AttachmentPreview url={pendingAttachment} /><button type="button" aria-label="Remove attachment" onClick={() => setPendingAttachment(null)} className="absolute right-2 top-2 rounded-full border border-border bg-sidebar p-1 shadow"><X className="h-4 w-4" /></button></div><p className="py-2 text-xs text-muted-foreground">Ready to send. Add a message below or remove this attachment.</p></div>}
             <div className="p-3 bg-sidebar flex items-center gap-2 max-w-4xl mx-auto w-full">
-              <div className="relative group p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer">
-                <label className="cursor-pointer">
-                  <span
-                    className={`text-2xl transition-all ${isUploading ? "animate-pulse opacity-50" : "text-muted grayscale group-hover:grayscale-0"}`}
-                  >
-                    {isUploading ? "⏳" : "📎"}
-                  </span>
-                  <input
-                    type="file"
-                    className="hidden"
-                    accept="image/*"
-                    onChange={handleFileChange}
-                    disabled={isUploading}
-                  />
-                </label>
-              </div>
+              <AttachmentPicker key={selectedChat} compact onUploaded={setPendingAttachment} onBusyChange={setIsUploading} disabled={!!pendingAttachment} />
 
               {/* Anonymous Toggle */}
               <button
@@ -466,7 +423,9 @@ export function ChatView({
                     ? "bg-purple-500/10 text-purple-600"
                     : "hover:bg-black/5 dark:hover:bg-white/5 text-muted"
                 }`}
-                title="Toggle Anonymous Mode"
+                title={isAnonymous ? "Anonymous mode is on" : "Anonymous mode is off"}
+                aria-label="Anonymous mode"
+                aria-pressed={isAnonymous}
               >
                 <Shield
                   className={`w-6 h-6 ${isAnonymous ? "fill-purple-600" : ""}`}
@@ -492,10 +451,11 @@ export function ChatView({
               </div>
 
               <button
-                onClick={() => handleSend()}
-                disabled={!inputText.trim()}
+                onClick={sendMessage}
+                aria-label="Send message"
+                disabled={isUploading || (!inputText.trim() && !pendingAttachment)}
                 className={`p-3 rounded-full transition-all flex items-center justify-center ${
-                  inputText.trim()
+                  (inputText.trim() || pendingAttachment) && !isUploading
                     ? "cursor-pointer bg-primary text-white shadow-lg scale-100 hover:opacity-90 active:scale-95"
                     : "bg-transparent text-muted scale-90 opacity-40 cursor-default"
                 }`}
@@ -516,6 +476,7 @@ export function ChatView({
                 </svg>
               </button>
             </div>
+            </>
           ) : (
             <div className="p-4 bg-sidebar/80 backdrop-blur-md border-t border-border flex flex-col items-center gap-3">
               <p className="text-sm font-medium text-muted-foreground">

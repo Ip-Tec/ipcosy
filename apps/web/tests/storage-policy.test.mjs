@@ -1,13 +1,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { validateUpload, storageEnabled, requireStorageConfig, encodeFileKey, decodeFileKey } from '../src/lib/storage-policy.ts';
+import { validateUpload, storageEnabled, requireStorageConfig, encodeFileKey, decodeFileKey, safeFileName, fileDisposition } from '../src/lib/storage-policy.ts';
 const secret = 'a'.repeat(64);
 const key = 'uploads/01234567-89ab-cdef-0123-456789abcdef';
 const config = { STORAGE_PROVIDER:'b2', B2_ENDPOINT:'https://s3.us-west-004.backblazeb2.com', B2_REGION:'us-west-004', B2_BUCKET:'test-private', B2_KEY_ID:'test', B2_APPLICATION_KEY:'test', STORAGE_TOKEN_SECRET:secret };
 test('limits reject oversized, empty, fractional and executable uploads', () => {
-  validateUpload('image/png',4*1024*1024);
-  validateUpload('application/pdf',16*1024*1024);
-  for(const [type,size] of [['image/png',4*1024*1024+1],['application/pdf',16*1024*1024+1],['image/png',0],['image/png',0.5],['image/svg+xml',10],['text/html',10]]) assert.throws(()=>validateUpload(type,size));
+  validateUpload('image/png',20*1024*1024);
+  validateUpload('application/pdf',100*1024*1024);
+  for(const [type,size] of [['image/png',20*1024*1024+1],['application/pdf',100*1024*1024+1],['image/png',0],['image/png',0.5],['image/svg+xml',10],['text/html',10]]) assert.throws(()=>validateUpload(type,size));
 });
 test('default stays on legacy storage; enabled incomplete configuration fails closed',()=>{
   assert.equal(storageEnabled({}),false);
@@ -29,4 +29,14 @@ test('file links hide keys, use unique tokens, and reject tampering/wrong secret
   assert.throws(()=>decodeFileKey(token,'b'.repeat(64)));
   assert.throws(()=>decodeFileKey('../etc/passwd',secret));
   assert.throws(()=>decodeFileKey(encodeFileKey('../etc/passwd',secret),secret));
+});
+
+test('download names cannot inject response headers or paths',()=>{
+  assert.equal(safeFileName('folder/\\report\r\n.pdf'),'folderreport.pdf');
+  const disposition=fileDisposition('Budget \"résumé\".pdf');
+  assert.ok(disposition.startsWith('attachment;'));
+  assert.ok(disposition.includes('filename*=UTF-8'));
+  assert.ok(!disposition.includes('\r'));
+  assert.ok(!disposition.includes('\n'));
+  assert.ok(!fileDisposition('x\r\nSet-Cookie: bad').includes('\r\n'));
 });

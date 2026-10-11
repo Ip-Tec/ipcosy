@@ -4,10 +4,10 @@ import { prepareDownload } from "@/lib/storage";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-export async function GET(_req: Request, { params }: { params: Promise<{ token: string }> }) {
+export async function GET(req: Request, { params }: { params: Promise<{ token: string }> }) {
   const { token } = await params;
   try {
-    const response = NextResponse.redirect(await prepareDownload(token), 302);
+    const response = NextResponse.redirect(await prepareDownload(token, new URL(req.url).searchParams.get("download") === "1"), 302);
     response.headers.set("Cache-Control", "private, no-store");
     response.headers.set("Referrer-Policy", "no-referrer");
     return response;

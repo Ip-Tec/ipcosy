@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import { Download, Share2, ShieldIcon } from "lucide-react";
 import { toPng } from "html-to-image";
 import { toast } from "sonner";
+import { AttachmentPreview } from "./attachment-preview";
 
 export interface AnonymousMessageCardProps {
   content: string;
@@ -90,28 +91,7 @@ export function AnonymousMessageCard({
             "{content}"
           </p>
 
-          {fileUrl && (
-            <div className="relative z-10 rounded-2xl overflow-hidden border border-primary/20 bg-black/5 dark:bg-white/5">
-              {fileUrl.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? (
-                <img
-                  src={fileUrl}
-                  alt="Shared file"
-                  className="w-full max-h-64 object-cover cursor-pointer hover:scale-105 transition-transform"
-                  onClick={() => window.open(fileUrl, "_blank")}
-                />
-              ) : (
-                <div
-                  className="p-6 flex flex-col items-center gap-2 cursor-pointer hover:bg-black/10 transition-colors"
-                  onClick={() => window.open(fileUrl, "_blank")}
-                >
-                  <div className="text-4xl">📄</div>
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-primary">
-                    View Document
-                  </span>
-                </div>
-              )}
-            </div>
-          )}
+          {fileUrl && <div className="relative z-10"><AttachmentPreview url={fileUrl} /></div>}
 
           <div className="flex items-center justify-between pt-4 border-t border-primary/10 relative z-10">
             <div className="flex items-center gap-2">

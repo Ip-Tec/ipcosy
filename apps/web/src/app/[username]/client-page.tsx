@@ -13,13 +13,12 @@ import {
   Send,
   ShieldCheck,
   Dices,
-  Image as ImageIcon,
   X,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import FingerprintJS from "@fingerprintjs/fingerprintjs";
-import Image from "next/image";
-import { uploadImage } from "@/utils/storage-upload";
+import { AttachmentPreview } from "@/components/chat/attachment-preview";
+import { AttachmentPicker } from "@/components/chat/attachment-picker";
 
 interface UserInfo {
   id: string;
@@ -184,7 +183,6 @@ export default function ClientPage({
   const [fileUrl, setFileUrl] = useState<string | null>(null);
   const [isSending, setIsSending] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const [showRegPopup, setShowRegPopup] = useState(false);
   const [visitorId, setVisitorId] = useState<string | null>(null);
 
@@ -326,16 +324,9 @@ export default function ClientPage({
           {/* Image Preview */}
           {fileUrl && (
             <div className="relative w-full bg-sidebar rounded-[1.5rem] p-4 border border-primary/30">
-              <div className="relative w-full h-40 rounded-lg overflow-hidden">
-                <Image
-                  unoptimized
-                  src={fileUrl}
-                  alt="Uploaded image"
-                  fill
-                  className="object-cover"
-                />
-              </div>
+              <AttachmentPreview url={fileUrl} />
               <button
+                aria-label="Remove attachment"
                 onClick={() => setFileUrl(null)}
                 className="absolute -top-2 -right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors"
               >
@@ -344,26 +335,7 @@ export default function ClientPage({
             </div>
           )}
 
-          {/* Upload Section */}
-          <div className="w-full">
-<input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/gif,image/webp" className="hidden" onChange={async (event) => {
-              const file = event.target.files?.[0];
-              if (!file || isUploading) return;
-              setIsUploading(true);
-              try {
-                setFileUrl(await uploadImage(file));
-                toast.success("Image uploaded!");
-              } catch (error) {
-                toast.error(error instanceof Error ? error.message : "Upload failed");
-              } finally {
-                setIsUploading(false);
-                event.target.value = "";
-              }
-            }} />
-            <button type="button" disabled={isUploading} onClick={() => fileInputRef.current?.click()} className="w-full bg-primary/20 text-primary font-bold py-3 rounded-[1.5rem] disabled:opacity-50 flex items-center justify-center gap-2">
-              <ImageIcon className="w-4 h-4" /> {isUploading ? "Uploading..." : "Add Image"}
-            </button>
-          </div>
+          <AttachmentPicker onUploaded={setFileUrl} onBusyChange={setIsUploading} disabled={!!fileUrl} />
 
           <button
             onClick={handleSend}

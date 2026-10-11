@@ -22,7 +22,7 @@ Backblaze includes the first 10 GB free across the account. Verify existing acco
 - B2_APPLICATION_KEY=<bucket-scoped key secret>
 - STORAGE_TOKEN_SECRET=<random secret of at least 32 characters; preserve this permanently for existing B2 links>
 
-No database migration is needed. Image size limits remain 4 MB. The existing UploadThing uploader stays in place as the default until STORAGE_PROVIDER=b2 is set.
+No database migration is needed. Image size limits remain 20 MB. The existing UploadThing uploader stays in place as the default until STORAGE_PROVIDER=b2 is set.
 
 ## Verification
 
@@ -59,3 +59,7 @@ A private encrypted B2 bucket was created in `us-east-005`. The account dashboar
 A live test using the application storage implementation passed: signed image PUT and GET returned 200, downloaded bytes matched, unsigned access returned 401, invalid links were rejected, and production-origin CORS preflight succeeded. Exact production and branch-preview origins were configured.
 
 Deployed application upload/message verification and production activation remain pending; the local storage test does not establish that the production deployment uses B2.
+
+## Larger attachments
+
+JPEG, PNG, GIF and WebP images can be up to 20 MB. Other files can be up to 100 MB and are downloaded as attachments instead of rendered as active content. The original filename is stored in private B2 object metadata, keeping message links within the existing database field length. No database migration is required. Uploads have progress, cancellation, retry and a preview before sending. The UploadThing rollback retains its original 4 MB image / 16 MB file limits.

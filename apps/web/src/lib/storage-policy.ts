@@ -5,9 +5,9 @@ const FILE_TYPES = new Set([...IMAGE_TYPES, "application/pdf", "application/octe
 
 export function validateUpload(type: string, size: number) {
   if (!FILE_TYPES.has(type)) throw new Error("Unsupported file type");
-  const limit = IMAGE_TYPES.has(type) ? 4 * 1024 * 1024 : 16 * 1024 * 1024;
+  const limit = IMAGE_TYPES.has(type) ? 20 * 1024 * 1024 : 100 * 1024 * 1024;
   if (!Number.isSafeInteger(size) || size < 1 || size > limit) {
-    throw new Error(IMAGE_TYPES.has(type) ? "Images must be 4 MB or smaller" : "Files must be 16 MB or smaller");
+    throw new Error(IMAGE_TYPES.has(type) ? "Images must be 20 MB or smaller" : "Files must be 100 MB or smaller");
   }
 }
 
@@ -51,4 +51,14 @@ export function decodeFileKey(token: string, secret: string) {
   const key = Buffer.concat([decipher.update(data.subarray(28)), decipher.final()]).toString("utf8");
   if (!/^uploads\/[a-f0-9-]{36}$/.test(key)) throw new Error("Invalid file link");
   return key;
+}
+
+export function safeFileName(value: string) {
+  return value.replace(/[\x00-\x1f\x7f/\\]/g, "").trim().slice(0, 160) || "file";
+}
+export function fileDisposition(name: string) {
+  const safe = safeFileName(name);
+  const fallback = safe.replace(/[^a-zA-Z0-9._ -]/g, "_");
+  const encoded = encodeURIComponent(safe).replace(/['()*]/g, (char) => "%" + char.charCodeAt(0).toString(16).toUpperCase());
+  return `attachment; filename="${fallback}"; filename*=UTF-8''${encoded}`;
 }

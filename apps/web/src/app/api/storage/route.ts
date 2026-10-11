@@ -19,7 +19,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
   const body = await req.json().catch(() => null);
-  if (!body || typeof body.type !== "string" || typeof body.size !== "number") {
+  if (!body || typeof body.type !== "string" || typeof body.size !== "number" || (body.name !== undefined && (typeof body.name !== "string" || body.name.length > 255))) {
     return NextResponse.json({ error: "Invalid upload" }, { status: 400 });
   }
   try { validateUpload(body.type, body.size); } catch (error) {
@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
       const user = await prisma.user.findUnique({ where: { id: session.user.id }, select: { isBanned: true } });
       if (!user || user.isBanned) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
-    return NextResponse.json(await prepareUpload(body.type, body.size), { headers: { "Cache-Control": "no-store" } });
+    return NextResponse.json(await prepareUpload(body.type, body.size, body.name), { headers: { "Cache-Control": "no-store" } });
   } catch (error) {
     console.error("Storage upload preparation failed", error);
     return NextResponse.json({ error: "Uploads are temporarily unavailable" }, { status: 503 });
