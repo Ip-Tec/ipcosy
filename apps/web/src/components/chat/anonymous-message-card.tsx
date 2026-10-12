@@ -1,9 +1,11 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef } from "react";
 import { Download, Share2, ShieldIcon } from "lucide-react";
 import { toPng } from "html-to-image";
 import { toast } from "sonner";
+import { SenderDetails } from "./sender-details";
+import { AttachmentPreview } from "./attachment-preview";
 
 export interface AnonymousMessageCardProps {
   content: string;
@@ -15,6 +17,7 @@ export interface AnonymousMessageCardProps {
     browser?: string;
     city?: string;
     country?: string;
+    locationSource?: string;
   } | null;
   fileUrl?: string;
 }
@@ -27,7 +30,7 @@ export function AnonymousMessageCard({
   fileUrl,
 }: AnonymousMessageCardProps) {
   const cardRef = useRef<HTMLDivElement>(null);
-  const [showMetadata, setShowMetadata] = useState(false);
+
 
   const downloadCard = async () => {
     if (cardRef.current === null) return;
@@ -90,28 +93,7 @@ export function AnonymousMessageCard({
             "{content}"
           </p>
 
-          {fileUrl && (
-            <div className="relative z-10 rounded-2xl overflow-hidden border border-primary/20 bg-black/5 dark:bg-white/5">
-              {fileUrl.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? (
-                <img
-                  src={fileUrl}
-                  alt="Shared file"
-                  className="w-full max-h-64 object-cover cursor-pointer hover:scale-105 transition-transform"
-                  onClick={() => window.open(fileUrl, "_blank")}
-                />
-              ) : (
-                <div
-                  className="p-6 flex flex-col items-center gap-2 cursor-pointer hover:bg-black/10 transition-colors"
-                  onClick={() => window.open(fileUrl, "_blank")}
-                >
-                  <div className="text-4xl">📄</div>
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-primary">
-                    View Document
-                  </span>
-                </div>
-              )}
-            </div>
-          )}
+          {fileUrl && <div className="relative z-10"><AttachmentPreview url={fileUrl} /></div>}
 
           <div className="flex items-center justify-between pt-4 border-t border-primary/10 relative z-10">
             <div className="flex items-center gap-2">
@@ -153,58 +135,7 @@ export function AnonymousMessageCard({
             </button>
           </div>
 
-          {metadata && (
-            <div className="w-full">
-              <button
-                onClick={() => setShowMetadata(!showMetadata)}
-                className="w-full py-2 text-[10px] font-bold text-muted-foreground uppercase tracking-widest hover:text-primary transition-colors flex items-center justify-center gap-2"
-              >
-                <ShieldIcon className="w-3 h-3" />
-                {showMetadata
-                  ? "Hide Sender Data"
-                  : "View Sender Data (Premium)"}
-              </button>
-
-              {showMetadata && (
-                <div className="mt-2 p-4 bg-sidebar rounded-2xl border border-border/50 text-[10px] space-y-2 animate-in fade-in slide-in-from-top-2 duration-300">
-                  <div className="flex justify-between items-center opacity-70">
-                    <span className="font-bold uppercase tracking-tight">
-                      Device Type
-                    </span>
-                    <span className="font-medium">
-                      {metadata.deviceType || "Unknown"}
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center opacity-70">
-                    <span className="font-bold uppercase tracking-tight">
-                      OS / System
-                    </span>
-                    <span className="font-medium">
-                      {metadata.deviceOS || "Unknown"}
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center opacity-70">
-                    <span className="font-bold uppercase tracking-tight">
-                      Browser
-                    </span>
-                    <span className="font-medium">
-                      {metadata.browser || "Unknown"}
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center opacity-70">
-                    <span className="font-bold uppercase tracking-tight">
-                      Location
-                    </span>
-                    <span className="font-medium">
-                      {metadata.city && metadata.country
-                        ? `${metadata.city}, ${metadata.country}`
-                        : "Hidden"}
-                    </span>
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
+          <SenderDetails metadata={metadata} />
         </div>
       </div>
     </>
