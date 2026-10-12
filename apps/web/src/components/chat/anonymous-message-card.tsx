@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef } from "react";
-import { Download, Share2 } from "lucide-react";
+import { Download, Share2, ShieldIcon } from "lucide-react";
 import { toPng } from "html-to-image";
 import { toast } from "sonner";
 import { SenderDetails } from "./sender-details";
