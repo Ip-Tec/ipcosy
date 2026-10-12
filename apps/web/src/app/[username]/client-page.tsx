@@ -20,6 +20,8 @@ import FingerprintJS from "@fingerprintjs/fingerprintjs";
 import Image from "next/image";
 import { AttachmentPreview } from "@/components/chat/attachment-preview";
 import { AttachmentPicker } from "@/components/chat/attachment-picker";
+import { CitySharing } from "@/components/chat/city-sharing";
+import type { SharedCity } from "@/lib/shared-city";
 
 interface UserInfo {
   id: string;
@@ -184,6 +186,8 @@ export default function ClientPage({
   const [fileUrl, setFileUrl] = useState<string | null>(null);
   const [isSending, setIsSending] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [sharedCity, setSharedCity] = useState<SharedCity | null>(null);
+  const [isLocating, setIsLocating] = useState(false);
   const [showRegPopup, setShowRegPopup] = useState(false);
   const [visitorId, setVisitorId] = useState<string | null>(null);
 
@@ -214,6 +218,7 @@ export default function ClientPage({
   }, [initialUserInfo]);
 
   const handleSend = async () => {
+    if (isLocating || isSending) return;
     if (!message.trim() && !fileUrl) return;
 
     if (status !== "authenticated" && !visitorId && !document.cookie.includes("ipcosy-fingerprint")) {
@@ -232,6 +237,7 @@ export default function ClientPage({
           content: message,
           fileUrl: fileUrl,
           isAnonymous: true,
+          sharedCity,
         }),
       });
 
@@ -241,6 +247,7 @@ export default function ClientPage({
         toast.success("Message sent anonymously!");
         setMessage("");
         setFileUrl(null);
+        setSharedCity(null);
         if (status !== "authenticated") {
           setShowRegPopup(true);
         }
@@ -336,10 +343,11 @@ export default function ClientPage({
           )}
 
           <AttachmentPicker onUploaded={setFileUrl} onBusyChange={setIsUploading} disabled={!!fileUrl} />
+          <CitySharing value={sharedCity} onChange={setSharedCity} onBusyChange={setIsLocating} disabled={isSending} />
 
           <button
             onClick={handleSend}
-            disabled={(!message.trim() && !fileUrl) || isSending || isUploading}
+            disabled={(!message.trim() && !fileUrl) || isSending || isUploading || isLocating}
             className="cursor-pointer w-full bg-primary text-white py-5 rounded-[1.5rem] font-black text-sm shadow-xl hover:opacity-90 active:scale-[0.98] transition-all disabled:opacity-50 flex items-center justify-center gap-3"
           >
             {isSending ? (

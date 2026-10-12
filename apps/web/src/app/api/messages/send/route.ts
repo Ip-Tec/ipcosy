@@ -5,10 +5,14 @@ import { prisma } from "@ipcosy/db";
 import { captureMessageMetadata } from "@/lib/metadata";
 import { messageView } from "@/lib/message-view";
 import { notifyNewMessage } from "@/lib/notifications";
+import { validateSharedCity } from "@/lib/shared-city";
 
 export async function POST(req: NextRequest) {
   if (req.headers.get("origin") !== req.nextUrl.origin) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   const body = await req.json().catch(() => null);
+  let sharedCity;
+  try { sharedCity = validateSharedCity(body?.sharedCity); }
+  catch { return NextResponse.json({ error: "Invalid shared city" }, { status: 400 }); }
   if (!body || typeof body.chatId !== "string" || typeof body.text !== "string" || body.text.length > 10000 ||
       (body.fileUrl !== undefined && (typeof body.fileUrl !== "string" || body.fileUrl.length > 191)) ||
       (!body.text.trim() && !body.fileUrl)) return NextResponse.json({ error: "Invalid message" }, { status: 400 });
@@ -35,7 +39,7 @@ export async function POST(req: NextRequest) {
     if (blocked) return NextResponse.json({ error: "You are blocked from this chat" }, { status: 403 });
     const recent = await prisma.message.count({ where: { userId: user.id, createdAt: { gt: new Date(Date.now() - 60000) } } });
     if (recent >= 20) return NextResponse.json({ error: "Please slow down and try again shortly" }, { status: 429 });
-    const metadata = await captureMessageMetadata();
+    const metadata = await captureMessageMetadata(sharedCity);
     const isAnonymous = body.isAnonymous === true || !user.email;
     const message = await prisma.$transaction(async (tx) => {
       const saved = await tx.message.create({ data: {

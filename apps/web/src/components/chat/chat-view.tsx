@@ -8,6 +8,8 @@ import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AttachmentPicker } from "./attachment-picker";
 import { SenderDetails } from "./sender-details";
+import { CitySharing } from "./city-sharing";
+import type { SharedCity } from "@/lib/shared-city";
 import { AttachmentPreview } from "./attachment-preview";
 import { X } from "lucide-react";
 import { AnonymousMessageCard } from "./anonymous-message-card";
@@ -24,7 +26,7 @@ interface ChatViewProps {
   isLoadingMessages: boolean;
   inputText: string;
   setInputText: (text: string) => void;
-  handleSend: (fileUrl?: string) => Promise<boolean>;
+  handleSend: (fileUrl?: string, sharedCity?: SharedCity | null) => Promise<boolean>;
   typingUser: string | null;
   setShowGroupSettings: (show: boolean) => void;
   status: string;
@@ -69,11 +71,13 @@ export function ChatView({
 
   const [pendingAttachment, setPendingAttachment] = useState<string | null>(null);
   const [isSending, setIsSending] = useState(false);
-  useEffect(() => { setPendingAttachment(null); setIsUploading(false); }, [selectedChat]);
+  const [sharedCity, setSharedCity] = useState<SharedCity | null>(null);
+  const [isLocating, setIsLocating] = useState(false);
+  useEffect(() => { setPendingAttachment(null); setIsUploading(false); setSharedCity(null); setIsLocating(false); }, [selectedChat]);
   const sendMessage = async () => {
-    if (isSending || isUploading || (!inputText.trim() && !pendingAttachment)) return;
+    if (isSending || isLocating || isUploading || (!inputText.trim() && !pendingAttachment)) return;
     setIsSending(true);
-    try { if (await handleSend(pendingAttachment || undefined)) setPendingAttachment(null); }
+    try { if (await handleSend(pendingAttachment || undefined, sharedCity)) { setPendingAttachment(null); setSharedCity(null); } }
     finally { setIsSending(false); }
   };
 
@@ -460,7 +464,7 @@ export function ChatView({
               <button
                 onClick={sendMessage}
                 aria-label="Send message"
-                disabled={isUploading || (!inputText.trim() && !pendingAttachment)}
+                disabled={isSending || isLocating || isUploading || (!inputText.trim() && !pendingAttachment)}
                 className={`p-3 rounded-full transition-all flex items-center justify-center ${
                   (inputText.trim() || pendingAttachment) && !isUploading
                     ? "cursor-pointer bg-primary text-white shadow-lg scale-100 hover:opacity-90 active:scale-95"
@@ -484,6 +488,7 @@ export function ChatView({
               </button>
             </div>
             <p className="mx-auto w-full max-w-4xl bg-sidebar px-3 pb-2 text-[11px] text-muted-foreground">{limitText}</p>
+            <div className="bg-sidebar px-3 pb-2"><CitySharing key={selectedChat} value={sharedCity} onChange={setSharedCity} onBusyChange={setIsLocating} disabled={isSending} /></div>
             </>
           ) : (
             <div className="p-4 bg-sidebar/80 backdrop-blur-md border-t border-border flex flex-col items-center gap-3">

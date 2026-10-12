@@ -1,3 +1,4 @@
+import { locationSource } from "./shared-city";
 export function messageView(message: any, viewerId: string | null, isPremium: boolean) {
   const isMe = message.userId === viewerId;
   const anonymous = message.isAnonymous || (!!message.user.fingerprint && !message.user.email);
@@ -12,6 +13,7 @@ export function messageView(message: any, viewerId: string | null, isPremium: bo
     metadata: isPremium && !isMe ? {
       deviceType: message.deviceType, deviceOS: message.deviceOS, browser: message.browser,
       city: message.city, country: message.country,
+      locationSource: locationSource(message.browserFingerprint),
     } : null,
   };
 }

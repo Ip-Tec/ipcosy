@@ -4,11 +4,15 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { captureMessageMetadata } from "@/lib/metadata";
 import { createNotification } from "@/lib/notifications";
+import { validateSharedCity } from "@/lib/shared-city";
 
 export async function POST(req: Request) {
   try {
     const session = await getServerSession(authOptions);
-    const { targetUserId, content, fileUrl } = await req.json();
+    const { targetUserId, content, fileUrl, sharedCity: rawCity } = await req.json();
+    let sharedCity;
+    try { sharedCity = validateSharedCity(rawCity); }
+    catch { return NextResponse.json({ error: "Invalid shared city" }, { status: 400 }); }
 
     if (!targetUserId || (!content && !fileUrl)) {
       return NextResponse.json(
@@ -18,7 +22,7 @@ export async function POST(req: Request) {
     }
 
     // Capture metadata from request
-    const metadata = await captureMessageMetadata();
+    const metadata = await captureMessageMetadata(sharedCity);
 
     if (session?.user && (session.user as any).id === targetUserId) {
       return NextResponse.json(

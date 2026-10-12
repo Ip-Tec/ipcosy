@@ -17,6 +17,7 @@ export interface AnonymousMessageCardProps {
     browser?: string;
     city?: string;
     country?: string;
+    locationSource?: string;
   } | null;
   fileUrl?: string;
 }

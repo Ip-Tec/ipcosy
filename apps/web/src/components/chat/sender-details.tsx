@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { ShieldIcon } from "lucide-react";
 
-type SenderMetadata = { deviceType?: string | null; deviceOS?: string | null; browser?: string | null; city?: string | null; country?: string | null };
+type SenderMetadata = { deviceType?: string | null; deviceOS?: string | null; browser?: string | null; city?: string | null; country?: string | null; locationSource?: string };
 export function SenderDetails({ metadata }: { metadata?: SenderMetadata | null }) {
   const [open, setOpen] = useState(false);
   if (!metadata) return null;
@@ -14,7 +14,8 @@ export function SenderDetails({ metadata }: { metadata?: SenderMetadata | null }
     {open && <div className="space-y-2 rounded-2xl border border-border/50 bg-sidebar p-4 text-[10px] text-foreground">
       {[["Device Type", metadata.deviceType], ["OS / System", metadata.deviceOS], ["Browser", metadata.browser], ["Location", location]].map(([label, value]) =>
         <div key={label} className="flex justify-between gap-3"><span className="font-bold">{label}</span><span>{value || "Unknown"}</span></div>)}
-      <p className="text-muted-foreground">Location is approximate. VPNs and browser settings can affect these clues. Older messages may have no saved details.</p>
+      <p className="font-medium">{metadata.locationSource === "shared-city" ? "City shared by sender" : "Approximate network location"}</p>
+      <p className="text-muted-foreground">{metadata.locationSource === "shared-city" ? "The sender chose to share this city. It is a clue, not verified identity." : "Network estimates may show a different city. VPNs and browser settings can affect these clues. Older messages may have no saved details."}</p>
     </div>}
   </div>;
 }

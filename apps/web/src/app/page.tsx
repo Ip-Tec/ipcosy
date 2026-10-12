@@ -9,6 +9,7 @@ import FingerprintJS from "@fingerprintjs/fingerprintjs";
 import { useSession, signIn } from "next-auth/react";
 import { useSearchParams } from "next/navigation";
 import { toast } from "sonner";
+import type { SharedCity } from "@/lib/shared-city";
 import { OnboardingModal } from "@/components/onboarding-modal";
 
 // New modular components
@@ -226,7 +227,7 @@ function HomeContent() {
   }, [selectedChat, status, searchParams]);
 
   const sendingRef = useRef(false);
-  const handleSend = async (fileUrl?: string): Promise<boolean> => {
+  const handleSend = async (fileUrl?: string, sharedCity?: SharedCity | null): Promise<boolean> => {
     if (sendingRef.current || !visitorId || (!inputText.trim() && !fileUrl)) return false;
     sendingRef.current = true;
     const chatId = selectedChat || "mvp-lobby";
@@ -234,7 +235,7 @@ function HomeContent() {
     try {
       const response = await fetch("/api/messages/send", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ chatId, text, fileUrl, isAnonymous }),
+        body: JSON.stringify({ chatId, text, fileUrl, isAnonymous, sharedCity }),
       });
       const message = await response.json();
       if (!response.ok) throw new Error(message.error || "Message could not be sent");
