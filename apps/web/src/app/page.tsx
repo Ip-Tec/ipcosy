@@ -163,43 +163,6 @@ function HomeContent() {
       console.error("WebSocket error:", err);
     });
 
-    socketRef.current.on("message", (payload: any) => {
-      if (payload.type === "echo") {
-        const msgChatId = payload.data.chatId || "mvp-lobby";
-        const currentChatId = selectedChatRef.current || "mvp-lobby";
-
-        if (msgChatId === currentChatId) {
-          setMessages((prev) => [
-            ...prev,
-            {
-              ...payload.data,
-              sender: payload.data.visitorId === visitorId ? "me" : "them",
-            },
-          ]);
-        } else if (
-          payload.data.visitorId === visitorId &&
-          payload.data.isAnonymous
-        ) {
-          // Message was re-routed to an anonymous chat!
-          setSelectedChat(msgChatId);
-          fetchChats();
-        } else if (payload.data.visitorId !== visitorId) {
-          // Message in another chat - show notification
-          showNotification(payload.data);
-          fetchChats();
-        }
-      } else if (payload.type === "typing") {
-        const typingChatId = payload.chatId || "mvp-lobby";
-        const currentChatId = selectedChatRef.current || "mvp-lobby";
-
-        if (typingChatId === currentChatId && payload.visitorId !== visitorId) {
-          setTypingUser(payload.isTyping ? "Someone" : null);
-        }
-      } else if (payload.type === "error") {
-        console.error("WebSocket server error:", payload.message);
-        toast.error(payload.message || "Failed to send message");
-      }
-    });
 
     return () => {
       socketRef.current?.disconnect();
@@ -256,48 +219,71 @@ function HomeContent() {
         });
       }
 
-      setIsLoadingMessages(true);
-      const msgUrl = jc
-        ? `/api/groups/messages?joinCode=${jc}`
-        : `/api/groups/messages?chatId=${queryChatId}`;
-
-      fetch(msgUrl)
-        .then((res) => res.json())
-        .then((data) => {
-          if (Array.isArray(data)) {
-            setMessages(data);
-          }
-        })
-        .finally(() => setIsLoadingMessages(false));
     } else {
       setSelectedChatInfo(null);
       if (selectedChat !== "mvp-lobby") setMessages([]);
     }
   }, [selectedChat, status, searchParams]);
 
-  const handleSend = (fileUrl?: string) => {
-    if (!visitorId) return;
-    if (!inputText.trim() && !fileUrl) return;
-
-    const msg = {
-      id: Date.now(),
-      text: inputText,
-      fileUrl: fileUrl,
-      visitorId: visitorId,
-      alias: isAnonymous ? "Anonymous" : alias,
-      isAnonymous: isAnonymous,
-      time: new Date().toLocaleTimeString([], {
-        hour: "2-digit",
-        minute: "2-digit",
-        hour12: false,
-      }),
-      createdAt: new Date().toISOString(),
-      chatId: selectedChat || undefined,
-    };
-
-    socketRef.current?.send(msg);
-    setInputText("");
+  const sendingRef = useRef(false);
+  const handleSend = async (fileUrl?: string): Promise<boolean> => {
+    if (sendingRef.current || !visitorId || (!inputText.trim() && !fileUrl)) return false;
+    sendingRef.current = true;
+    const chatId = selectedChat || "mvp-lobby";
+    const text = inputText;
+    try {
+      const response = await fetch("/api/messages/send", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ chatId, text, fileUrl, isAnonymous }),
+      });
+      const message = await response.json();
+      if (!response.ok) throw new Error(message.error || "Message could not be sent");
+      if ((selectedChatRef.current || "mvp-lobby") === chatId) {
+        setMessages((previous) => previous.some((item) => item.id === message.id) ? previous : [...previous, message]);
+        setInputText((current) => current === text ? "" : current);
+      }
+      return true;
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Message could not be sent");
+      return false;
+    } finally { sendingRef.current = false; }
   };
+
+  // Refresh recipient-filtered history so both API sending paths appear without reloading.
+  useEffect(() => {
+    if (!selectedChat) return;
+    setIsLoadingMessages(true);
+    const controller = new AbortController();
+    let running = false;
+    const refresh = async () => {
+      if (running || document.hidden) return;
+      running = true;
+      try {
+        const response = await fetch("/api/groups/messages?chatId=" + encodeURIComponent(selectedChat), { cache: "no-store", signal: controller.signal });
+        if (response.ok) {
+          const data = await response.json();
+          if (!controller.signal.aborted && Array.isArray(data)) setMessages((previous) => JSON.stringify(previous) === JSON.stringify(data) ? previous : data);
+        }
+      } catch { /* Keep history during temporary connection failures. */ }
+      finally { running = false; if (!controller.signal.aborted) setIsLoadingMessages(false); }
+    };
+    void refresh();
+    const timer = setInterval(() => void refresh(), 4000);
+    return () => { clearInterval(timer); controller.abort(); };
+  }, [selectedChat, status]);
+
+  useEffect(() => {
+    if (!visitorId) return;
+    const controller = new AbortController();
+    const timer = setInterval(() => {
+      if (document.hidden) return;
+      void fetch("/api/groups/list", { cache: "no-store", signal: controller.signal })
+        .then(async (response) => response.ok ? response.json() : null)
+        .then((data) => { if (!controller.signal.aborted && Array.isArray(data)) setChats(data); })
+        .catch(() => {});
+    }, 8000);
+    return () => { clearInterval(timer); controller.abort(); };
+  }, [visitorId]);
 
   const handleCreateGroup = async () => {
     if (!newGroupName.trim()) return;

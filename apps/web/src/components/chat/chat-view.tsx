@@ -7,6 +7,7 @@ import { Share2, Trash2, Shield } from "lucide-react";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AttachmentPicker } from "./attachment-picker";
+import { SenderDetails } from "./sender-details";
 import { AttachmentPreview } from "./attachment-preview";
 import { X } from "lucide-react";
 import { AnonymousMessageCard } from "./anonymous-message-card";
@@ -23,7 +24,7 @@ interface ChatViewProps {
   isLoadingMessages: boolean;
   inputText: string;
   setInputText: (text: string) => void;
-  handleSend: (fileUrl?: string) => void;
+  handleSend: (fileUrl?: string) => Promise<boolean>;
   typingUser: string | null;
   setShowGroupSettings: (show: boolean) => void;
   status: string;
@@ -67,11 +68,13 @@ export function ChatView({
   const [isUploading, setIsUploading] = useState(false);
 
   const [pendingAttachment, setPendingAttachment] = useState<string | null>(null);
+  const [isSending, setIsSending] = useState(false);
   useEffect(() => { setPendingAttachment(null); setIsUploading(false); }, [selectedChat]);
-  const sendMessage = () => {
-    if (isUploading || (!inputText.trim() && !pendingAttachment)) return;
-    handleSend(pendingAttachment || undefined);
-    setPendingAttachment(null);
+  const sendMessage = async () => {
+    if (isSending || isUploading || (!inputText.trim() && !pendingAttachment)) return;
+    setIsSending(true);
+    try { if (await handleSend(pendingAttachment || undefined)) setPendingAttachment(null); }
+    finally { setIsSending(false); }
   };
 
   // Helper to get display name for chat header
@@ -367,6 +370,8 @@ export function ChatView({
                               </span>
                             )}
                           </div>
+
+                          <SenderDetails metadata={msg.metadata} />
 
                           {/* Action Buttons: Delete & Share */}
                           <div className="absolute -top-2 -right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">

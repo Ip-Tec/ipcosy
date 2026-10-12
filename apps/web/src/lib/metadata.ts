@@ -60,10 +60,10 @@ export function extractDeviceInfo(userAgent: string): DeviceInfo {
   // Detect browser
   let browser = "Unknown";
   if (/edg/i.test(ua)) browser = "Edge";
+  else if (/opr\//i.test(ua)) browser = "Opera";
   else if (/chrome|chromium|crios/i.test(ua)) browser = "Chrome";
   else if (/firefox|fxios/i.test(ua)) browser = "Firefox";
   else if (/safari/i.test(ua)) browser = "Safari";
-  else if (/opr\//i.test(ua)) browser = "Opera";
 
   return { deviceType, deviceOS, browser };
 }
@@ -88,6 +88,7 @@ export async function getLocationFromIP(ip: string): Promise<LocationInfo> {
 
     const response = await fetch(`https://ipapi.co/${ip}/json/`, {
       headers: { "User-Agent": "IPCosy/1.0" },
+      signal: AbortSignal.timeout(2000),
     });
 
     if (!response.ok) {
@@ -162,7 +163,11 @@ export async function captureMessageMetadata(): Promise<MessageMetadata> {
 
   const deviceInfo = extractDeviceInfo(userAgent);
   const ipAddress = await getClientIP();
-  const location = await getLocationFromIP(ipAddress);
+  const platformCountry = headersList.get("x-vercel-ip-country");
+  const platformCity = headersList.get("x-vercel-ip-city");
+  let city = platformCity || "Unknown";
+  try { city = decodeURIComponent(city); } catch { /* Keep the original value. */ }
+  const location: LocationInfo = platformCountry ? { city, country: platformCountry } : await getLocationFromIP(ipAddress);
   const deviceId = generateDeviceFingerprint(
     userAgent,
     acceptLanguage,
