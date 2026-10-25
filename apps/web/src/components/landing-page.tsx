@@ -39,7 +39,6 @@ export function LandingPage({ onContinue }: LandingPageProps) {
         <div aria-hidden="true" className="pointer-events-none absolute -left-40 top-8 h-96 w-96 rounded-full bg-primary/10 blur-3xl" />
         <div aria-hidden="true" className="pointer-events-none absolute right-0 top-20 h-72 w-72 rounded-full bg-bubble-out/50 blur-3xl" />
         <div className="relative z-[1] max-w-2xl">
-          <div className="mb-7 inline-flex items-center gap-2 rounded-full border border-border bg-sidebar/80 px-3.5 py-2 text-sm font-semibold text-primary shadow-sm"><MessageCircleMore className="h-4 w-4" /> Anonymous messages, in one place</div>
           <h1 className="max-w-2xl text-[3.3rem] font-black leading-[0.98] tracking-[-0.065em] text-foreground sm:text-6xl lg:text-[4.65rem]">Let your friends say <span className="relative inline-block text-[#7162ec]">what they really think<svg aria-hidden="true" className="absolute -bottom-2 left-0 w-full" viewBox="0 0 260 12" fill="none"><path d="M3 8C75 2 174 2 257 7" stroke="#B7AEFF" strokeWidth="5" strokeLinecap="round" /></svg></span>.</h1>
           <p className="mt-7 max-w-xl text-base leading-7 text-muted-foreground sm:text-lg sm:leading-8">Give your friends a place to say what’s on their mind. Start with an anonymous message, then keep the conversation going in your own inbox.</p>
           <div className="mt-9 flex flex-col gap-3 sm:flex-row sm:items-center">
