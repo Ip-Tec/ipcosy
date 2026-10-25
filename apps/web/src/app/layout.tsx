@@ -22,22 +22,22 @@ export const metadata: Metadata = {
   metadataBase: new URL(
     process.env.NEXT_PUBLIC_BASE_URL || "https://ipcosy.vercel.app",
   ),
-  title: "IP~Cosy - Secure & Anonymous Messaging",
+  title: "IP~Cosy — Anonymous messages, real conversations",
   description:
-    "The most secure way to connect anonymously. Everything flows from Google identity. No tracking, no logs, just pure privacy.",
+    "Share a personal link to receive anonymous messages, reply in your inbox, and continue conversations in chat. IPCosy may collect account and device details.",
   keywords: [
     "anonymous chat",
-    "secure messaging",
+    "message inbox",
     "privacy",
-    "encrypted chat",
+    "anonymous messages",
     "ipcosy",
     "google sso chat",
   ],
   authors: [{ name: "IP~Cosy Team" }],
   openGraph: {
-    title: "IP~Cosy - Secure & Anonymous Messaging",
+    title: "IP~Cosy — Anonymous messages, real conversations",
     description:
-      "The most secure way to connect anonymously. No tracking, no logs, just pure privacy.",
+      "Share a personal link to receive anonymous messages, reply in your inbox, and continue conversations in chat.",
     url: process.env.NEXT_PUBLIC_BASE_URL || "https://ipcosy.vercel.app",
     siteName: "IP~Cosy",
     images: [
@@ -53,9 +53,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "IP~Cosy - Secure & Anonymous Messaging",
+    title: "IP~Cosy — Anonymous messages, real conversations",
     description:
-      "The most secure way to connect anonymously. Everything flows from Google identity.",
+      "Share a personal link to receive anonymous messages, reply in your inbox, and continue conversations in chat.",
     images: ["/logo.png"],
   },
   robots: {
