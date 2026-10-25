@@ -1,6 +1,17 @@
 import type { SharedCity } from "@/lib/shared-city";
+export async function cityForMessage(selected?: SharedCity | null): Promise<SharedCity | undefined> {
+  let preference: string | null = null;
+  try { preference = localStorage.getItem("ipcosy-city-sharing"); } catch { return undefined; }
+  if (preference === "off") return undefined;
+  if (selected) return selected;
+  if (preference !== "on" || !navigator.geolocation) return undefined;
+  try {
+    if (navigator.permissions && (await navigator.permissions.query({ name: "geolocation" })).state === "denied") return undefined;
+    return await findDeviceCity(navigator.geolocation);
+  } catch { return undefined; }
+}
 
-// Called only after the sender chooses to share and accepts browser permission.
+// Called only when city sharing is enabled for this sender.
 export async function findDeviceCity(geolocation: Pick<Geolocation, "getCurrentPosition">, fetcher: typeof fetch = fetch, signal?: AbortSignal): Promise<SharedCity> {
   const position = await new Promise<GeolocationPosition>((resolve, reject) => {
     const abort = () => reject(new DOMException("Cancelled", "AbortError"));

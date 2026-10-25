@@ -9,6 +9,7 @@ import { useSession } from "next-auth/react";
 import nextDynamic from "next/dynamic";
 import { toast } from "sonner";
 import { LoginPrompt } from "@/components/login-prompt";
+import { BackLink } from "@/components/back-link";
 import { APP_VERSION } from "@/lib/constants";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SupportModal } from "@/components/support-modal";
@@ -200,13 +201,10 @@ export default function SettingsPage() {
     <div className="flex h-screen flex-col bg-background text-foreground">
       {/* Header */}
       <div className="flex items-center gap-4 border-b border-border bg-sidebar p-4 shadow-sm">
-        <Link
-          href="/"
-          className="text-primary hover:opacity-80 transition-opacity"
-        >
+        <BackLink className="text-primary hover:opacity-80 transition-opacity">
           <ChevronLeft className="w-4 h-4" />
           Back to Chat
-        </Link>
+        </BackLink>
         <h1 className="text-xl font-bold">Settings</h1>
       </div>
 
@@ -334,10 +332,10 @@ export default function SettingsPage() {
                 <p className="font-bold">Browser Notifications</p>
                 <p className="text-xs text-muted-foreground">
                   {notifPermission === "granted"
-                    ? "You are receiving real-time alerts."
+                    ? "Message alerts appear here while IPCosy is open. Browser alerts also need permission."
                     : notifPermission === "denied"
                       ? "Notifications are blocked in your browser."
-                      : "Click to enable background message alerts."}
+                      : "Click to enable browser notifications while IPCosy is open."}
                 </p>
               </div>
             </div>

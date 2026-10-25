@@ -215,7 +215,7 @@ export function ChatView({
           {/* Chat Header */}
           <div className="flex items-center gap-4 border-b border-border bg-sidebar p-3 z-10">
             <button
-              onClick={() => setSelectedChat(null)}
+              onClick={() => { if (history.state?.ipcosyChatOpen && history.length > 1) history.back(); else setSelectedChat(null); }}
               className="md:hidden p-4 -ml-2 cursor-pointer hover:bg-black/5 dark:hover:bg-white/5 rounded-full touch-manipulation"
             >
               <span className="text-2xl">←</span>

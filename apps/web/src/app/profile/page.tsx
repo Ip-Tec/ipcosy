@@ -21,6 +21,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 
 import { LoginPrompt } from "@/components/login-prompt";
+import { BackLink } from "@/components/back-link";
 import nextDynamic from "next/dynamic";
 
 const UpgradeButton = nextDynamic(() => import("@/components/upgrade-button"), {
@@ -80,12 +81,9 @@ export default function ProfilePage() {
     <div className="flex h-screen flex-col bg-background text-foreground">
       {/* Header */}
       <div className="flex items-center gap-4 border-b border-border bg-sidebar p-4 shadow-sm">
-        <Link
-          href="/"
-          className="text-primary hover:opacity-80 transition-opacity flex items-center gap-1"
-        >
+        <BackLink className="text-primary hover:opacity-80 transition-opacity flex items-center gap-1">
           <ChevronLeft className="w-4 h-4" /> Back to Chat
-        </Link>
+        </BackLink>
         <h1 className="text-xl font-bold">Your Profile</h1>
       </div>
 

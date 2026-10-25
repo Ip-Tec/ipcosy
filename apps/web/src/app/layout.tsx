@@ -5,6 +5,8 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { AuthProvider } from "@/components/providers/auth-provider";
 import { NotificationProvider } from "@/components/notification-provider";
 import { Toaster } from "sonner";
+import { AppNavigation } from "@/components/app-navigation";
+import { GoogleOneTap } from "@/components/google-one-tap";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -91,6 +93,8 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <AuthProvider>
+            <AppNavigation />
+            <GoogleOneTap />
             <NotificationProvider>{children}</NotificationProvider>
             <Toaster richColors position="top-right" />
           </AuthProvider>

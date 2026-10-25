@@ -53,6 +53,31 @@ function HomeContent() {
     selectedChatRef.current = selectedChat;
   }, [selectedChat]);
 
+  useEffect(() => {
+    const onPopState = (event: PopStateEvent) => {
+      if (selectedChatRef.current && !event.state?.ipcosyChatOpen) setSelectedChat(null);
+    };
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
+  }, []);
+
+  useEffect(() => {
+    if (!selectedChat) {
+      if (history.state?.ipcosyChatOpen) history.replaceState({ ...history.state, ipcosyChatOpen: false }, "", window.location.href);
+      return;
+    }
+    if (!history.state?.ipcosyChatOpen) history.pushState({ ...history.state, ipcosyChatOpen: true }, "", window.location.href);
+  }, [selectedChat]);
+
+  useEffect(() => {
+    const openChat = (event: Event) => {
+      const chatId = (event as CustomEvent<{ chatId?: string }>).detail?.chatId;
+      if (chatId) setSelectedChat(chatId);
+    };
+    window.addEventListener("ipcosy:open-chat", openChat);
+    return () => window.removeEventListener("ipcosy:open-chat", openChat);
+  }, []);
+
   const [dbUser, setDbUser] = useState<any>(null);
   const [isLoadingChats, setIsLoadingChats] = useState(false);
   const [isLoadingMessages, setIsLoadingMessages] = useState(false);
