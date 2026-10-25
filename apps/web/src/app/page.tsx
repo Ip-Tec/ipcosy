@@ -11,6 +11,7 @@ import { useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import type { SharedCity } from "@/lib/shared-city";
 import { OnboardingModal } from "@/components/onboarding-modal";
+import { LandingPage } from "@/components/landing-page";
 
 // New modular components
 import { Sidebar } from "@/components/chat/sidebar";
@@ -450,52 +451,14 @@ function HomeContent() {
     searchParams.get("view") === "true" || status === "unauthenticated";
   const joinCodeParam = searchParams.get("join");
 
-  // Only show splash if NOT viewing a group via link
   if (status === "unauthenticated" && !joinCodeParam) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-background p-6">
-        <div className="w-full max-w-sm bg-background border border-border rounded-[2.5rem] p-10 shadow-2xl space-y-10 text-center animate-in fade-in zoom-in duration-500">
-          <div className="space-y-6">
-            <div className="w-28 h-28 bg-primary/10 rounded-full flex items-center justify-center mx-auto transition-transform hover:scale-105 duration-300">
-              <img
-                src="/logo.png"
-                alt="Logo"
-                className="w-[70px] h-[70px] object-contain"
-              />
-            </div>
-            <div className="space-y-2">
-              <h2 className="text-4xl font-extrabold tracking-tight">
-                IP~Cosy
-              </h2>
-              <p className="text-muted-foreground text-sm px-2 leading-relaxed">
-                The most secure way to connect anonymously.
-                <br />
-                <span className="font-medium">
-                  Everything flows from Google identity.
-                </span>
-              </p>
-            </div>
-          </div>
-          <button
-            onClick={() => {
-              if (visitorId) {
-                document.cookie = `ipcosy-fingerprint=${visitorId}; path=/; max-age=31536000`;
-              }
-              signIn("google");
-            }}
-            className="cursor-pointer w-full flex items-center justify-center gap-4 bg-foreground text-background font-bold py-5 rounded-[1.5rem] hover:opacity-90 active:scale-[0.98] transition-all shadow-xl group"
-          >
-            <div className="bg-white p-1 rounded-full">
-              <img
-                src="https://www.google.com/favicon.ico"
-                className="w-5 h-5"
-                alt="Google"
-              />
-            </div>
-            Continue with Google
-          </button>
-        </div>
-      </div>
+      <LandingPage
+        onContinue={() => {
+          if (visitorId) document.cookie = "ipcosy-fingerprint=" + visitorId + "; path=/; max-age=31536000";
+          void signIn("google");
+        }}
+      />
     );
   }
 
