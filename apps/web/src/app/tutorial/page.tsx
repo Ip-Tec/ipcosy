@@ -22,7 +22,7 @@ export default function TutorialPage() {
     {
       title: "Privacy First",
       description:
-        "All messages are automatically deleted after 72 hours. We don't store your personal data longer than necessary.",
+        "Messages are stored for delivery and conversation history. Removing a message does not automatically remove its stored attachment.",
       icon: <Trash2 className="w-10 h-10 text-red-500" />,
       color: "bg-red-500/10",
     },

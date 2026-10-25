@@ -9,6 +9,7 @@ import { useSession } from "next-auth/react";
 import nextDynamic from "next/dynamic";
 import { toast } from "sonner";
 import { LoginPrompt } from "@/components/login-prompt";
+import { BackLink } from "@/components/back-link";
 import { APP_VERSION } from "@/lib/constants";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SupportModal } from "@/components/support-modal";
@@ -200,13 +201,10 @@ export default function SettingsPage() {
     <div className="flex h-screen flex-col bg-background text-foreground">
       {/* Header */}
       <div className="flex items-center gap-4 border-b border-border bg-sidebar p-4 shadow-sm">
-        <Link
-          href="/"
-          className="text-primary hover:opacity-80 transition-opacity"
-        >
+        <BackLink className="text-primary hover:opacity-80 transition-opacity">
           <ChevronLeft className="w-4 h-4" />
           Back to Chat
-        </Link>
+        </BackLink>
         <h1 className="text-xl font-bold">Settings</h1>
       </div>
 
@@ -334,10 +332,10 @@ export default function SettingsPage() {
                 <p className="font-bold">Browser Notifications</p>
                 <p className="text-xs text-muted-foreground">
                   {notifPermission === "granted"
-                    ? "You are receiving real-time alerts."
+                    ? "Message alerts appear here while IPCosy is open. Browser alerts also need permission."
                     : notifPermission === "denied"
                       ? "Notifications are blocked in your browser."
-                      : "Click to enable background message alerts."}
+                      : "Click to enable browser notifications while IPCosy is open."}
                 </p>
               </div>
             </div>
@@ -555,96 +553,19 @@ export default function SettingsPage() {
           </h2>
           <div className="bg-sidebar rounded-2xl border border-border overflow-hidden shadow-sm">
             <div className="p-5 border-b border-border space-y-3">
-              <div className="flex justify-between items-center">
-                <span className="font-medium">Privacy & Security</span>
-                <span className="text-[10px] bg-green-500/10 text-green-600 px-2 py-0.5 rounded-full font-bold">
-                  Secure
-                </span>
-              </div>
+              <div className="flex justify-between items-center"><span className="font-medium">Privacy & Security</span><span className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full font-bold">How it works</span></div>
               <div className="space-y-3 text-xs text-muted leading-relaxed">
-                <p>
-                  <span className="font-semibold text-foreground">
-                    🔒 End-to-End Anonymity:
-                  </span>{" "}
-                  IPCosy is built with privacy at its core. Your messages are
-                  transmitted with full anonymity protection, ensuring your
-                  identity remains private.
-                </p>
-                <p>
-                  <span className="font-semibold text-foreground">
-                    🛡️ Secure Authentication:
-                  </span>{" "}
-                  We use industry-standard OAuth 2.0 with Google Sign-In,
-                  ensuring your credentials are never stored on our servers.
-                  Your account is protected by Google&apos;s enterprise-grade
-                  security.
-                </p>
-                <p>
-                  <span className="font-semibold text-foreground">
-                    ⏱️ Auto-Delete Policy:
-                  </span>{" "}
-                  All messages are automatically deleted from our servers after
-                  72 hours. This ensures your conversations remain ephemeral and
-                  reduces data exposure risks.
-                </p>
-                <p>
-                  <span className="font-semibold text-foreground">
-                    🔐 Data Encryption:
-                  </span>{" "}
-                  All data transmitted between your device and our servers is
-                  encrypted using TLS 1.3, protecting your messages from
-                  interception.
-                </p>
-                <p>
-                  <span className="font-semibold text-foreground">
-                    👤 Anonymous Messaging:
-                  </span>{" "}
-                  Send messages without revealing your identity. Our anonymous
-                  mode masks your profile information, allowing truly private
-                  communication.
-                </p>
+                <p><span className="font-semibold text-foreground">Anonymous mode:</span>{" "}Your name is masked in the chat when anonymous mode is on. IPCosy processes account and message information to run the service. Messages are not end-to-end encrypted.</p>
+                <p><span className="font-semibold text-foreground">Google sign-in:</span>{" "}Google handles sign-in. IPCosy stores profile and session information for your account.</p>
+                <p><span className="font-semibold text-foreground">Check attachments:</span>{" "}Files can contain names, authorship details and other identifying information. Check their contents before sending anonymously.</p>
               </div>
             </div>
-
             <div className="p-5 border-b border-border space-y-3">
-              <div className="flex justify-between items-center">
-                <span className="font-medium">Data Usage</span>
-                <span className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full font-bold">
-                  Minimal Storage
-                </span>
-              </div>
+              <div className="flex justify-between items-center"><span className="font-medium">Data Usage</span><span className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full font-bold">Storage &amp; history</span></div>
               <div className="space-y-3 text-xs text-muted leading-relaxed">
-                <p>
-                  <span className="font-semibold text-foreground">
-                    💾 Temporary Storage:
-                  </span>{" "}
-                  Messages are stored temporarily on our secure servers only for
-                  delivery purposes. After 72 hours, all message content is
-                  permanently deleted.
-                </p>
-                <p>
-                  <span className="font-semibold text-foreground">
-                    📊 Minimal Data Collection:
-                  </span>{" "}
-                  We only collect essential information needed for
-                  authentication (via Google) and basic app functionality. We
-                  never sell or share your personal data with third parties.
-                </p>
-                <p>
-                  <span className="font-semibold text-foreground">
-                    🗑️ Right to Deletion:
-                  </span>{" "}
-                  You can delete your messages at any time. Once deleted,
-                  messages are immediately removed from our servers and cannot
-                  be recovered.
-                </p>
-                <p>
-                  <span className="font-semibold text-foreground">
-                    🌐 No Tracking:
-                  </span>{" "}
-                  We don&apos;t use invasive analytics or tracking cookies. Your
-                  browsing behavior within IPCosy remains private.
-                </p>
+                <p><span className="font-semibold text-foreground">Chat history:</span>{" "}Messages are stored for delivery and conversation history. Shared messages may be retained when an account is deleted.</p>
+                <p><span className="font-semibold text-foreground">Stored files:</span>{" "}Removing a message does not automatically remove its stored attachment. Free accounts can upload images up to 4 MB and other files up to 16 MB. Premium accounts can upload images up to 20 MB and other files up to 100 MB.</p>
+                <p><span className="font-semibold text-foreground">Account and device information:</span>{" "}Cookies and device identifiers support sessions and anonymous messages. Some sender details may be shown through premium features.</p>
               </div>
             </div>
 

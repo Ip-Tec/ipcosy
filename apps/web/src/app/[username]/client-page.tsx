@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { toast } from "sonner";
 import { useSession, signIn } from "next-auth/react";
 import {
@@ -13,14 +13,15 @@ import {
   Send,
   ShieldCheck,
   Dices,
-  Image as ImageIcon,
   X,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import FingerprintJS from "@fingerprintjs/fingerprintjs";
 import Image from "next/image";
-import { UploadButton } from "@uploadthing/react";
-import type { OurFileRouter } from "@/app/api/uploadthing/core";
+import { AttachmentPreview } from "@/components/chat/attachment-preview";
+import { AttachmentPicker } from "@/components/chat/attachment-picker";
+import { CitySharing } from "@/components/chat/city-sharing";
+import type { SharedCity } from "@/lib/shared-city";
 
 interface UserInfo {
   id: string;
@@ -184,6 +185,9 @@ export default function ClientPage({
   const [message, setMessage] = useState("");
   const [fileUrl, setFileUrl] = useState<string | null>(null);
   const [isSending, setIsSending] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [sharedCity, setSharedCity] = useState<SharedCity | null>(null);
+  const [isLocating, setIsLocating] = useState(false);
   const [showRegPopup, setShowRegPopup] = useState(false);
   const [visitorId, setVisitorId] = useState<string | null>(null);
 
@@ -214,6 +218,7 @@ export default function ClientPage({
   }, [initialUserInfo]);
 
   const handleSend = async () => {
+    if (isLocating || isSending) return;
     if (!message.trim() && !fileUrl) return;
 
     if (status !== "authenticated" && !visitorId && !document.cookie.includes("ipcosy-fingerprint")) {
@@ -232,6 +237,7 @@ export default function ClientPage({
           content: message,
           fileUrl: fileUrl,
           isAnonymous: true,
+          sharedCity,
         }),
       });
 
@@ -241,6 +247,7 @@ export default function ClientPage({
         toast.success("Message sent anonymously!");
         setMessage("");
         setFileUrl(null);
+        setSharedCity(null);
         if (status !== "authenticated") {
           setShowRegPopup(true);
         }
@@ -296,8 +303,7 @@ export default function ClientPage({
             <p className="text-xs text-muted font-medium">@{username}</p>
           </div>
           <p className="text-sm text-muted-foreground leading-relaxed px-4">
-            They will never know who sent this message unless you reveal
-            yourself later!
+            Send without displaying your account name. Check your message and files for identifying details.
           </p>
         </div>
 
@@ -325,15 +331,9 @@ export default function ClientPage({
           {/* Image Preview */}
           {fileUrl && (
             <div className="relative w-full bg-sidebar rounded-[1.5rem] p-4 border border-primary/30">
-              <div className="relative w-full h-40 rounded-lg overflow-hidden">
-                <Image
-                  src={fileUrl}
-                  alt="Uploaded image"
-                  fill
-                  className="object-cover"
-                />
-              </div>
+              <AttachmentPreview url={fileUrl} />
               <button
+                aria-label="Remove attachment"
                 onClick={() => setFileUrl(null)}
                 className="absolute -top-2 -right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors"
               >
@@ -342,37 +342,12 @@ export default function ClientPage({
             </div>
           )}
 
-          {/* Upload Section */}
-          <div className="w-full">
-            <UploadButton<OurFileRouter, "imageUploader">
-              endpoint="imageUploader"
-              onClientUploadComplete={(res) => {
-                if (res?.[0]) {
-                  setFileUrl(res[0].url);
-                  toast.success("Image uploaded!");
-                }
-              }}
-              onUploadError={(error: Error) => {
-                toast.error(`Upload failed: ${error.message}`);
-              }}
-              content={{
-                button({ ready, isUploading }) {
-                  if (isUploading) return "Uploading...";
-                  if (ready) return <div className="flex items-center gap-2"><ImageIcon className="w-4 h-4" /> Add Image</div>;
-                  return "Getting ready...";
-                },
-              }}
-              appearance={{
-                container: "w-full",
-                button: "w-full ut-button:bg-primary/20 ut-button:text-primary ut-button:font-bold ut-button:py-3 ut-button:rounded-[1.5rem] ut-button:border-0 ut-button:transition-all hover:ut-button:bg-primary/30",
-                allowedContent: "hidden",
-              }}
-            />
-          </div>
+          <AttachmentPicker onUploaded={setFileUrl} onBusyChange={setIsUploading} disabled={!!fileUrl} />
+          <CitySharing value={sharedCity} onChange={setSharedCity} onBusyChange={setIsLocating} disabled={isSending} />
 
           <button
             onClick={handleSend}
-            disabled={(!message.trim() && !fileUrl) || isSending}
+            disabled={(!message.trim() && !fileUrl) || isSending || isUploading || isLocating}
             className="cursor-pointer w-full bg-primary text-white py-5 rounded-[1.5rem] font-black text-sm shadow-xl hover:opacity-90 active:scale-[0.98] transition-all disabled:opacity-50 flex items-center justify-center gap-3"
           >
             {isSending ? (
@@ -392,8 +367,7 @@ export default function ClientPage({
             Powered by IP~Tec
           </p>
           <p className="text-[10px] text-muted-foreground italic flex items-center justify-center gap-1">
-            <ShieldCheck className="w-3 h-3" /> End-to-end anonymous encryption
-            enabled.
+            <ShieldCheck className="w-3 h-3" /> Anonymous mode is on. Check attachments before sending.
           </p>
         </div>
       </div>

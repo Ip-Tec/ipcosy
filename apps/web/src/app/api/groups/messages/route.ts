@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@ipcosy/db";
+import { messageView } from "@/lib/message-view";
+export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
   try {
@@ -71,7 +73,7 @@ export async function GET(req: NextRequest) {
     // 1. If user is a participant, allowed.
     // 2. If chat is public, everyone is allowed.
     // 3. Otherwise, forbidden.
-    const isPublic = (chat as any).isPublic;
+    const isPublic = (chat as any).isPublic || chat.id === "mvp-lobby";
 
     if (!participation && !isPublic) {
         return NextResponse.json({ error: "Forbidden" }, { status: 403 });
@@ -86,14 +88,9 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    const isPremium = userId
-      ? !!(
-          await prisma.user.findUnique({
-            where: { id: userId },
-            select: { isPremium: true },
-          })
-        )?.isPremium
-      : false;
+    const viewer = userId ? await prisma.user.findUnique({ where: { id: userId }, select: { isPremium: true, isBanned: true } }) : null;
+    if (viewer?.isBanned) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    const isPremium = !!viewer?.isPremium;
 
     // Actual chatId to fetch
     const targetChatId = chat.id;
@@ -101,7 +98,7 @@ export async function GET(req: NextRequest) {
     // Fetch messages
     const messages = await prisma.message.findMany({
       where: { chatId: targetChatId },
-      orderBy: { createdAt: "asc" }, // Oldest first for chat UI
+      orderBy: { createdAt: "desc" }, // Fetch latest 50, then display oldest first.
       take: 50, // Limit to 50 for now
       include: {
         user: {
@@ -116,54 +113,10 @@ export async function GET(req: NextRequest) {
       },
     });
 
-    // Format for UI
-    const formattedMessages = messages.map((msg) => {
-      // Determine if sender is me
-      const isMe = userId ? msg.userId === userId : false;
+    // Private sender clues are returned only to paid participants.
+    const formattedMessages = messages.reverse().map((msg) => messageView(msg, userId, isPremium && !!participation));
 
-      // Determine alias
-      // If user has a fingerprint but no email, they're anonymous
-      let alias = msg.user.username || msg.user.name || "Anonymous";
-      if (msg.user.fingerprint && !msg.user.email) {
-        alias = "Anonymous";
-      }
-
-      // Mask identity for anonymous messages if not the sender
-      let maskedVisitorId = msg.userId;
-      let finalAlias = alias;
-
-      if (msg.isAnonymous && !isMe) {
-        maskedVisitorId = "anonymous";
-        finalAlias = "Anonymous";
-      }
-
-      return {
-        id: msg.id,
-        text: msg.content,
-        fileUrl: msg.fileUrl,
-        sender: isMe ? "me" : "them",
-        alias: finalAlias,
-        visitorId: maskedVisitorId,
-        time: new Date(msg.createdAt).toLocaleTimeString([], {
-          hour: "2-digit",
-          minute: "2-digit",
-          hour12: false,
-        }),
-        isAnonymous: msg.isAnonymous,
-        metadata:
-          isPremium && !isMe
-            ? {
-                deviceType: msg.deviceType,
-                deviceOS: msg.deviceOS,
-                browser: msg.browser,
-                city: msg.city,
-                country: msg.country,
-              }
-            : null,
-      };
-    });
-
-    return NextResponse.json(formattedMessages);
+    return NextResponse.json(formattedMessages, { headers: { "Cache-Control": "no-store" } });
   } catch (error) {
     console.error("Messages fetch error:", error);
     return NextResponse.json(
